@@ -51,7 +51,7 @@ if len(args) < 1:
 
 try:
 	pattern = args[0].lower()
-	matches = [c for c in commands if c.__name__[3:].startswith(pattern)]
+	matches = [c for c in commands if c.__name__[3:].replace('_', '-').startswith(pattern)]
 	if len(matches) == 0:
 		parser.print_help()
 		sys.exit(1)

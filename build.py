@@ -5,72 +5,7 @@ import sys, os, __main__
 from logging import info
 from xml.dom import minidom
 
-from zeroinstall.injector.model import Interface, Implementation, Dependency, EnvironmentBinding
-from zeroinstall.zerostore import Stores
-
 from support import *
-
-stores = Stores()
-def lookup(id):
-	if id.startswith('/'):
-		if os.path.isdir(id):
-			return id
-		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % id)
-	return stores.lookup(id)
-
-class BuildEnv(object):
-	__slots__ = ['doc', 'interface', 'interfaces', 'main', 'srcdir']
-
-	def __init__(self):
-		self.doc = get_env_doc()
-		root = self.doc.documentElement
-		self.interface = root.getAttributeNS(None, 'interface')
-		assert self.interface
-
-		self.interfaces = {}
-		for child in children(root, XMLNS_0COMPILE, 'interface'):
-			iface = self.interface_from_elem(child)
-			assert iface.uri not in self.interfaces
-			self.interfaces[iface.uri] = iface
-
-		assert self.interface in self.interfaces
-		root_impl = self.chosen_impl(self.interface)
-		main = root_impl.main
-		assert main
-
-		self.main = os.path.join(lookup(root_impl.id), main)
-		self.srcdir = os.path.dirname(self.main)
-	
-	def chosen_impl(self, uri):
-		assert uri in self.interfaces
-		impls = self.interfaces[uri].implementations.values()
-		assert len(impls) == 1
-		return impls[0]
-
-	def interface_from_elem(self, elem):
-		uri = elem.getAttributeNS(None, 'uri')
-
-		iface = Interface(uri)
-
-		impl_elems = list(children(elem, XMLNS_0COMPILE, 'implementation'))
-		assert len(impl_elems) == 1
-		impl_elem = impl_elems[0]
-
-		impl = iface.get_impl(impl_elem.getAttributeNS(None, 'id'))
-		impl.main = impl_elem.getAttributeNS(None, 'main') or None
-
-		for dep_elem in children(impl_elem, XMLNS_0COMPILE, 'requires'):
-			dep_uri = dep_elem.getAttributeNS(None, 'interface')
-			dep = Dependency(dep_uri)
-			impl.dependencies[dep_uri] = dep
-
-			for e in children(dep_elem, XMLNS_0COMPILE, 'environment'):
-				env = EnvironmentBinding(e.getAttributeNS(None, 'name'),
-							 e.getAttributeNS(None, 'insert'),
-							 e.getAttributeNS(None, 'default') or None)
-				dep.bindings.append(env)
-
-		return iface
 
 def env(name, value):
 	info('Setting %s="%s"', name, value)
