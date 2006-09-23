@@ -1,0 +1,41 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl'
+     href='http://0install.net/2006/stylesheets/interface.xsl'?>
+
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface">
+  <name>0compile</name>
+  <summary>create a binary release from source code</summary>
+  <description>
+0compile creates a binary from source code, either for your own use or ready
+for publishing on the web through Zero Install. It works by setting up a
+build environment and then executing the (source) interface. The default
+source implementation is executed in the following environment:
+
+- Read access to all build dependencies (from the source interface)
+
+- Write access to $TMPDIR (empty, deleted after the build)
+
+- Write access to $BUILDDIR, which is also the current directory (this persists over builds by default, to speed up rebuilds)
+
+- Write access to $DESTDIR (the final binary package and interface)
+
+- No write access anywhere else.
+
+- Read access to $SRCDIR
+
+If plash is not installed, the read-only restrictions are not enforced, but you
+should follow them anyway.
+
+As a special case, the source interface may specify compile-type='CMM', in which
+case the 'main' attribute gives the location of an autoconf configure script and
+the familiar './configure &amp;&amp; make &amp;&amp; make install' sequence
+will be run with appropriate options passed to configure to use the correct directories.
+  </description>
+  <homepage>http://0install.net/injector-packagers.html</homepage>
+
+  <feed-for interface='http://0install.net/2006/interfaces/0compile'/>
+
+  <group main='0compile'>
+    <implementation id="." version="0.1.0" released='Snapshot'/>
+  </group>
+</interface>
