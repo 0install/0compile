@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+# Copyright (C) 2006, Thomas Leonard
+# See the README file for details, or visit http://0install.net.
+
+# Hacky replacement for /usr/bin/install, to avoid a problem with
+# plash 0.16 (chown always returns an error code).
+
+from optparse import OptionParser
+import os, sys, shutil
+
+parser = OptionParser(usage="usage: %prog SOURCE DEST")
+
+parser.add_option("-c", help="ignored", action='store_true')
+parser.add_option("-m", "--mode", help="mode")
+
+parser.disable_interspersed_args()
+
+(options, args) = parser.parse_args()
+
+src, dest = args
+
+shutil.copyfile(src, dest)
+
+if options.mode:
+	os.execvp('chmod', ['chmod', options.mode, '--', dest])

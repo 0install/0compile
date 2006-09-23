@@ -23,19 +23,12 @@ def find_in_path(prog):
 			return path
 	return None
 
-def spawn(policy, main, args):
-	child = os.fork()
-	if child == 0:
-		try:
-			try:
-				run.execute(policy, args, main = main)
-			except SafeException, ex:
-				print str(ex)
-			except:
-				traceback.print_exc()
-		finally:
-			os._exit(1)
-	wait_for_child(child)
+def spawn_and_check(prog, args):
+	status = os.spawnv(os.P_WAIT, prog, [prog] + args)
+	if status > 0:
+		raise SafeException("Program '%s' failed with exit code %d" % (prog, status))
+	elif status < 0:
+		raise SafeException("Program '%s' failed with signal %d" % (prog, -status))
 
 def wait_for_child(child):
 	"""Wait for child to exit and reap it. Throw an exception if it doesn't return success."""
@@ -91,5 +84,6 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 		pola_args += ['-f', r]
 	for w in writable:
 		pola_args += ['-fw', w]
-	pola_args += ['-t', '/tmp', tmpdir]
+	pola_args += ['-tw', '/tmp', tmpdir]
+	os.environ['TMPDIR'] = '/tmp'
 	os.execl(_pola_run, _pola_run, *pola_args)
