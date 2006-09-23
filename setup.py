@@ -14,10 +14,10 @@ from support import *
 def do_setup(args):
 	"setup [ SOURCE-URI [ DIR ] ]"
 	if len(args) == 0:
-		if not os.path.exists(ENV_FILE):
-			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
+		if not os.path.isfile(ENV_FILE):
+			raise SafeException("Run 0compile from a directory containing a '%s' file"
 					    "specify a source URI as an argument." % ENV_FILE)
-		doc = minidom.parse(ENV_FILE)
+		doc = get_env_doc()
 		interface = doc.documentElement.getAttributeNS(None, 'interface')
 		assert interface
 	else:
@@ -93,7 +93,7 @@ def save_environment(policy):
 
 			dep_elem = doc.createElementNS(XMLNS_0COMPILE, 'requires')
 			dep_elem.setAttributeNS(None, 'interface', dep.interface)
-			iface_elem.appendChild(dep_elem)
+			impl_elem.appendChild(dep_elem)
 
 			for b in dep.bindings:
 				if isinstance(b, model.EnvironmentBinding):
