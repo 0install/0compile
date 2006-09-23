@@ -14,7 +14,12 @@ from support import *
 def do_setup(args):
 	"setup [ SOURCE-URI [ DIR ] ]"
 	if len(args) == 0:
-		raise "later"
+		if not os.path.exists(ENV_FILE):
+			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
+					    "specify a source URI as an argument." % ENV_FILE)
+		doc = minidom.parse(ENV_FILE)
+		interface = doc.documentElement.getAttributeNS(None, 'interface')
+		assert interface
 	else:
 		interface = args[0]
 		if len(args) == 1:
@@ -32,12 +37,8 @@ def do_setup(args):
 		if os.path.exists(dir):
 			raise SafeException("Directory '%s' already exists." % dir)
 
-	def env(name, value):
-		info('Setting %s="%s"', name, value)
-		os.environ[name] = value
-
 	# Prompt user to choose versions
-	if os.spawnvp(os.P_WAIT, '0launch', ['0launch', '--source', '--download-only', interface]):
+	if os.spawnvp(os.P_WAIT, '0launch', ['0launch', '--gui', '--source', '--download-only', interface]):
 		raise SafeException('Failed to select source files.')
 	
 	# Get the chosen versions
@@ -48,15 +49,15 @@ def do_setup(args):
 	if not policy.ready:
 		raise Exception('Internal error: required source components not found!')
 
-	# Create build directory
-	if os.path.exists(dir):
-		raise SafeException("Directory '%s' already exists." % dir)
-	os.mkdir(dir)
-	os.chdir(dir)
+	if len(args) > 0:
+		# Create build directory
+		if os.path.exists(dir):
+			raise SafeException("Directory '%s' already exists." % dir)
+		os.mkdir(dir)
+		os.chdir(dir)
 
 	# Store choices
 	save_environment(policy)
-	env_file = file('0compile-env.xml')
 
 def save_environment(policy):
 	impl = minidom.getDOMImplementation()
