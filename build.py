@@ -25,6 +25,9 @@ def do_build_internal(args):
 	distdir = os.path.realpath('dist')
 	builddir = os.path.realpath('build')
 
+	metadir = os.path.join(distdir, '0install')
+	ensure_dir(metadir)
+
 	# Create build-environment.xml file
 	root = buildenv.doc.documentElement
 	info = buildenv.doc.createElementNS(XMLNS_0COMPILE, 'build-info')
@@ -36,12 +39,14 @@ def do_build_internal(args):
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	uname = os.uname()
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
-	buildenv.doc.writexml(file('dist/build-environment.xml', 'w'))
+	buildenv.doc.writexml(file(os.path.join(metadir, 'build-environment.xml'), 'w'))
 
 	# Create local binary interface file
 	src_iface = iface_cache.get_interface(buildenv.interface)
 	name = src_iface.name.replace('/', '_').replace(' ', '-')
-	write_sample_interface(src_iface, 'dist/%s.xml' % name, buildenv.chosen_impl(buildenv.interface))
+	write_sample_interface(src_iface,
+		os.path.join(metadir, '%s.xml' % name),
+		buildenv.chosen_impl(buildenv.interface))
 
 	env('BUILDDIR', builddir)
 	env('DISTDIR', distdir)
@@ -124,6 +129,8 @@ def write_sample_interface(iface, path, src_impl):
 	addSimple(root, 'name', iface.name)
 	addSimple(root, 'summary', iface.summary)
 	addSimple(root, 'description', iface.description)
+	feed_for = addSimple(root, 'feed-for')
+	feed_for.setAttributeNS(None, 'interface', iface.uri)
 
 	group = addSimple(root, 'group')
 	main = src_impl.metadata.get('binary-main')
@@ -131,7 +138,7 @@ def write_sample_interface(iface, path, src_impl):
 		group.setAttributeNS(None, 'main', main)
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
-	impl_elem.setAttributeNS(None, 'id', '.')
+	impl_elem.setAttributeNS(None, 'id', '..')
 	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))
 	close(group)
 	close(root)
