@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See the README file for details, or visit http://0install.net.
 
-import sys, os, __main__
+import sys, os, __main__, time
 from logging import info
 from xml.dom import minidom
 
@@ -39,7 +39,9 @@ def do_build_internal(args):
 	buildenv.doc.writexml(file('dist/build-environment.xml', 'w'))
 
 	# Create local binary interface file
-	
+	src_iface = iface_cache.get_interface(buildenv.interface)
+	name = src_iface.name.replace('/', '_').replace(' ', '-')
+	write_sample_interface(src_iface, 'dist/%s.xml' % name, buildenv.chosen_impl(buildenv.interface))
 
 	env('BUILDDIR', builddir)
 	env('DISTDIR', distdir)
@@ -85,6 +87,8 @@ def do_build(args):
 		env('TMPDIR', tmpdir)
 		env('PATH', os.path.join(my_dir, 'bin') + ':' + os.environ['PATH'])
 
+		readable.append(get_cached_iface_path(buildenv.interface))
+
 		for iface in buildenv.interfaces:
 			readable.append(lookup(buildenv.chosen_impl(iface).id))
 
@@ -95,5 +99,41 @@ def do_build(args):
 	finally:
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
+
+def write_sample_interface(iface, path, src_impl):
+	impl = minidom.getDOMImplementation()
+
+	XMLNS_IFACE = namespaces.XMLNS_IFACE
+
+	doc = impl.createDocument(XMLNS_IFACE, "interface", None)
+
+	root = doc.documentElement
+	root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns', XMLNS_IFACE)
+
+	def addSimple(parent, name, text = None):
+		elem = doc.createElementNS(XMLNS_IFACE, name)
+
+		parent.appendChild(doc.createTextNode('\n' + '  ' * (1 + depth(parent))))
+		parent.appendChild(elem)
+		if text:
+			elem.appendChild(doc.createTextNode(text))
+		return elem
+
+	def close(element):
+		element.appendChild(doc.createTextNode('\n' + '  ' * depth(element)))
+
+	addSimple(root, 'name', iface.name)
+	addSimple(root, 'summary', iface.summary)
+	addSimple(root, 'description', iface.description)
+
+	group = addSimple(root, 'group')
+	impl_elem = addSimple(group, 'implementation')
+	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
+	impl_elem.setAttributeNS(None, 'id', '.')
+	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))
+	close(group)
+	close(root)
+
+	doc.writexml(file(path, 'w'))
 
 __main__.commands.append(do_build)

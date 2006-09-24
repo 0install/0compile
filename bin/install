@@ -20,6 +20,8 @@ parser.disable_interspersed_args()
 src, dest = args
 
 shutil.copyfile(src, dest)
+if os.stat(src).st_mode & 0111:
+	os.chmod(dest, os.stat(dest).st_mode | 0111)
 
 if options.mode:
 	os.execvp('chmod', ['chmod', options.mode, '--', dest])

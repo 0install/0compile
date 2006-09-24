@@ -4,12 +4,12 @@
 import os, sys, tempfile, shutil, traceback
 from xml.dom import minidom, XMLNS_NAMESPACE, Node
 
-from zeroinstall.injector.model import Interface, Implementation, Dependency, EnvironmentBinding
+from zeroinstall.injector.model import Interface, Implementation, Dependency, EnvironmentBinding, escape
+from zeroinstall.injector import namespaces, basedir, reader
+from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
 from zeroinstall.injector import run
 from zeroinstall.zerostore import Stores
-
-stores = Stores()
 
 ENV_FILE = '0compile-env.xml'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
@@ -19,7 +19,18 @@ def lookup(id):
 		if os.path.isdir(id):
 			return id
 		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % id)
-	return stores.lookup(id)
+	return iface_cache.stores.lookup(id)
+
+def get_cached_iface_path(uri):
+	if uri.startswith('/'):
+		if not os.path.isfile(uri):
+			raise SafeException("Local source interface '%s' does not exist!" % uri)
+		return uri
+	else:
+		path = basedir.load_first_cache(namespaces.config_site, 'interfaces', escape(uri))
+		if path and os.path.isfile(path):
+			return path
+		raise SafeException("Interface '%s' not found in cache. Hint: try '0compile setup'" % uri)
 
 def ensure_dir(d):
 	if os.path.isdir(d): return
@@ -143,6 +154,7 @@ class BuildEnv(object):
 
 		impl = iface.get_impl(impl_elem.getAttributeNS(None, 'id'))
 		impl.main = impl_elem.getAttributeNS(None, 'main') or None
+		impl.version = reader.parse_version(impl_elem.getAttributeNS(None, 'version'))
 
 		for dep_elem in children(impl_elem, XMLNS_0COMPILE, 'requires'):
 			dep_uri = dep_elem.getAttributeNS(None, 'interface')
@@ -157,3 +169,10 @@ class BuildEnv(object):
 
 		return iface
 
+def depth(node):
+	root = node.ownerDocument.documentElement
+	depth = 0
+	while node and node is not root:
+		node = node.parentNode
+		depth += 1
+	return depth
