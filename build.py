@@ -25,6 +25,9 @@ def do_build_internal(args):
 	distdir = os.path.realpath('dist')
 	builddir = os.path.realpath('build')
 
+	shutil.rmtree(distdir)
+	os.mkdir(distdir)
+
 	metadir = os.path.join(distdir, '0install')
 	ensure_dir(metadir)
 
@@ -47,6 +50,18 @@ def do_build_internal(args):
 	write_sample_interface(src_iface,
 		os.path.join(metadir, '%s.xml' % name),
 		buildenv.chosen_impl(buildenv.interface))
+
+	# Create the patch
+	if os.path.isdir('src'):
+		orig_impl = buildenv.chosen_impl(buildenv.interface)
+		orig_src = lookup(orig_impl.id)
+		# (ignore errors; will already be shown on stderr)
+		patch_file = 'dist/0install/from-%s.patch' % orig_impl.get_version()
+		os.system("diff -urN '%s' src > %s" %
+			(orig_src.replace('\\', '\\\\').replace("'", "\\'"),
+			 patch_file))
+		if os.path.getsize(patch_file) == 0:
+			os.unlink(patch_file)
 
 	env('BUILDDIR', builddir)
 	env('DISTDIR', distdir)
