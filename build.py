@@ -61,10 +61,9 @@ def do_build_internal(args):
 	if args == ['--shell']:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
-		# GNU build process
-		spawn_and_check(buildenv.main, ['--prefix', distdir])
-		spawn_and_check(find_in_path('make'), [])
-		spawn_and_check(find_in_path('make'), ['install'])
+		command = buildenv.root_impl.metadata['command']
+		print "Executing: " + command
+		os.system(command)
 
 def do_build(args):
 	"""build [ --nosandbox ] [ shell ]"""
@@ -127,6 +126,9 @@ def write_sample_interface(iface, path, src_impl):
 	addSimple(root, 'description', iface.description)
 
 	group = addSimple(root, 'group')
+	main = src_impl.metadata.get('binary-main')
+	if main:
+		group.setAttributeNS(None, 'main', main)
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
 	impl_elem.setAttributeNS(None, 'id', '.')

@@ -82,8 +82,15 @@ def save_environment(policy):
 		impl_elem.setAttributeNS(None, 'version', impl.get_version())
 		if impl.interface is not needed_iface:
 			impl_elem.setAttributeNS(None, 'from-feed', impl.interface.uri)
+
 		if needed_iface.uri == policy.root:
-			impl_elem.setAttributeNS(None, 'main', impl.main)
+			command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
+			if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
+			impl_elem.setAttributeNS(XMLNS_0COMPILE, 'command', command)
+			binary_main = impl.metadata.get(XMLNS_0COMPILE + ' binary-main', None)
+			if binary_main:
+				impl_elem.setAttributeNS(XMLNS_0COMPILE, 'binary-main', binary_main)
+
 		iface_elem.appendChild(impl_elem)
 
 		for dep in impl.dependencies.values():

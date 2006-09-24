@@ -111,7 +111,7 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	os.execl(_pola_run, _pola_run, *pola_args)
 
 class BuildEnv(object):
-	__slots__ = ['doc', 'interface', 'interfaces', 'main', 'srcdir']
+	__slots__ = ['doc', 'interface', 'interfaces', 'root_impl', 'srcdir']
 
 	def __init__(self):
 		self.doc = get_env_doc()
@@ -126,16 +126,12 @@ class BuildEnv(object):
 			self.interfaces[iface.uri] = iface
 
 		assert self.interface in self.interfaces
-		root_impl = self.chosen_impl(self.interface)
-		main = root_impl.main
-		assert main
+		self.root_impl = self.chosen_impl(self.interface)
 
 		if os.path.isdir('src'):
-			src_impl_root = os.path.realpath('src')
+			self.srcdir = os.path.realpath('src')
 		else:
-			src_impl_root = lookup(root_impl.id)
-		self.main = os.path.join(src_impl_root, main)
-		self.srcdir = os.path.dirname(self.main)
+			self.srcdir = lookup(self.root_impl.id)
 	
 	def chosen_impl(self, uri):
 		assert uri in self.interfaces
@@ -155,6 +151,9 @@ class BuildEnv(object):
 		impl = iface.get_impl(impl_elem.getAttributeNS(None, 'id'))
 		impl.main = impl_elem.getAttributeNS(None, 'main') or None
 		impl.version = reader.parse_version(impl_elem.getAttributeNS(None, 'version'))
+
+		for x in impl_elem.attributes.values():
+			impl.metadata[x.name] = x.value
 
 		for dep_elem in children(impl_elem, XMLNS_0COMPILE, 'requires'):
 			dep_uri = dep_elem.getAttributeNS(None, 'interface')
