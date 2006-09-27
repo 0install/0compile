@@ -5,6 +5,13 @@
 from optparse import OptionParser
 import os, sys, tempfile, shutil, traceback
 from logging import info, debug
+import zeroinstall
+
+if map(int, zeroinstall.version.split('.')) < [0, 23]:
+	print >>sys.stderr, "Your version of 0launch (%s) is too old. " \
+			    "I need version 0.23 or later." % zeroinstall.version
+	sys.exit(1)
+
 from zeroinstall.injector import model, arch, run
 from zeroinstall.injector.policy import Policy
 from zeroinstall import SafeException
