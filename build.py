@@ -24,9 +24,7 @@ def do_build_internal(args):
 	buildenv = BuildEnv()
 
 	builddir = os.path.realpath('build')
-
-	metadir = join(buildenv.distdir, '0install')
-	ensure_dir(metadir)
+	ensure_dir(buildenv.metadir)
 
 	# Create build-environment.xml file
 	root = buildenv.doc.documentElement
@@ -39,13 +37,11 @@ def do_build_internal(args):
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	uname = os.uname()
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
-	buildenv.doc.writexml(file(join(metadir, 'build-environment.xml'), 'w'))
+	buildenv.doc.writexml(file(join(buildenv.metadir, 'build-environment.xml'), 'w'))
 
 	# Create local binary interface file
 	src_iface = iface_cache.get_interface(buildenv.interface)
-	name = src_iface.name.replace('/', '_').replace(' ', '-')
-	write_sample_interface(src_iface,
-		join(metadir, '%s.xml' % name),
+	write_sample_interface(src_iface, buildenv.local_iface_file,
 		buildenv.chosen_impl(buildenv.interface))
 
 	# Create the patch

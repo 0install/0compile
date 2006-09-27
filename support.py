@@ -3,6 +3,7 @@
 
 import os, sys, tempfile, shutil, traceback
 from xml.dom import minidom, XMLNS_NAMESPACE, Node
+from os.path import join
 
 from zeroinstall.injector.model import Interface, Implementation, Dependency, EnvironmentBinding, escape
 from zeroinstall.injector import namespaces, basedir, reader
@@ -112,7 +113,7 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 
 class BuildEnv(object):
 	__slots__ = ['doc', 'interface', 'interfaces', 'root_impl', 'srcdir',
-		     'download_base_url', 'distdir']
+		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name']
 
 	def __init__(self):
 		self.doc = get_env_doc()
@@ -136,12 +137,16 @@ class BuildEnv(object):
 		else:
 			self.srcdir = lookup(self.root_impl.id)
 
-		iface_name = os.path.basename(self.interface)
-		if iface_name.endswith('.xml'):
-			iface_name = iface_name[:-4]
-		distdir_name = '%s-%s' % (iface_name.lower(), self.root_impl.get_version())
+		self.iface_name = os.path.basename(self.interface)
+		if self.iface_name.endswith('.xml'):
+			self.iface_name = self.iface_name[:-4]
+		self.iface_name = self.iface_name.replace(' ', '-')
+		distdir_name = '%s-%s' % (self.iface_name.lower(), self.root_impl.get_version())
 		assert '/' not in distdir_name
 		self.distdir = os.path.realpath(distdir_name)
+
+		self.metadir = join(self.distdir, '0install')
+		self.local_iface_file = join(self.metadir, '%s.xml' % self.iface_name)
 	
 	def chosen_impl(self, uri):
 		assert uri in self.interfaces
