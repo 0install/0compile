@@ -20,7 +20,7 @@ For a full tutorial, see 0compile's homepage.
   </description>
   <homepage>http://0install.net/0compile.html</homepage>
 
-  <feed-for interface='http://0install.net/2006/interfaces/0compile'/>
+  <feed-for interface='http://0install.net/2006/interfaces/0compile.xml'/>
 
   <group main='0compile'>
     <implementation id="." version="0.1" released='Snapshot'/>
