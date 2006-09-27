@@ -2,6 +2,7 @@
 # See the README file for details, or visit http://0install.net.
 
 import sys, os, __main__, time
+from os.path import join
 from logging import info
 from xml.dom import minidom
 
@@ -22,13 +23,9 @@ def do_build_internal(args):
 
 	buildenv = BuildEnv()
 
-	distdir = os.path.realpath('dist')
 	builddir = os.path.realpath('build')
 
-	shutil.rmtree(distdir)
-	os.mkdir(distdir)
-
-	metadir = os.path.join(distdir, '0install')
+	metadir = join(buildenv.distdir, '0install')
 	ensure_dir(metadir)
 
 	# Create build-environment.xml file
@@ -42,29 +39,31 @@ def do_build_internal(args):
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	uname = os.uname()
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
-	buildenv.doc.writexml(file(os.path.join(metadir, 'build-environment.xml'), 'w'))
+	buildenv.doc.writexml(file(join(metadir, 'build-environment.xml'), 'w'))
 
 	# Create local binary interface file
 	src_iface = iface_cache.get_interface(buildenv.interface)
 	name = src_iface.name.replace('/', '_').replace(' ', '-')
 	write_sample_interface(src_iface,
-		os.path.join(metadir, '%s.xml' % name),
+		join(metadir, '%s.xml' % name),
 		buildenv.chosen_impl(buildenv.interface))
 
 	# Create the patch
+	orig_impl = buildenv.chosen_impl(buildenv.interface)
+	patch_file = join(buildenv.distdir, '0install/from-%s.patch' % orig_impl.get_version())
 	if os.path.isdir('src'):
-		orig_impl = buildenv.chosen_impl(buildenv.interface)
 		orig_src = lookup(orig_impl.id)
 		# (ignore errors; will already be shown on stderr)
-		patch_file = 'dist/0install/from-%s.patch' % orig_impl.get_version()
 		os.system("diff -urN '%s' src > %s" %
 			(orig_src.replace('\\', '\\\\').replace("'", "\\'"),
 			 patch_file))
 		if os.path.getsize(patch_file) == 0:
 			os.unlink(patch_file)
+	elif os.path.exists(patch_file):
+		os.unlink(patch_file)
 
 	env('BUILDDIR', builddir)
-	env('DISTDIR', distdir)
+	env('DISTDIR', buildenv.distdir)
 	env('SRCDIR', buildenv.srcdir)
 	os.chdir(builddir)
 
@@ -89,11 +88,10 @@ def do_build(args):
 	"""build [ --nosandbox ] [ shell ]"""
 	buildenv = BuildEnv()
 
-	distdir = os.path.realpath('dist')
 	builddir = os.path.realpath('build')
 
 	ensure_dir(builddir)
-	ensure_dir(distdir)
+	ensure_dir(buildenv.distdir)
 
 	if args[:1] == ['--nosandbox']:
 		return do_build_internal(args[1:])
@@ -102,9 +100,9 @@ def do_build(args):
 	try:
 		my_dir = os.path.dirname(__file__)
 		readable = ['.', my_dir]
-		writable = ['build', 'dist', tmpdir]
+		writable = ['build', buildenv.distdir, tmpdir]
 		env('TMPDIR', tmpdir)
-		env('PATH', os.path.join(my_dir, 'bin') + ':' + os.environ['PATH'])
+		env('PATH', join(my_dir, 'bin') + ':' + os.environ['PATH'])
 
 		readable.append(get_cached_iface_path(buildenv.interface))
 

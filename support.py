@@ -111,13 +111,16 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	os.execl(_pola_run, _pola_run, *pola_args)
 
 class BuildEnv(object):
-	__slots__ = ['doc', 'interface', 'interfaces', 'root_impl', 'srcdir']
+	__slots__ = ['doc', 'interface', 'interfaces', 'root_impl', 'srcdir',
+		     'download_base_url', 'distdir']
 
 	def __init__(self):
 		self.doc = get_env_doc()
 		root = self.doc.documentElement
 		self.interface = root.getAttributeNS(None, 'interface')
 		assert self.interface
+
+		self.download_base_url = root.getAttributeNS(None, 'download-base-url')
 
 		self.interfaces = {}
 		for child in children(root, XMLNS_0COMPILE, 'interface'):
@@ -132,6 +135,13 @@ class BuildEnv(object):
 			self.srcdir = os.path.realpath('src')
 		else:
 			self.srcdir = lookup(self.root_impl.id)
+
+		iface_name = os.path.basename(self.interface)
+		if iface_name.endswith('.xml'):
+			iface_name = iface_name[:-4]
+		distdir_name = '%s-%s' % (iface_name.lower(), self.root_impl.get_version())
+		assert '/' not in distdir_name
+		self.distdir = os.path.realpath(distdir_name)
 	
 	def chosen_impl(self, uri):
 		assert uri in self.interfaces
