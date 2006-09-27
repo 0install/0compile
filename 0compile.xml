@@ -7,35 +7,22 @@
   <summary>create a binary release from source code</summary>
   <description>
 0compile creates a binary from source code, either for your own use or ready
-for publishing on the web through Zero Install. It works by setting up a
-build environment and then executing the (source) interface. The default
-source implementation is executed in the following environment:
+for publishing on the web through Zero Install. It can use Zero Install to
+download any build dependencies (compilers, header files, build tools, etc).
 
-- Read access to all build dependencies (from the source interface)
+This is useful if there is no binary for your platform, or if you wish to modify the
+program in some way.
 
-- Write access to $TMPDIR (empty, deleted after the build)
+If plash is installed, it is used to sandbox the build so that it can't accidentally
+modifiy any files outside of the build directory.
 
-- Write access to $BUILDDIR, which is also the current directory (this persists over builds by default, to speed up rebuilds)
-
-- Write access to $DESTDIR (the final binary package and interface)
-
-- No write access anywhere else.
-
-- Read access to $SRCDIR
-
-If plash is not installed, the read-only restrictions are not enforced, but you
-should follow them anyway.
-
-As a special case, the source interface may specify compile-type='CMM', in which
-case the 'main' attribute gives the location of an autoconf configure script and
-the familiar './configure &amp;&amp; make &amp;&amp; make install' sequence
-will be run with appropriate options passed to configure to use the correct directories.
+For a full tutorial, see 0compile's homepage.
   </description>
-  <homepage>http://0install.net/injector-packagers.html</homepage>
+  <homepage>http://0install.net/0compile.html</homepage>
 
   <feed-for interface='http://0install.net/2006/interfaces/0compile'/>
 
   <group main='0compile'>
-    <implementation id="." version="0.1.0" released='Snapshot'/>
+    <implementation id="." version="0.1" released='Snapshot'/>
   </group>
 </interface>
