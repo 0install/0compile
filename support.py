@@ -1,5 +1,5 @@
 # Copyright (C) 2006, Thomas Leonard
-# See the README file for details, or visit http://0install.net.
+# See http://0install.net/0compile.html
 
 import os, sys, tempfile, shutil, traceback
 from xml.dom import minidom, XMLNS_NAMESPACE, Node

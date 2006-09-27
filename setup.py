@@ -1,5 +1,5 @@
 # Copyright (C) 2006, Thomas Leonard
-# See the README file for details, or visit http://0install.net.
+# See http://0install.net/0compile.html
 
 import sys, os, __main__
 from logging import info
@@ -15,7 +15,7 @@ def do_setup(args):
 	"setup [ SOURCE-URI [ DIR ] ]"
 	if len(args) == 0:
 		if not os.path.isfile(ENV_FILE):
-			raise SafeException("Run 0compile from a directory containing a '%s' file"
+			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
 					    "specify a source URI as an argument." % ENV_FILE)
 		doc = get_env_doc()
 		interface = doc.documentElement.getAttributeNS(None, 'interface')

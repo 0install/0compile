@@ -1,5 +1,5 @@
 # Copyright (C) 2006, Thomas Leonard
-# See the README file for details, or visit http://0install.net.
+# See http://0install.net/0compile.html
 
 import sys, os, __main__, time
 from os.path import join
