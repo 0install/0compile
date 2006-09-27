@@ -145,6 +145,13 @@ def write_sample_interface(iface, path, src_impl):
 	main = src_impl.metadata.get('binary-main')
 	if main:
 		group.setAttributeNS(None, 'main', main)
+
+	uname = os.uname()
+	target_os, target_machine = uname[0], uname[-1]
+	if target_machine in ('i585', 'i686'):
+		target_machine = 'i486'	# (sensible default)
+
+	group.setAttributeNS(None, 'arch', '%s-%s' % (target_os, target_machine))
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
 	impl_elem.setAttributeNS(None, 'id', '..')
