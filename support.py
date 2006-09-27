@@ -1,5 +1,5 @@
 # Copyright (C) 2006, Thomas Leonard
-# See the README file for details, or visit http://0install.net.
+# See http://0install.net/0compile.html
 
 import os, sys, tempfile, shutil, traceback
 from xml.dom import minidom, XMLNS_NAMESPACE, Node
@@ -36,7 +36,7 @@ def get_cached_iface_path(uri):
 def ensure_dir(d):
 	if os.path.isdir(d): return
 	if os.path.exists(d):
-		raise SafeException("'%s' exitst, but is not a directory!" % d)
+		raise SafeException("'%s' exists, but is not a directory!" % d)
 	os.mkdir(d)
 
 def find_in_path(prog):
