@@ -32,7 +32,7 @@ def do_setup(args):
 		else:
 			raise __main__.UsageError()
 
-		interface, args = model.canonical_iface_uri(args[0]), args[1:]
+		interface = model.canonical_iface_uri(args[0])
 
 		if os.path.exists(dir):
 			raise SafeException("Directory '%s' already exists." % dir)

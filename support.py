@@ -10,7 +10,7 @@ from zeroinstall.injector import namespaces, basedir, reader
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
 from zeroinstall.injector import run
-from zeroinstall.zerostore import Stores
+from zeroinstall.zerostore import Stores, NotStored
 
 ENV_FILE = '0compile-env.xml'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
@@ -20,7 +20,10 @@ def lookup(id):
 		if os.path.isdir(id):
 			return id
 		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % id)
-	return iface_cache.stores.lookup(id)
+	try:
+		return iface_cache.stores.lookup(id)
+	except NotStored, ex:
+		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
 
 def get_cached_iface_path(uri):
 	if uri.startswith('/'):
@@ -36,7 +39,7 @@ def get_cached_iface_path(uri):
 def ensure_dir(d):
 	if os.path.isdir(d): return
 	if os.path.exists(d):
-		raise SafeException("'%s' exitst, but is not a directory!" % d)
+		raise SafeException("'%s' exists, but is not a directory!" % d)
 	os.mkdir(d)
 
 def find_in_path(prog):
