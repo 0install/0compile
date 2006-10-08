@@ -78,7 +78,8 @@ def do_build_internal(args):
 	else:
 		command = buildenv.root_impl.metadata['command']
 		print "Executing: " + command
-		os.system(command)
+		if os.system(command):
+			raise SafeException("Build command '%s' failed (non-zero exit status)" % command)
 
 def do_build(args):
 	"""build [ --nosandbox ] [ shell ]"""
