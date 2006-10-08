@@ -22,7 +22,7 @@ commands = []
 
 import setup, copysrc, build, publish
 
-version = '0.1'
+version = '0.2'
 
 parser = OptionParser(usage="usage: %prog " + 
 			  '\n       %prog '.join([c.__doc__ for c in commands]))
