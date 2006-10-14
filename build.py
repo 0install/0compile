@@ -109,6 +109,9 @@ def do_build(args):
 		options = []
 		if __main__.options.verbose:
 			options.append('--verbose')
+
+		readable.append('/etc')	# /etc/ld.*
+
 		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, [sys.argv[0]] + options + ['build', '--nosandbox'] + args)
 	finally:
 		info("Deleting temporary directory '%s'" % tmpdir)
