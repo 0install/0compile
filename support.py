@@ -182,6 +182,8 @@ class BuildEnv(object):
 			dep_uri = dep_elem.getAttributeNS(None, 'interface')
 			dep = Dependency(dep_uri)
 			impl.dependencies[dep_uri] = dep
+			for x in dep_elem.attributes.values():
+				dep.metadata[x.name] = x.value
 
 			for e in children(dep_elem, XMLNS_0COMPILE, 'environment'):
 				env = EnvironmentBinding(e.getAttributeNS(None, 'name'),
@@ -206,3 +208,9 @@ else:
 	def format_version(v):
 		return '.'.join(v)
 	parse_version = reader.parse_version
+
+def parse_bool(s):
+	if s == 'true': return True
+	if s == 'false': return False
+	raise SafeException('Expected "true" or "false" but got "%s"' % s)
+

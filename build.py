@@ -149,6 +149,22 @@ def write_sample_interface(iface, path, src_impl):
 	main = src_impl.metadata.get('binary-main')
 	if main:
 		group.setAttributeNS(None, 'main', main)
+	
+	for d in src_impl.dependencies.values():
+		if parse_bool(d.metadata.get('include-binary', 'false')):
+			requires = addSimple(group, 'requires')
+			requires.setAttributeNS(None, 'interface', d.interface)
+			for b in d.bindings:
+				if isinstance(b, model.EnvironmentBinding):
+					env_elem = addSimple(requires, 'environment')
+					env_elem.setAttributeNS(None, 'name', b.name)
+					env_elem.setAttributeNS(None, 'insert', b.insert)
+					if b.default:
+						env_elem.setAttributeNS(None, 'default', b.default)
+				else:
+					raise Exception('Unknown binding type ' + b)
+			close(requires)
+				
 
 	uname = os.uname()
 	target_os, target_machine = uname[0], uname[-1]

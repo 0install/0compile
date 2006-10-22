@@ -112,6 +112,10 @@ def save_environment(policy):
 			dep_elem.setAttributeNS(None, 'interface', dep.interface)
 			impl_elem.appendChild(dep_elem)
 
+			for m in dep.metadata:
+				if m.startswith(XMLNS_0COMPILE + ' '):
+					dep_elem.setAttributeNS(None, m.split(' ', 1)[1], dep.metadata[m])
+
 			for b in dep.bindings:
 				if isinstance(b, model.EnvironmentBinding):
 					env_elem = doc.createElementNS(XMLNS_0COMPILE, 'environment')

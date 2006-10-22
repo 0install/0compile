@@ -7,9 +7,9 @@ import os, sys, tempfile, shutil, traceback
 from logging import info, debug
 import zeroinstall
 
-if map(int, zeroinstall.version.split('.')) < [0, 23]:
+if map(int, zeroinstall.version.split('.')) < [0, 24]:
 	print >>sys.stderr, "Your version of 0launch (%s) is too old. " \
-			    "I need version 0.23 or later." % zeroinstall.version
+			    "I need version 0.24 or later." % zeroinstall.version
 	sys.exit(1)
 
 from zeroinstall.injector import model, arch, run
@@ -22,7 +22,7 @@ commands = []
 
 import setup, copysrc, build, publish
 
-version = '0.2'
+version = '0.3'
 
 parser = OptionParser(usage="usage: %prog " + 
 			  '\n       %prog '.join([c.__doc__ for c in commands]))
