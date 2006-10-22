@@ -49,6 +49,13 @@ def do_setup(args):
 	if not policy.ready:
 		raise Exception('Internal error: required source components not found!')
 
+	root_iface = policy.get_interface(policy.root)
+	impl = policy.implementation[root_iface]
+	min_version = parse_version(impl.metadata.get(XMLNS_0COMPILE + ' min-version', None))
+	if min_version and min_version > parse_version(__main__.version):
+		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
+				(root_iface.get_name(), impl.get_version(), format_version(min_version), __main__.version))
+
 	if len(args) > 0:
 		# Create build directory
 		if os.path.exists(dir):

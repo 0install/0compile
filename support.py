@@ -5,6 +5,7 @@ import os, sys, tempfile, shutil, traceback
 from xml.dom import minidom, XMLNS_NAMESPACE, Node
 from os.path import join
 
+from zeroinstall.injector import model
 from zeroinstall.injector.model import Interface, Implementation, Dependency, EnvironmentBinding, escape
 from zeroinstall.injector import namespaces, basedir, reader
 from zeroinstall.injector.iface_cache import iface_cache
@@ -193,3 +194,11 @@ def depth(node):
 		node = node.parentNode
 		depth += 1
 	return depth
+
+if hasattr(model, 'format_version'):
+	format_version = model.format_version
+	parse_version = model.parse_version
+else:
+	def format_version(v):
+		return '.'.join(v)
+	parse_version = reader.parse_version
