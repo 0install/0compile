@@ -97,6 +97,9 @@ def save_environment(policy):
 			binary_main = impl.metadata.get(XMLNS_0COMPILE + ' binary-main', None)
 			if binary_main:
 				impl_elem.setAttributeNS(XMLNS_0COMPILE, 'binary-main', binary_main)
+			metadir = impl.metadata.get(XMLNS_0COMPILE + ' metadir', None)
+			if metadir:
+				impl_elem.setAttributeNS(XMLNS_0COMPILE, 'metadir', metadir)
 
 		iface_elem.appendChild(impl_elem)
 

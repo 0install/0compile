@@ -149,7 +149,11 @@ class BuildEnv(object):
 		assert '/' not in distdir_name
 		self.distdir = os.path.realpath(distdir_name)
 
-		self.metadir = join(self.distdir, '0install')
+		metadir = self.root_impl.metadata.get('metadir', None)
+		if metadir is None:
+			metadir = '0install'
+		assert not metadir.startswith('/')
+		self.metadir = join(self.distdir, metadir)
 		self.local_iface_file = join(self.metadir, '%s.xml' % self.iface_name)
 	
 	def chosen_impl(self, uri):
