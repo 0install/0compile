@@ -12,7 +12,13 @@ from zeroinstall import SafeException
 from support import *
 
 def do_setup(args):
-	"setup [ SOURCE-URI [ DIR ] ]"
+	"setup [--noprompt] [ SOURCE-URI [ DIR ] ]"
+	if args and args[0] == '--noprompt':
+		del args[0]
+		gui_options = '--offline'
+	else:
+		gui_options = '--gui'
+
 	if len(args) == 0:
 		if not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
@@ -38,7 +44,7 @@ def do_setup(args):
 			raise SafeException("Directory '%s' already exists." % dir)
 
 	# Prompt user to choose versions
-	if os.spawnvp(os.P_WAIT, '0launch', ['0launch', '--gui', '--source', '--download-only', interface]):
+	if os.spawnvp(os.P_WAIT, '0launch', ['0launch', gui_options, '--source', '--download-only', interface]):
 		raise SafeException('Failed to select source files.')
 	
 	# Get the chosen versions
