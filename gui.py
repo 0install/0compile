@@ -13,7 +13,6 @@ from support import *
 def do_gui(args):
 	"gui [--no-prompt] SOURCE-URI"
 	main_path = os.path.abspath(__main__.__file__)
-	print main_path
 	
 	prompt = True
 	if args and args[0] == '--no-prompt':
