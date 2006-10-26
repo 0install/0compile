@@ -2,6 +2,8 @@
 # Copyright (C) 2006, Thomas Leonard
 # See the README file for details, or visit http://0install.net.
 
+__builtins__._ = lambda x: x
+
 from optparse import OptionParser
 import os, sys, tempfile, shutil, traceback
 from logging import info, debug
@@ -20,7 +22,7 @@ class UsageError(SafeException): pass
 
 commands = []
 
-import setup, copysrc, build, publish
+import setup, copysrc, build, publish, gui
 
 version = '0.3'
 
