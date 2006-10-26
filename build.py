@@ -174,6 +174,8 @@ def write_sample_interface(iface, path, src_impl):
 	group.setAttributeNS(None, 'arch', '%s-%s' % (target_os, target_machine))
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
+	if os.path.isdir('src'):
+		impl_elem.setAttributeNS(None, 'version-modifier', '-1')
 	impl_elem.setAttributeNS(None, 'id', '..')
 	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))
 	close(group)
