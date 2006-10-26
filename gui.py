@@ -33,6 +33,7 @@ def do_gui(args):
 	import gui_support
 	import gtk
 	build_dir = gui_support.choose_dir(_('Create build directory'), default_dir)
+	if not build_dir: return
 
 	try:
 		import setup
