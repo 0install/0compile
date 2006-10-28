@@ -23,6 +23,6 @@ For a full tutorial, see 0compile's homepage.
   <feed-for interface='http://0install.net/2006/interfaces/0compile.xml'/>
 
   <group main='0compile'>
-    <implementation id="." version="0.4" version-modifier='-post' released='Snapshot'/>
+    <implementation id="." version="0.5" version-modifier='-post' released='Snapshot'/>
   </group>
 </interface>
