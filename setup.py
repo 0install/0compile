@@ -12,7 +12,12 @@ from zeroinstall import SafeException
 from support import *
 
 def do_setup(args):
-	"setup [ SOURCE-URI [ DIR ] ]"
+	"setup [--no-prompt] [ SOURCE-URI [ DIR ] ]"
+	prompt = True
+	if args and args[0] == '--no-prompt':
+		del args[0]
+		prompt = False
+
 	if len(args) == 0:
 		if not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
@@ -20,26 +25,27 @@ def do_setup(args):
 		doc = get_env_doc()
 		interface = doc.documentElement.getAttributeNS(None, 'interface')
 		assert interface
+		create_dir = None
 	else:
 		interface = args[0]
 		if len(args) == 1:
-			dir = os.path.basename(interface)
-			if dir.endswith('.xml'):
-				dir = dir[:-4]
-			assert '/' not in dir
+			create_dir = os.path.basename(interface)
+			if create_dir.endswith('.xml'):
+				create_dir = create_dir[:-4]
+			assert '/' not in create_dir
 		elif len(args) == 2:
-			dir = args[1]
+			create_dir = args[1]
 		else:
 			raise __main__.UsageError()
 
 		interface = model.canonical_iface_uri(args[0])
 
-		if os.path.exists(dir):
-			raise SafeException("Directory '%s' already exists." % dir)
+		if os.path.exists(create_dir):
+			raise SafeException("Directory '%s' already exists." % create_dir)
 	
-	setup(interface, dir, prompt = True, create_dir = len(args) > 0)
+	setup(interface, create_dir, prompt)
 
-def setup(interface, dir, prompt, create_dir):
+def setup(interface, create_dir, prompt):
 	if prompt:
 		gui_options = '--gui'
 	else:
@@ -65,10 +71,10 @@ def setup(interface, dir, prompt, create_dir):
 				(root_iface.get_name(), impl.get_version(), format_version(min_version), __main__.version))
 
 	if create_dir:
-		if os.path.exists(dir):
-			raise SafeException("Directory '%s' already exists." % dir)
-		os.mkdir(dir)
-		os.chdir(dir)
+		if os.path.exists(create_dir):
+			raise SafeException("Directory '%s' already exists." % create_dir)
+		os.mkdir(create_dir)
+		os.chdir(create_dir)
 
 	# Store choices
 	save_environment(policy)

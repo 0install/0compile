@@ -37,7 +37,7 @@ def do_gui(args):
 
 	try:
 		import setup
-		setup.setup(interface, build_dir, prompt, create_dir = True)
+		setup.setup(interface, build_dir, prompt)
 		os.chdir(build_dir)
 
 		box = gui_support.CompileBox(_("Compile '%s'") % default_dir)
