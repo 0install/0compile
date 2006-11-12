@@ -99,7 +99,6 @@ def do_build(args):
 		readable = ['.', my_dir]
 		writable = ['build', buildenv.distdir, tmpdir]
 		env('TMPDIR', tmpdir)
-		env('PATH', join(my_dir, 'bin') + ':' + os.environ['PATH'])
 
 		readable.append(get_cached_iface_path(buildenv.interface))
 
