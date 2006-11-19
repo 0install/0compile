@@ -10,6 +10,7 @@ class CompileBox(gtk.Dialog):
 
 	def __init__(self, title):
 		gtk.Dialog.__init__(self)
+		self.set_has_separator(False)
 		self.set_title(title)
 		self.set_default_size(gtk.gdk.screen_width() / 2, gtk.gdk.screen_height() / 2)
 
@@ -28,17 +29,59 @@ class CompileBox(gtk.Dialog):
 		self.vbox.pack_start(swin, True, True, 0)
 
 		self.vbox.show_all()
+	
+		self.connect('delete-event', lambda box, dev: True)
 
-	def run(self, command, success):
+		def response(box, resp):
+			if self.kill_child(): return
+			self.destroy()
+		self.connect('response', response)
+	
+	def kill_child(self):
+		if self.child is None: return False
+
+		import signal
+		self.killed = True
+		self.insert_at_end_and_scroll('\nSending SIGTERM to build process...\n')
+		os.kill(-self.child, signal.SIGTERM)
+		return True
+
+	def run_command(self, command, success):
 		assert self.child is None
+		self.killed = False
 		self.success = success
 		if isinstance(command, basestring):
 			self.buffer.insert_at_cursor("Running: " + command + "\n")
 		else:
 			self.buffer.insert_at_cursor("Running: " + ' '.join(command) + "\n")
-		self.child = popen2.Popen4(command)
-		self.child.tochild.close()
-		gobject.io_add_watch(self.child.fromchild, gobject.IO_IN | gobject.IO_HUP, self.got_data)
+
+		r, w = os.pipe()
+		try:
+			try:
+				self.child = os.fork()
+				if not self.child:
+					# We are the child
+					try:
+						try:
+							os.close(r)
+							os.dup2(w, 1)
+							os.dup2(w, 2)
+							os.close(w)
+							os.setpgrp()	# Become group leader
+							os.execvp(command[0], command)
+						except:
+							import traceback
+							traceback.print_exc()
+					finally:
+						os._exit(1)
+			finally:
+				os.close(w)
+		except:
+			os.close(r)
+			raise
+
+		# We are the parent
+		gobject.io_add_watch(r, gobject.IO_IN | gobject.IO_HUP, self.got_data)
 
 	def insert_at_end_and_scroll(self, data):
 		near_end = self.vscroll.upper - self.vscroll.page_size * 1.5 < self.vscroll.value
@@ -50,19 +93,22 @@ class CompileBox(gtk.Dialog):
 			self.tv.scroll_to_mark(cursor, 0, False, 0, 0)
 	
 	def got_data(self, src, cond):
-		data = os.read(src.fileno(), 100)
+		data = os.read(src, 100)
 		if data:
 			self.insert_at_end_and_scroll(data)
 			return True
 		else:
-			status = self.child.wait()
+			pid, status = os.waitpid(self.child, 0)
+			assert pid == self.child
 			self.child = None
 
 			if os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0:
 				self.insert_at_end_and_scroll("Command complete.\n")
 				self.success()
+			elif self.killed:
+				self.insert_at_end_and_scroll("Command terminated at user's request.\n")
 			else:
-				self.fail("Command failed.\n")
+				self.insert_at_end_and_scroll("Command failed.\n")
 			return False
 
 

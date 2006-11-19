@@ -47,7 +47,7 @@ def do_gui(args):
 			os.chdir(build_dir)
 
 		box = gui_support.CompileBox(_("Compile '%s'") % interface.rsplit('/', 1)[1])
-		box.connect('response', lambda b, r: gtk.main_quit())
+		box.connect('destroy', lambda b: gtk.main_quit())
 		box.show()
 
 		def register_feed():
@@ -60,7 +60,7 @@ def do_gui(args):
 			writer.save_interface(iface)
 			box.buffer.insert_at_cursor("\nYou can now close this window.")
 
-		box.run((sys.executable, main_path, 'build'), register_feed)
+		box.run_command((sys.executable, main_path, 'build'), register_feed)
 
 		gtk.main()
 	except Exception, ex:
