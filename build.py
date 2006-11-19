@@ -46,7 +46,7 @@ def do_build_internal(args):
 
 	# Create the patch
 	orig_impl = buildenv.chosen_impl(buildenv.interface)
-	patch_file = join(buildenv.distdir, '0install/from-%s.patch' % orig_impl.get_version())
+	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.get_version())
 	if os.path.isdir('src'):
 		orig_src = lookup(orig_impl.id)
 		# (ignore errors; will already be shown on stderr)
