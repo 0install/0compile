@@ -16,14 +16,15 @@ class CompileBox(gtk.Dialog):
 		self.add_button(gtk.STOCK_CLOSE, gtk.RESPONSE_OK)
 
 		self.buffer = gtk.TextBuffer()
-		tv = gtk.TextView(self.buffer)
-		tv.set_wrap_mode(gtk.WRAP_WORD)
+		self.tv = gtk.TextView(self.buffer)
+		self.tv.set_wrap_mode(gtk.WRAP_WORD)
 		swin = gtk.ScrolledWindow()
-		swin.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-		swin.add(tv)
+		swin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
+		swin.add(self.tv)
 		swin.set_shadow_type(gtk.SHADOW_IN)
-		tv.set_editable(False)
-		tv.set_cursor_visible(False)
+		self.vscroll = swin.get_vadjustment()
+		self.tv.set_editable(False)
+		self.tv.set_cursor_visible(False)
 		self.vbox.pack_start(swin, True, True, 0)
 
 		self.vbox.show_all()
@@ -38,18 +39,27 @@ class CompileBox(gtk.Dialog):
 		self.child = popen2.Popen4(command)
 		self.child.tochild.close()
 		gobject.io_add_watch(self.child.fromchild, gobject.IO_IN | gobject.IO_HUP, self.got_data)
+
+	def insert_at_end_and_scroll(self, data):
+		near_end = self.vscroll.upper - self.vscroll.page_size * 1.5 < self.vscroll.value
+		end = self.buffer.get_end_iter()
+		self.buffer.insert(end, data)
+		if near_end:
+			cursor = self.buffer.get_insert()
+			self.buffer.move_mark(cursor, end)
+			self.tv.scroll_to_mark(cursor, 0, False, 0, 0)
 	
 	def got_data(self, src, cond):
 		data = os.read(src.fileno(), 100)
 		if data:
-			self.buffer.insert_at_cursor(data)
+			self.insert_at_end_and_scroll(data)
 			return True
 		else:
 			status = self.child.wait()
 			self.child = None
 
 			if os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0:
-				self.buffer.insert_at_cursor("Command complete.\n")
+				self.insert_at_end_and_scroll("Command complete.\n")
 				self.success()
 			else:
 				self.fail("Command failed.\n")
