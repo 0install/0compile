@@ -80,12 +80,19 @@ def setup(interface, create_dir, prompt):
 	save_environment(policy)
 
 def save_environment(policy):
+	download_base = None
+	if os.path.exists(ENV_FILE):
+		# Don't lose existing download URL
+		download_base = BuildEnv().download_base_url
+
 	impl = minidom.getDOMImplementation()
 
 	doc = impl.createDocument(XMLNS_0COMPILE, "build-environment", None)
 
 	root = doc.documentElement
 	root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns', XMLNS_0COMPILE)
+	if download_base:
+		root.setAttributeNS(None, 'download-base-url', download_base)
 
 	root.setAttributeNS(None, 'interface', policy.root)
 
