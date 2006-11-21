@@ -24,7 +24,7 @@ commands = []
 
 import setup, copysrc, build, publish, gui
 
-version = '0.6'
+version = '0.7'
 
 parser = OptionParser(usage="usage: %prog " + 
 			  '\n       %prog '.join([c.__doc__ for c in commands]))
