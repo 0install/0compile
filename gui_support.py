@@ -105,6 +105,7 @@ class CompileBox(gtk.Dialog):
 
 		self.system_tag = self.buffer.create_tag('system', foreground = 'blue', background = 'white')
 		self.add_msg(instructions)
+		self.set_responses_sensitive()
 	
 	def kill_child(self):
 		if self.child is None: return False
@@ -157,6 +158,15 @@ class CompileBox(gtk.Dialog):
 
 		# We are the parent
 		gobject.io_add_watch(r, gobject.IO_IN | gobject.IO_HUP, self.got_data)
+	
+	def set_responses_sensitive(self):
+		self.set_response_sensitive(RESPONSE_SETUP, True)
+		self.set_response_sensitive(RESPONSE_BUILD, True)
+
+		buildenv = BuildEnv()
+		have_binary = os.path.exists(buildenv.local_iface_file)
+		self.set_response_sensitive(RESPONSE_REGISTER, have_binary)
+		self.set_response_sensitive(RESPONSE_PUBLISH, have_binary)
 
 	def insert_at_end_and_scroll(self, data, *tags):
 		near_end = self.vscroll.upper - self.vscroll.page_size * 1.5 < self.vscroll.value
@@ -178,8 +188,7 @@ class CompileBox(gtk.Dialog):
 			assert pid == self.child
 			self.child = None
 
-			for resp in action_responses:
-				self.set_response_sensitive(resp, True)
+			self.set_responses_sensitive()
 
 			if os.WIFEXITED(status) and os.WEXITSTATUS(status) == 0:
 				self.success()
