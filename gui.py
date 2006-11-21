@@ -5,15 +5,12 @@
 
 import sys, os, __main__
 from zeroinstall.injector.iface_cache import iface_cache
-from zeroinstall.injector import writer
 from logging import info
 
 from support import *
 
 def do_gui(args):
 	"gui [--no-prompt] [SOURCE-URI]"
-	main_path = os.path.abspath(__main__.__file__)
-	
 	prompt = True
 	if args and args[0] == '--no-prompt':
 		del args[0]
@@ -26,6 +23,7 @@ def do_gui(args):
 		env = BuildEnv()
 		interface = env.interface
 		build_dir = None
+		prompt = False
 	elif len(args) == 1:
 		interface = args[0]
 		default_dir = os.path.basename(interface)
@@ -46,23 +44,13 @@ def do_gui(args):
 		if build_dir:
 			os.chdir(build_dir)
 
-		box = gui_support.CompileBox(_("Compile '%s'") % interface.rsplit('/', 1)[1])
+		box = gui_support.CompileBox(interface)
 		box.connect('destroy', lambda b: gtk.main_quit())
 		box.show()
 
-		def register_feed():
-			buildenv = BuildEnv()
-
-			iface = iface_cache.get_interface(interface)
-			feed = buildenv.local_iface_file
-			box.buffer.insert_at_cursor("\nRegistering feed '%s'\n" % feed)
-			iface.feeds.append(model.Feed(feed, arch = None, user_override = True))
-			writer.save_interface(iface)
-			box.buffer.insert_at_cursor("\nYou can now close this window.")
-
-		box.run_command((sys.executable, main_path, 'build'), register_feed)
-
 		gtk.main()
+	except KeyboardInterrupt:
+		pass
 	except Exception, ex:
 		import traceback
 		traceback.print_exc()
