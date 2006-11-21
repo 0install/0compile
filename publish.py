@@ -28,14 +28,16 @@ def do_publish(args):
 	spawn_and_check(find_in_path('tar'), ['cjf', archive_name, distdir])
 
 	download_url = os.path.join(buildenv.download_base_url, archive_name)
-	local_download_iface = '%s-%s.xml' % (buildenv.iface_name, buildenv.root_impl.get_version())
-	shutil.copyfile(buildenv.local_iface_file, local_download_iface)
+	shutil.copyfile(buildenv.local_iface_file, buildenv.local_download_iface)
 	
 	spawn_and_check(find_in_path('0launch'),
-		['http://0install.net/2006/interfaces/0publish', local_download_iface,
+		['http://0install.net/2006/interfaces/0publish', buildenv.local_download_iface,
 		'--archive-url', download_url,
 		'--archive-extract', distdir])
 
-	print "Now upload '%s' as:\n%s" % (archive_name, download_url)
+	print "Now upload '%s' as:\n%s\n" % (archive_name, download_url)
+
+	print "Once uploaded, you can download and run with:"
+	print "$ 0launch %s" % buildenv.local_download_iface
 
 __main__.commands.append(do_publish)

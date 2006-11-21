@@ -212,6 +212,8 @@ class BuildEnv(object):
 
 		return iface
 
+	local_download_iface = property(lambda self: '%s-%s.xml' % (self.iface_name, self.root_impl.get_version()))
+
 def depth(node):
 	root = node.ownerDocument.documentElement
 	depth = 0

@@ -95,6 +95,20 @@ class CompileBox(gtk.Dialog):
 				iface.feeds.append(model.Feed(feed, arch = None, user_override = True))
 				writer.save_interface(iface)
 				box.buffer.insert_at_cursor("You can now close this window.\n")
+			elif resp == RESPONSE_PUBLISH:
+				buildenv = BuildEnv()
+				box = PublishBox(self, buildenv)
+				resp = box.run()
+				box.destroy()
+				if resp == gtk.RESPONSE_OK:
+					def done_publish():
+						self.add_msg("\nYou can copy-and-paste the <group> from this file "
+							"into the main feed. If you don't have a main feed then see "
+							"http://0install.net/injector-packagers.html for instructions on "
+							"creating one "
+							"(basically, you need to create a GPG key and then sign the XML file).")
+					self.run_command((sys.executable, main_path,
+						'publish', box.archive_dir.get_text()), done_publish)
 			elif resp == gtk.RESPONSE_CANCEL or resp == gtk.RESPONSE_DELETE_EVENT:
 				if self.kill_child(): return
 				self.destroy()
@@ -270,6 +284,29 @@ def confirm(parent, message, stock_icon, action = None):
 	resp = box.run()
 	box.destroy()
 	return resp == int(gtk.RESPONSE_OK)
+
+class PublishBox(gtk.MessageDialog):
+	def __init__(self, parent, buildenv):
+		gtk.MessageDialog.__init__(self, parent,
+			gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+			gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL,
+			'Enter the directory on your HTTP or FTP server to which '
+			'the archive file will be uploaded:')
+		vbox = gtk.VBox(True, 4)
+		self.vbox.pack_start(vbox, False, True, 0)
+		vbox.set_border_width(8)
+
+		self.archive_dir = gtk.Entry()
+		self.archive_dir.set_activates_default(True)
+		self.set_default_response(gtk.RESPONSE_OK)
+
+		if buildenv.download_base_url:
+			self.archive_dir.set_text(buildenv.download_base_url)
+		else:
+			self.archive_dir.set_text('http://myserver.com/archives')
+
+		vbox.pack_start(self.archive_dir, False, True, 0)
+		vbox.show_all()
 
 instructions = """Instructions
 
