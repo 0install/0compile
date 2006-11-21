@@ -13,7 +13,7 @@ download any build dependencies (compilers, header files, build tools, etc).
 This is useful if there is no binary for your platform, or if you wish to modify the
 program in some way.
 
-If plash is installed, it is used to sandbox the build so that it can't accidentally
+If plash is installed, it can be used to sandbox the build so that it can't accidentally
 modifiy any files outside of the build directory.
 
 For a full tutorial, see 0compile's homepage.

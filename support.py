@@ -98,11 +98,30 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	"""execl prog, with (only) the 'writable' directories writable if sandboxing is available.
 	The readable directories will be readable, as well as various standard locations.
 	If no sandbox is available, run without a sandbox."""
+
+	USE_PLASH = 'USE_PLASH_0COMPILE'
+
 	assert prog.startswith('/')
 	_pola_run = find_in_path('pola-run')
 
 	if _pola_run is None:
+		print "Not using sandbox (plash not installed)"
+		use_plash = False
+	else:
+		use_plash = os.environ.get(USE_PLASH, '').lower() or 'not set'
+		if use_plash in ('not set', 'false'):
+			print "Not using plash: $%s is %s" % (USE_PLASH, use_plash)
+			use_plash = False
+		elif use_plash == 'true':
+			use_plash = True
+		else:
+			raise Exception('$%s must be "true" or "false", not "%s"' % (USE_PLASH, use_plash))
+
+	if not use_plash:
 		os.execlp(prog, prog, *args)
+	
+	print "Using plash to sandbox the build..."
+	
 	# We have pola-shell :-)
 	pola_args = ['--prog', prog, '-B']
 	for a in args:
