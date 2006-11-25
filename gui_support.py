@@ -44,6 +44,8 @@ class CompileBox(gtk.Dialog):
 
 		self.buffer = gtk.TextBuffer()
 		self.tv = gtk.TextView(self.buffer)
+		self.tv.set_left_margin(4)
+		self.tv.set_right_margin(4)
 		self.tv.set_wrap_mode(gtk.WRAP_WORD)
 		swin = gtk.ScrolledWindow()
 		swin.set_policy(gtk.POLICY_AUTOMATIC, gtk.POLICY_ALWAYS)
@@ -80,7 +82,26 @@ class CompileBox(gtk.Dialog):
 			elif resp == RESPONSE_BUILD:
 				def done_build():
 					self.add_msg('\nBuild successful. Now register or publish the build.')
-				box.run_command((sys.executable, main_path, 'build'), done_build)
+				def build_failed():
+					self.add_msg('\nPlease notify the developers of this problem (this will transmit '
+						     'the contents of the build/build-failure.log file):')
+					end = self.buffer.get_end_iter()
+					anchor = self.buffer.create_child_anchor(end)
+					align = gtk.Alignment(0.0, 0.0, 1.0, 1.0)
+					button = ButtonMixed(gtk.STOCK_YES, 'Notify developers')
+					align.add(button)
+					align.set_padding(8, 8, 8, 8)
+					align.show_all()
+					self.tv.add_child_at_anchor(align, anchor)
+					self.add_msg('\n')
+					def report_bug(button):
+						def done_notify():
+							self.add_msg("\nReport sent. Thank you! (note: you won't get a reply, as "
+								"no contact details were sent; write to the project's mailing "
+								"list if you want to discuss the problem)")
+						self.run_command((sys.executable, main_path, 'reportbug'), done_notify)
+					button.connect('clicked', report_bug)
+				box.run_command((sys.executable, main_path, 'build'), done_build, build_failed)
 			elif resp == RESPONSE_REGISTER:
 				buildenv = BuildEnv()
 
@@ -133,10 +154,15 @@ class CompileBox(gtk.Dialog):
 	def add_msg(self, msg):
 		self.insert_at_end_and_scroll(msg + '\n', self.system_tag)
 
-	def run_command(self, command, success):
+	"""Run command in a sub-process.
+	Calls success() if the command exits with status zero.
+	Calls failure() if it fails for other reasons.
+	(neither is called if the user aborts the command)"""
+	def run_command(self, command, success, failure = None):
 		assert self.child is None
 		self.killed = False
 		self.success = success
+		self.failure = failure
 		if isinstance(command, basestring):
 			self.add_msg("Running: " + command + "\n")
 		else:
@@ -210,6 +236,8 @@ class CompileBox(gtk.Dialog):
 				self.add_msg("\nCommand terminated at user's request.")
 			else:
 				self.add_msg("\nCommand failed.")
+				if self.failure:
+					self.failure()
 			return False
 
 
