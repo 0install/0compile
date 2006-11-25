@@ -22,7 +22,7 @@ class UsageError(SafeException): pass
 
 commands = []
 
-import setup, copysrc, build, publish, gui
+import setup, copysrc, build, publish, gui, bugs
 
 version = '0.7'
 
