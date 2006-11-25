@@ -77,9 +77,45 @@ def do_build_internal(args):
 		spawn_and_check(find_in_path('sh'), [])
 	else:
 		command = buildenv.root_impl.metadata['command']
-		print "Executing: " + command
-		if os.system(command):
-			raise SafeException("Build command '%s' failed (non-zero exit status)" % command)
+
+		# Remove any existing log files
+		for log in ['build.log', 'build-success.log', 'build-failure.log']:
+			if os.path.exists(log):
+				os.unlink(log)
+
+		# Run the command, copying output to a new log
+		log = file('build.log', 'w')
+		try:
+			print "Executing: " + command
+			print >>log, "Executing: " + command
+
+			# Tee the output to the console and to the log
+			from popen2 import Popen4
+			child = Popen4(command)
+			child.tochild.close()
+			while True:
+				data = os.read(child.fromchild.fileno(), 100)
+				if not data: break
+				sys.stdout.write(data)
+				log.write(data)
+			status = child.wait()
+			failure = None
+			if os.WIFEXITED(status):
+				exit_code = os.WEXITSTATUS(status)
+				if exit_code == 0:
+					print >>log, "Build successful"
+				else:
+					failure = "Build failed with exit code %d" % exit_code
+			else:
+				failure = "Build failure: exited due to signal %d" % os.WTERMSIG(status)
+			if failure:
+				print >>log, failure
+				os.rename('build.log', 'build-failure.log')
+				raise SafeException("Command '%s': %s" % (command, failure))
+			else:
+				os.rename('build.log', 'build-success.log')
+		finally:
+			log.close()
 
 def do_build(args):
 	"""build [ --nosandbox ] [ shell ]"""
