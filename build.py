@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, time
+import sys, os, __main__, time, shutil
 from os.path import join
 from logging import info
 from xml.dom import minidom
@@ -26,6 +26,8 @@ def do_build_internal(args):
 	builddir = os.path.realpath('build')
 	ensure_dir(buildenv.metadir)
 
+	build_env_xml = join(buildenv.metadir, 'build-environment.xml')
+
 	# Create build-environment.xml file
 	root = buildenv.doc.documentElement
 	info = buildenv.doc.createElementNS(XMLNS_0COMPILE, 'build-info')
@@ -37,12 +39,14 @@ def do_build_internal(args):
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	uname = os.uname()
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
-	buildenv.doc.writexml(file(join(buildenv.metadir, 'build-environment.xml'), 'w'))
+	stream = file(build_env_xml, 'w')
+	buildenv.doc.writexml(stream)
+	stream.close()
 
 	# Create local binary interface file
 	src_iface = iface_cache.get_interface(buildenv.interface)
-	write_sample_interface(src_iface, buildenv.local_iface_file,
-		buildenv.chosen_impl(buildenv.interface))
+	src_impl = buildenv.chosen_impl(buildenv.interface)
+	write_sample_interface(src_iface, buildenv.local_iface_file, src_impl)
 
 	# Create the patch
 	orig_impl = buildenv.chosen_impl(buildenv.interface)
@@ -86,6 +90,20 @@ def do_build_internal(args):
 		# Run the command, copying output to a new log
 		log = file('build.log', 'w')
 		try:
+			print >>log, "Build log for %s-%s" % (src_iface.get_name(),
+							      src_impl.get_version())
+			print >>log, "\nBuilt using 0compile-%s" % __main__.version
+			print >>log, "\nBuild system: " + ', '.join(uname)
+			print >>log, "\n%s:\n" % ENV_FILE
+			shutil.copyfileobj(file("../" + ENV_FILE), log)
+
+			log.write('\n')
+
+			if os.path.exists(patch_file):
+				print >>log, "\nPatched with:\n"
+				shutil.copyfileobj(file(patch_file), log)
+				log.write('\n')
+
 			print "Executing: " + command
 			print >>log, "Executing: " + command
 
