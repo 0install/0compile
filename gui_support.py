@@ -21,7 +21,7 @@ class CompileBox(gtk.Dialog):
 	child = None
 
 	def __init__(self, interface):
-		gtk.Dialog.__init__(self, _("Compile '%s'") % interface.rsplit('/', 1)[1])
+		gtk.Dialog.__init__(self, _("Compile '%s'") % interface.split('/')[-1])	# No rsplit on Python 2.3
 		self.set_has_separator(False)
 		self.set_default_size(gtk.gdk.screen_width() / 2, gtk.gdk.screen_height() / 2)
 
