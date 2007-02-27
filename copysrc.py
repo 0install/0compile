@@ -20,12 +20,13 @@ def do_copy_src(args):
 	new_src = os.path.realpath('src')	# Just for better messages
 	if os.path.exists(new_src):
 		raise SafeException("Directory '%s' already exists!" % new_src)
-	shutil.copytree(path, 'src')
+	shutil.copytree(path, 'src', symlinks = True)
 	# Make all files writable by the owner
 	for root, dirs, files in os.walk('src'):
 		for f in files:
 			path = os.path.join(root, f)
-			os.chmod(path, os.stat(path).st_mode | 0200)
+			if not os.path.islink(path):
+				os.chmod(path, os.stat(path).st_mode | 0200)
 
 	print "Copied as '%s'" % new_src
 
