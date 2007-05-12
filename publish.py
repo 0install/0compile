@@ -25,7 +25,22 @@ def do_publish(args):
 	distdir = os.path.basename(buildenv.distdir)
 	archive_name = distdir + '.tar.bz2'
 
-	spawn_and_check(find_in_path('tar'), ['cjf', archive_name, distdir])
+	gnutar = None
+	for command in ['gtar', 'tar', 'gnutar', 'star']:
+		if find_in_path(command):
+			stream = os.popen("'%s' --version 2>&1" % command)
+			try:
+				version = stream.read()
+				if 'GNU tar' in version or \
+				   'star' in version:
+					gnutar = command
+					break
+			finally:
+				stream.close()
+	if not gnutar:
+		raise SafeException("GNU tar not found in $PATH")
+
+	spawn_and_check(find_in_path(gnutar), ['cjf', archive_name, distdir])
 
 	download_url = os.path.join(buildenv.download_base_url, archive_name)
 	shutil.copyfile(buildenv.local_iface_file, buildenv.local_download_iface)
