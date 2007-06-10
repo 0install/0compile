@@ -40,6 +40,10 @@ def do_publish(args):
 	if not gnutar:
 		raise SafeException("GNU tar not found in $PATH")
 
+	# Make all directories in the archive user writable
+	for main, dirs, files in os.walk(distdir):
+		os.chmod(main, os.stat(main).st_mode | 0200)
+
 	spawn_and_check(find_in_path(gnutar), ['cjf', archive_name, distdir])
 
 	download_url = os.path.join(buildenv.download_base_url, archive_name)
