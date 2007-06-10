@@ -6,7 +6,7 @@ from xml.dom import minidom, XMLNS_NAMESPACE, Node
 from os.path import join
 
 from zeroinstall.injector import model
-from zeroinstall.injector.model import Interface, Implementation, Dependency, EnvironmentBinding, escape
+from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
 from zeroinstall.injector import namespaces, basedir, reader
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
@@ -199,8 +199,12 @@ class BuildEnv(object):
 
 		for dep_elem in children(impl_elem, XMLNS_0COMPILE, 'requires'):
 			dep_uri = dep_elem.getAttributeNS(None, 'interface')
-			dep = Dependency(dep_uri)
-			impl.dependencies[dep_uri] = dep
+			if hasattr(model, 'InterfaceDependency'):
+				dep = model.InterfaceDependency(dep_uri)
+				impl.requires.append(dep)
+			else:
+				dep = model.Dependency(dep_uri)
+				impl.dependencies[dep_uri] = dep
 			for x in dep_elem.attributes.values():
 				dep.metadata[x.name] = x.value
 
