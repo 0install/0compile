@@ -19,7 +19,7 @@ def run(*args, **kwargs):
 
 	expected = kwargs.get('expect', '')
 	if expected:
-		if expected not in got:
+		if expected.lower() not in got.lower():
 			raise Exception("Expected '%s', got '%s'" % (expected, got))
 	elif got:
 		raise Exception("Expected nothing, got '%s'" % got)
