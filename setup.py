@@ -96,7 +96,10 @@ def save_environment(policy):
 
 	root.setAttributeNS(None, 'interface', policy.root)
 
-	for needed_iface in policy.implementation:
+	needed_ifaces = policy.implementation.keys()
+	needed_ifaces.sort(lambda a, b: cmp(a.uri, b.uri))
+
+	for needed_iface in needed_ifaces:
 		iface_elem = doc.createElementNS(XMLNS_0COMPILE, 'interface')
 		iface_elem.setAttributeNS(None, 'uri', needed_iface.uri)
 		root.appendChild(iface_elem)
