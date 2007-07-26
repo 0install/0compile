@@ -136,7 +136,7 @@ def do_build_internal(args):
 			log.close()
 
 def do_build(args):
-	"""build [ --nosandbox ] [ shell ]"""
+	"""build [ --nosandbox ] [ --shell ]"""
 	buildenv = BuildEnv()
 
 	builddir = os.path.realpath('build')
