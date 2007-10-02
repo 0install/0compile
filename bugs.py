@@ -6,8 +6,8 @@ from logging import info
 
 from support import *
 
-def do_reportbug(args):
-	"""reportbug"""
+def do_report_bug(args):
+	"""report-bug"""
 	buildenv = BuildEnv()
 
 	log_name = 'build/build-failure.log'
@@ -31,4 +31,4 @@ def do_reportbug(args):
 	stream.read()
 	stream.close()
 
-__main__.commands.append(do_reportbug)
+__main__.commands.append(do_report_bug)

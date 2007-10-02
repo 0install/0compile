@@ -1,0 +1,140 @@
+.TH 0COMPILE 1 "2007" "Thomas Leonard" ""
+.SH NAME
+0compile \- create a Zero Install binary package from source
+
+.SH SYNOPSIS
+
+.B 0compile setup
+[\fB--no-prompt\fP] [\fBSOURCE-URI\fP [\fBDIR\fP] ]
+
+.B 0compile build
+[\fB --nosandbox\fP ] [\fB--shell\fP]
+
+.B 0compile publish
+[\fBDOWNLOAD-BASE-URL\fP]
+
+.B 0compile copy-src
+
+.B 0compile diff
+
+.B 0compile gui
+[\fB--no-prompt\fP] [\fBSOURCE-URI\fP]
+
+.B 0compile include-deps
+
+.B 0compile report-bug
+
+.SH DESCRIPTION
+.PP
+0compile can be used to compile a Zero Install package from its source code.
+
+.SH SETUP
+
+.PP
+To set up a build environment for the GNU Hello World example:
+
+.B 0compile setup http://0install.net/tests/GNU-Hello.xml GNU-Hello
+
+.PP
+This downloads the source and any build dependencies into the Zero Install
+cache, and creates a new directory called GNU-Hello.
+
+.SH BUILD
+
+.PP
+To compile the code, cd to the directory created by "setup" above, and then:
+
+.B 0compile build
+
+.PP
+The resulting package will be in a new gnu-hello-1.3 subdirectory (or whatever version you downloaded).
+Temporary build files will be in a new "build" subdirectory. These are kept to make rebuilds faster, but
+you can delete them if you don't plan to recompile.
+
+.SH PUBLISH
+
+.PP
+To create an archive that other people can download:
+
+.B 0compile publish http://mysite/downloads
+
+The will archive the target directory. Upload the resulting tarball to the downloads directory on your web-server.
+The command will also create an XML file which can be used to download and run this version.
+
+.SH COPY-SRC
+
+.PP
+To make changes to the code before compiling:
+
+.B 0compile copy-src
+
+This copies the source code from the cache into a new "src" subdirectory. Edit to taste and then "build".
+
+.SH DIFF
+
+To see the differences between the original (cached) source code and the copy in your "src" directory:
+
+.B 0compile diff
+
+.SH INCLUDE-DEPS
+
+To create a self-contained bundle with the source code and build dependencies:
+
+.B 0compile include-deps
+
+This copies all required items from the Zero Install cache to a new "dependencies" subdirectory. The whole
+directory tree (including the "dependencies" subdirectory) can then be copied to the build machine. This is
+useful if the build machine doesn't have network access, and so can't download them itself.
+
+.PP
+Note that this doesn't include the 0compile program itself.
+
+.SH GUI
+
+To bring up the GTK interface, which offers an newbie-friendly interface to some of the features above:
+
+.B 0compile gui
+
+.SH REPORT-BUG
+
+To send a bug-report about a failed build:
+
+.B 0compile report-bug
+
+
+.SH COMMAND-LINE OPTIONS
+
+.TP
+\fB-h\fP, \fB--help\fP
+Show the built-in help text.
+
+.TP
+\fB-v\fP, \fB--verbose\fP
+More verbose output. Use twice for even more verbose output.
+
+.TP
+\fB-V\fP, \fB--version\fP
+Display version information.
+
+.SH LICENSE
+.PP
+Copyright (C) 2007 Thomas Leonard.
+
+.PP
+You may redistribute copies of this program under the terms of the GNU General Public License.
+.SH BUGS
+.PP
+Please report bugs to the developer mailing list:
+
+http://0install.net/support.html
+
+.SH AUTHOR
+.PP
+The Zero Install Injector was created by Thomas Leonard.
+
+.SH SEE ALSO
+0launch(1), 0store(1)
+.PP
+The Zero Install web-site:
+
+.B http://0install.net/0compile.html

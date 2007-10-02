@@ -99,7 +99,7 @@ class CompileBox(gtk.Dialog):
 							self.add_msg("\nReport sent. Thank you! (note: you won't get a reply, as "
 								"no contact details were sent; write to the project's mailing "
 								"list if you want to discuss the problem)")
-						self.run_command((sys.executable, main_path, 'reportbug'), done_notify)
+						self.run_command((sys.executable, main_path, 'report-bug'), done_notify)
 					button.connect('clicked', report_bug)
 				box.run_command((sys.executable, main_path, 'build'), done_build, build_failed)
 			elif resp == RESPONSE_REGISTER:
