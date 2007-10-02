@@ -22,7 +22,7 @@ class UsageError(SafeException): pass
 
 commands = []
 
-import setup, copysrc, build, publish, gui, bugs
+import setup, copysrc, build, publish, gui, bugs, include_deps
 
 version = '0.9'
 

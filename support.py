@@ -11,10 +11,12 @@ from zeroinstall.injector import namespaces, basedir, reader
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
 from zeroinstall.injector import run
-from zeroinstall.zerostore import Stores, NotStored
+from zeroinstall.zerostore import Stores, Store, NotStored
 
 ENV_FILE = '0compile-env.xml'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
+
+iface_cache.stores.stores.append(Store(os.path.realpath('dependencies')))
 
 def lookup(id):
 	if id.startswith('/'):
@@ -26,6 +28,7 @@ def lookup(id):
 	except NotStored, ex:
 		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
 
+# No longer used
 def get_cached_iface_path(uri):
 	if uri.startswith('/'):
 		if not os.path.isfile(uri):

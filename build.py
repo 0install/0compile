@@ -154,7 +154,8 @@ def do_build(args):
 		writable = ['build', buildenv.distdir, tmpdir]
 		env('TMPDIR', tmpdir)
 
-		readable.append(get_cached_iface_path(buildenv.interface))
+		# Why did we need this?
+		#readable.append(get_cached_iface_path(buildenv.interface))
 
 		for iface in buildenv.interfaces:
 			readable.append(lookup(buildenv.chosen_impl(iface).id))
