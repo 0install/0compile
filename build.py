@@ -46,7 +46,7 @@ def do_build_internal(args):
 	# Create local binary interface file
 	src_iface = iface_cache.get_interface(buildenv.interface)
 	src_impl = buildenv.chosen_impl(buildenv.interface)
-	write_sample_interface(src_iface, buildenv.local_iface_file, src_impl)
+	write_sample_interface(src_iface, buildenv.local_iface_file, src_impl, buildenv.target_arch)
 
 	# Create the patch
 	orig_impl = buildenv.chosen_impl(buildenv.interface)
@@ -171,7 +171,7 @@ def do_build(args):
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
 
-def write_sample_interface(iface, path, src_impl):
+def write_sample_interface(iface, path, src_impl, target_arch):
 	impl = minidom.getDOMImplementation()
 
 	XMLNS_IFACE = namespaces.XMLNS_IFACE
@@ -219,13 +219,7 @@ def write_sample_interface(iface, path, src_impl):
 					raise Exception('Unknown binding type ' + b)
 			close(requires)
 				
-
-	uname = os.uname()
-	target_os, target_machine = uname[0], uname[-1]
-	if target_machine in ('i585', 'i686'):
-		target_machine = 'i486'	# (sensible default)
-
-	group.setAttributeNS(None, 'arch', '%s-%s' % (target_os, target_machine))
+	group.setAttributeNS(None, 'arch', target_arch)
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
 	if os.path.isdir('src'):

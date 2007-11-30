@@ -139,7 +139,8 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 
 class BuildEnv(object):
 	__slots__ = ['doc', 'interface', 'interfaces', 'root_impl', 'srcdir',
-		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name']
+		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
+		     'target_arch']
 
 	def __init__(self):
 		self.doc = get_env_doc()
@@ -163,11 +164,21 @@ class BuildEnv(object):
 		else:
 			self.srcdir = lookup(self.root_impl.id)
 
+		# Set target arch
+		uname = os.uname()
+		target_os, target_machine = uname[0], uname[-1]
+		if target_machine in ('i585', 'i686'):
+			target_machine = 'i486'	# (sensible default)
+		self.target_arch = target_os + '-' + target_machine
+
 		self.iface_name = os.path.basename(self.interface)
 		if self.iface_name.endswith('.xml'):
 			self.iface_name = self.iface_name[:-4]
 		self.iface_name = self.iface_name.replace(' ', '-')
-		distdir_name = '%s-%s' % (self.iface_name.lower(), self.root_impl.get_version())
+		if self.iface_name.endswith('-src'):
+			self.iface_name = self.iface_name[:-4]
+		uname = os.uname()
+		distdir_name = '%s-%s-%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.get_version())
 		assert '/' not in distdir_name
 		self.distdir = os.path.realpath(distdir_name)
 
