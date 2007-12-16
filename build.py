@@ -4,7 +4,7 @@
 import sys, os, __main__, time, shutil
 from os.path import join
 from logging import info
-from xml.dom import minidom
+from xml.dom import minidom, XMLNS_NAMESPACE
 
 from support import *
 
@@ -28,29 +28,29 @@ def do_build_internal(args):
 
 	build_env_xml = join(buildenv.metadir, 'build-environment.xml')
 
+	buildenv_doc = buildenv.selections.toDOM()
+
 	# Create build-environment.xml file
-	root = buildenv.doc.documentElement
-	info = buildenv.doc.createElementNS(XMLNS_0COMPILE, 'build-info')
-	root.appendChild(buildenv.doc.createTextNode('  '))
+	root = buildenv_doc.documentElement
+	info = buildenv_doc.createElementNS(XMLNS_0COMPILE, 'build-info')
 	root.appendChild(info)
-	root.appendChild(buildenv.doc.createTextNode('\n'))
 	info.setAttributeNS(None, 'time', time.strftime('%Y-%m-%d %H:%M').strip())
 	info.setAttributeNS(None, 'host', socket.getfqdn())
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	uname = os.uname()
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
 	stream = file(build_env_xml, 'w')
-	buildenv.doc.writexml(stream)
+	buildenv_doc.writexml(stream, addindent="  ", newl="\n")
 	stream.close()
 
 	# Create local binary interface file
 	src_iface = iface_cache.get_interface(buildenv.interface)
 	src_impl = buildenv.chosen_impl(buildenv.interface)
-	write_sample_interface(src_iface, buildenv.local_iface_file, src_impl, buildenv.target_arch)
+	write_sample_interface(buildenv, src_iface, src_impl)
 
 	# Create the patch
 	orig_impl = buildenv.chosen_impl(buildenv.interface)
-	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.get_version())
+	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.version)
 	if os.path.isdir('src'):
 		orig_src = lookup(orig_impl.id)
 		# (ignore errors; will already be shown on stderr)
@@ -67,11 +67,11 @@ def do_build_internal(args):
 	env('SRCDIR', buildenv.srcdir)
 	os.chdir(builddir)
 
-	for needed_iface in buildenv.interfaces:
+	for needed_iface in buildenv.selections.selections:
 		impl = buildenv.chosen_impl(needed_iface)
 		assert impl
-		for dep in impl.dependencies.values():
-			dep_iface = buildenv.interfaces[dep.interface]
+		for dep in impl.dependencies:
+			dep_iface = buildenv.selections.selections[dep.interface]
 			for b in dep.bindings:
 				if isinstance(b, EnvironmentBinding):
 					dep_impl = buildenv.chosen_impl(dep.interface)
@@ -80,7 +80,7 @@ def do_build_internal(args):
 	if args == ['--shell']:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
-		command = buildenv.root_impl.metadata['command']
+		command = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' command')
 
 		# Remove any existing log files
 		for log in ['build.log', 'build-success.log', 'build-failure.log']:
@@ -91,7 +91,7 @@ def do_build_internal(args):
 		log = file('build.log', 'w')
 		try:
 			print >>log, "Build log for %s-%s" % (src_iface.get_name(),
-							      src_impl.get_version())
+							      src_impl.version)
 			print >>log, "\nBuilt using 0compile-%s" % __main__.version
 			print >>log, "\nBuild system: " + ', '.join(uname)
 			print >>log, "\n%s:\n" % ENV_FILE
@@ -157,8 +157,8 @@ def do_build(args):
 		# Why did we need this?
 		#readable.append(get_cached_iface_path(buildenv.interface))
 
-		for iface in buildenv.interfaces:
-			readable.append(lookup(buildenv.chosen_impl(iface).id))
+		for selection in buildenv.selections.selections.values():
+			readable.append(lookup(selection.id))
 
 		options = []
 		if __main__.options.verbose:
@@ -171,7 +171,10 @@ def do_build(args):
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
 
-def write_sample_interface(iface, path, src_impl, target_arch):
+def write_sample_interface(buildenv, iface, src_impl):
+	path = buildenv.local_iface_file
+	target_arch = buildenv.target_arch
+
 	impl = minidom.getDOMImplementation()
 
 	XMLNS_IFACE = namespaces.XMLNS_IFACE
@@ -200,11 +203,11 @@ def write_sample_interface(iface, path, src_impl, target_arch):
 	feed_for.setAttributeNS(None, 'interface', iface.uri)
 
 	group = addSimple(root, 'group')
-	main = src_impl.metadata.get('binary-main')
+	main = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-main')
 	if main:
 		group.setAttributeNS(None, 'main', main)
 	
-	for d in src_impl.dependencies.values():
+	for d in src_impl.dependencies:
 		if parse_bool(d.metadata.get('include-binary', 'false')):
 			requires = addSimple(group, 'requires')
 			requires.setAttributeNS(None, 'interface', d.interface)
@@ -221,9 +224,11 @@ def write_sample_interface(iface, path, src_impl, target_arch):
 				
 	group.setAttributeNS(None, 'arch', target_arch)
 	impl_elem = addSimple(group, 'implementation')
-	impl_elem.setAttributeNS(None, 'version', src_impl.get_version())
-	if os.path.isdir('src'):
-		impl_elem.setAttributeNS(None, 'version-modifier', '-1')
+	impl_elem.setAttributeNS(None, 'version', src_impl.version)
+
+	if buildenv.version_modifier:
+		impl_elem.setAttributeNS(None, 'version-modifier', buildenv.version_modifier)
+
 	impl_elem.setAttributeNS(None, 'id', '..')
 	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))
 	close(group)

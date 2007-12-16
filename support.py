@@ -2,10 +2,9 @@
 # See http://0install.net/0compile.html
 
 import os, sys, tempfile, shutil, traceback
-from xml.dom import minidom, XMLNS_NAMESPACE, Node
 from os.path import join
 
-from zeroinstall.injector import model
+from zeroinstall.injector import model, selections, qdom
 from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
 from zeroinstall.injector import namespaces, basedir, reader
 from zeroinstall.injector.iface_cache import iface_cache
@@ -73,11 +72,6 @@ def wait_for_child(child):
 	else:
 		raise SafeException('Command failed with signal %d' % WTERMSIG(status))
 
-def get_env_doc():
-	if not os.path.isfile(ENV_FILE):
-		raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
-	return minidom.parse(ENV_FILE)
-
 def children(parent, uri, name):
 	"""Yield all direct children with the given name."""
 	for x in parent.childNodes:
@@ -138,29 +132,28 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	os.execl(_pola_run, _pola_run, *pola_args)
 
 class BuildEnv(object):
-	__slots__ = ['doc', 'interface', 'interfaces', 'root_impl', 'srcdir',
+	__slots__ = ['doc', 'selections', 'root_impl', 'srcdir', 'version_modifier',
 		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
 		     'target_arch']
 
+	interface = property(lambda self: self.selections.interface)
+
 	def __init__(self):
-		self.doc = get_env_doc()
-		root = self.doc.documentElement
-		self.interface = root.getAttributeNS(None, 'interface')
-		assert self.interface
+		if not os.path.isfile(ENV_FILE):
+			raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
+		self.doc = qdom.parse(file(ENV_FILE))
+		self.selections = selections.Selections(self.doc)
 
-		self.download_base_url = root.getAttributeNS(None, 'download-base-url')
+		self.download_base_url = self.doc.getAttribute(XMLNS_0COMPILE + ' download-base-url')
 
-		self.interfaces = {}
-		for child in children(root, XMLNS_0COMPILE, 'interface'):
-			iface = self.interface_from_elem(child)
-			assert iface.uri not in self.interfaces
-			self.interfaces[iface.uri] = iface
+		self.version_modifier = self.doc.getAttribute(XMLNS_0COMPILE + ' version-modifier')
 
-		assert self.interface in self.interfaces
-		self.root_impl = self.chosen_impl(self.interface)
+		self.root_impl = self.selections.selections[self.interface]
 
 		if os.path.isdir('src'):
 			self.srcdir = os.path.realpath('src')
+			if not self.version_modifier:
+				self.version_modifier = '-1'
 		else:
 			self.srcdir = lookup(self.root_impl.id)
 
@@ -178,11 +171,11 @@ class BuildEnv(object):
 		if self.iface_name.endswith('-src'):
 			self.iface_name = self.iface_name[:-4]
 		uname = os.uname()
-		distdir_name = '%s-%s-%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.get_version())
+		distdir_name = '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier or "")
 		assert '/' not in distdir_name
 		self.distdir = os.path.realpath(distdir_name)
 
-		metadir = self.root_impl.metadata.get('metadir', None)
+		metadir = self.doc.getAttribute(XMLNS_0COMPILE + ' metadir')
 		if metadir is None:
 			metadir = '0install'
 		assert not metadir.startswith('/')
@@ -190,47 +183,10 @@ class BuildEnv(object):
 		self.local_iface_file = join(self.metadir, '%s.xml' % self.iface_name)
 	
 	def chosen_impl(self, uri):
-		assert uri in self.interfaces
-		impls = self.interfaces[uri].implementations.values()
-		assert len(impls) == 1
-		return impls[0]
+		assert uri in self.selections.selections
+		return self.selections.selections[uri]
 
-	def interface_from_elem(self, elem):
-		uri = elem.getAttributeNS(None, 'uri')
-
-		iface = Interface(uri)
-
-		impl_elems = list(children(elem, XMLNS_0COMPILE, 'implementation'))
-		assert len(impl_elems) == 1
-		impl_elem = impl_elems[0]
-
-		impl = iface.get_impl(impl_elem.getAttributeNS(None, 'id'))
-		impl.main = impl_elem.getAttributeNS(None, 'main') or None
-		impl.version = reader.parse_version(impl_elem.getAttributeNS(None, 'version'))
-
-		for x in impl_elem.attributes.values():
-			impl.metadata[x.name] = x.value
-
-		for dep_elem in children(impl_elem, XMLNS_0COMPILE, 'requires'):
-			dep_uri = dep_elem.getAttributeNS(None, 'interface')
-			if hasattr(model, 'InterfaceDependency'):
-				dep = model.InterfaceDependency(dep_uri)
-				impl.requires.append(dep)
-			else:
-				dep = model.Dependency(dep_uri)
-				impl.dependencies[dep_uri] = dep
-			for x in dep_elem.attributes.values():
-				dep.metadata[x.name] = x.value
-
-			for e in children(dep_elem, XMLNS_0COMPILE, 'environment'):
-				env = EnvironmentBinding(e.getAttributeNS(None, 'name'),
-							 e.getAttributeNS(None, 'insert'),
-							 e.getAttributeNS(None, 'default') or None)
-				dep.bindings.append(env)
-
-		return iface
-
-	local_download_iface = property(lambda self: '%s-%s.xml' % (self.iface_name, self.root_impl.get_version()))
+	local_download_iface = property(lambda self: '%s-%s%s.xml' % (self.iface_name, self.root_impl.version, self.version_modifier or ""))
 
 def depth(node):
 	root = node.ownerDocument.documentElement

@@ -5,7 +5,7 @@ import sys, os, __main__
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
 
-from zeroinstall.injector import model
+from zeroinstall.injector import model, selections
 from zeroinstall.injector.policy import Policy
 from zeroinstall import SafeException
 
@@ -22,8 +22,9 @@ def do_setup(args):
 		if not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
 					    "specify a source URI as an argument." % ENV_FILE)
-		doc = get_env_doc()
-		interface = doc.documentElement.getAttributeNS(None, 'interface')
+		
+		buildenv = BuildEnv()
+		interface = buildenv.interface
 		assert interface
 		create_dir = None
 	else:
@@ -85,70 +86,28 @@ def save_environment(policy):
 		# Don't lose existing download URL
 		download_base = BuildEnv().download_base_url
 
-	impl = minidom.getDOMImplementation()
-
-	doc = impl.createDocument(XMLNS_0COMPILE, "build-environment", None)
-
+	sels = selections.Selections(policy)
+	doc = sels.toDOM()
 	root = doc.documentElement
-	root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns', XMLNS_0COMPILE)
-	if download_base:
-		root.setAttributeNS(None, 'download-base-url', download_base)
 
-	root.setAttributeNS(None, 'interface', policy.root)
+	root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:compile', XMLNS_0COMPILE)
+
+	if download_base:
+		root.setAttributeNS(XMLNS_0COMPILE, 'compile:download-base-url', download_base)
 
 	needed_ifaces = policy.implementation.keys()
 	needed_ifaces.sort(lambda a, b: cmp(a.uri, b.uri))
 
-	for needed_iface in needed_ifaces:
-		iface_elem = doc.createElementNS(XMLNS_0COMPILE, 'interface')
-		iface_elem.setAttributeNS(None, 'uri', needed_iface.uri)
-		root.appendChild(iface_elem)
-
-		impl = policy.implementation[needed_iface]
-		assert impl
-
-		impl_elem = doc.createElementNS(XMLNS_0COMPILE, 'implementation')
-		impl_elem.setAttributeNS(None, 'id', impl.id)
-		impl_elem.setAttributeNS(None, 'version', impl.get_version())
-		if impl.interface is not needed_iface:
-			impl_elem.setAttributeNS(None, 'from-feed', impl.interface.uri)
-
-		if needed_iface.uri == policy.root:
-			command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
-			if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
-			impl_elem.setAttributeNS(XMLNS_0COMPILE, 'command', command)
-			binary_main = impl.metadata.get(XMLNS_0COMPILE + ' binary-main', None)
-			if binary_main:
-				impl_elem.setAttributeNS(XMLNS_0COMPILE, 'binary-main', binary_main)
-			metadir = impl.metadata.get(XMLNS_0COMPILE + ' metadir', None)
-			if metadir:
-				impl_elem.setAttributeNS(XMLNS_0COMPILE, 'metadir', metadir)
-
-		iface_elem.appendChild(impl_elem)
-
-		for dep in impl.dependencies.values():
-
-			dep_iface = policy.get_interface(dep.interface)
-			dep_impl = policy.get_implementation(dep_iface)
-
-			dep_elem = doc.createElementNS(XMLNS_0COMPILE, 'requires')
-			dep_elem.setAttributeNS(None, 'interface', dep.interface)
-			impl_elem.appendChild(dep_elem)
-
-			for m in dep.metadata:
-				if m.startswith(XMLNS_0COMPILE + ' '):
-					dep_elem.setAttributeNS(None, m.split(' ', 1)[1], dep.metadata[m])
-
-			for b in dep.bindings:
-				if isinstance(b, model.EnvironmentBinding):
-					env_elem = doc.createElementNS(XMLNS_0COMPILE, 'environment')
-					env_elem.setAttributeNS(None, 'name', b.name)
-					env_elem.setAttributeNS(None, 'insert', b.insert)
-					if b.default:
-						env_elem.setAttributeNS(None, 'default', b.default)
-					dep_elem.appendChild(env_elem)
-				else:
-					raise Exception('Unknown binding type ' + b)
+	impl = policy.implementation[policy.get_interface(policy.root)]
+	command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
+	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
+	root.setAttributeNS(XMLNS_0COMPILE, 'compile:command', command)
+	binary_main = impl.metadata.get(XMLNS_0COMPILE + ' binary-main', None)
+	if binary_main:
+		root.setAttributeNS(XMLNS_0COMPILE, 'compile:binary-main', binary_main)
+	metadir = impl.metadata.get(XMLNS_0COMPILE + ' metadir', None)
+	if metadir:
+		root.setAttributeNS(XMLNS_0COMPILE, 'compile:metadir', metadir)
 
 	doc.writexml(file(ENV_FILE, 'w'), addindent = '  ', newl = '\n')
 
