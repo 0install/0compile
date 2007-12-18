@@ -15,7 +15,8 @@ from zeroinstall.zerostore import Stores, Store, NotStored
 ENV_FILE = '0compile-env.xml'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
-iface_cache.stores.stores.append(Store(os.path.realpath('dependencies')))
+if os.path.isdir('dependencies'):
+	iface_cache.stores.stores.append(Store(os.path.realpath('dependencies')))
 
 def lookup(id):
 	if id.startswith('/'):
@@ -131,6 +132,13 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	os.environ['TMPDIR'] = '/tmp'
 	os.execl(_pola_run, _pola_run, *pola_args)
 
+def get_arch_name():
+	uname = os.uname()
+	target_os, target_machine = uname[0], uname[-1]
+	if target_machine in ('i585', 'i686'):
+		target_machine = 'i486'	# (sensible default)
+	return target_os + '-' + target_machine
+
 class BuildEnv(object):
 	__slots__ = ['doc', 'selections', 'root_impl', 'srcdir', 'version_modifier',
 		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
@@ -157,12 +165,7 @@ class BuildEnv(object):
 		else:
 			self.srcdir = lookup(self.root_impl.id)
 
-		# Set target arch
-		uname = os.uname()
-		target_os, target_machine = uname[0], uname[-1]
-		if target_machine in ('i585', 'i686'):
-			target_machine = 'i486'	# (sensible default)
-		self.target_arch = target_os + '-' + target_machine
+		self.target_arch = get_arch_name()
 
 		self.iface_name = os.path.basename(self.interface)
 		if self.iface_name.endswith('.xml'):

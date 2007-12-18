@@ -3,6 +3,9 @@ import sys, tempfile, os, shutil, imp, tempfile, popen2
 from StringIO import StringIO
 import unittest
 
+sys.path.insert(0, '..')
+import support
+
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
 
 compile_bin = os.path.abspath('../0compile')
@@ -52,9 +55,13 @@ class TestCompile(unittest.TestCase):
 		compile('setup', '--no-prompt')
 
 		compile('build', expect = 'Executing: "$SRCDIR/configure"')
-		run('gnu-hello-1.3/bin/hello', expect = 'Hello, world!')
-		run('0launch', 'gnu-hello-1.3/0install/GNU-Hello.xml', expect = 'Hello, world!')
-		compile('publish', 'http://localhost/downloads', expect = "Now upload 'gnu-hello-1.3.tar.bz2'")
+
+		target_dir = 'gnu-hello-%s-1.3' % support.get_arch_name().lower()
+		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
+
+		run('%s/bin/hello' % target_dir, expect = 'Hello, world!')
+		run('0launch', '%s/0install/GNU-Hello.xml' % target_dir, expect = 'Hello, world!')
+		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % target_dir)
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
