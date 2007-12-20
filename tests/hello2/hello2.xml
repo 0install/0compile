@@ -1,0 +1,16 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" xmlns:compile="http://zero-install.sourceforge.net/2006/namespaces/0compile">
+  <name>hello2</name>
+  <summary>testing</summary>
+  <description>
+    Test compiling a program with a runtime dependency.
+  </description>
+
+  <group arch="*-src">
+    <requires compile:include-binary='true' interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
+      <environment insert="ROX-Lib2/python" name="ROXLIB"/>
+    </requires>
+    <implementation id="." version="0.1" compile:binary-main='hello2' compile:command='ls -l "$ROXLIB" &amp;&amp; cp "$SRCDIR/hello2" "$DISTDIR"'/>
+  </group>
+</interface>
