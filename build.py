@@ -208,7 +208,9 @@ def write_sample_interface(buildenv, iface, src_impl):
 		group.setAttributeNS(None, 'main', main)
 	
 	for d in src_impl.dependencies:
-		if parse_bool(d.metadata.get('include-binary', 'false')):
+		# 0launch < 0.32 messed up the namespace...
+		if parse_bool(d.metadata.get('include-binary', 'false')) or \
+		   parse_bool(d.metadata.get(XMLNS_0COMPILE + ' include-binary', 'false')):
 			requires = addSimple(group, 'requires')
 			requires.setAttributeNS(None, 'interface', d.interface)
 			for b in d.bindings:
