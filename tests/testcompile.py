@@ -1,5 +1,5 @@
-#!/usr/bin/env python2.3
-import sys, tempfile, os, shutil, imp, tempfile, popen2
+#!/usr/bin/env python2.4
+import sys, tempfile, os, shutil, tempfile, subprocess
 from StringIO import StringIO
 import unittest
 
@@ -12,14 +12,16 @@ local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hel
 compile_bin = os.path.abspath('../0compile')
 assert os.path.exists(compile_bin)
 
+# Ensure it's cached now, to avoid extra output during the tests
+if subprocess.call(['0launch', '--source', '-vc', '--download-only', hello_uri]):
+	raise Exception("Failed to download hello world test program")
+
 def compile(*args, **kwargs):
 	run(*([compile_bin] + list(args)), **kwargs)
 
 def run(*args, **kwargs):
-	cout, cin = popen2.popen4(args)
-	cin.close()
-	got = cout.read()
-	cout.close()
+	child = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+	got, unused = child.communicate()
 
 	expected = kwargs.get('expect', '')
 	if expected:

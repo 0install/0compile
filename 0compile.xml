@@ -18,7 +18,7 @@ For a full tutorial, see 0compile's homepage.</description>
 
   <feed-for interface="http://0install.net/2006/interfaces/0compile.xml"/>
 
-  <group main="0compile">
+  <group main="0compile" self-test='tests/testcompile.py'>
     <implementation id="." version="0.9" version-modifier="-post"/>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="0.28"/>
