@@ -20,7 +20,7 @@ For a full tutorial, see 0compile's homepage.</description>
   <feed-for interface="http://0install.net/2006/interfaces/0compile.xml"/>
 
   <group main="0compile" self-test="tests/testcompile.py">
-    <implementation id="." released="2007-12-24" version="0.10"/>
+    <implementation id="." version="0.10-post"/>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="0.28"/>
       <environment insert="" mode="prepend" name="PYTHONPATH"/>
