@@ -150,6 +150,9 @@ class BuildEnv(object):
 		if not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
 		self.doc = qdom.parse(file(ENV_FILE))
+		if self.doc.name == 'build-environment':
+			raise SafeException(("Sorry, this %s file is in an old format that is no longer supported. "
+					     "Please delete it and try again.") % os.path.abspath(ENV_FILE))
 		self.selections = selections.Selections(self.doc)
 
 		self.download_base_url = self.doc.getAttribute(XMLNS_0COMPILE + ' download-base-url')
