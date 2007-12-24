@@ -19,6 +19,11 @@ For a full tutorial, see 0compile's homepage.</description>
 
   <feed-for interface="http://0install.net/2006/interfaces/0compile.xml"/>
 
+  <release:management xmlns:release="http://zero-install.sourceforge.net/2007/namespaces/0release">
+    <!-- Update the copy of the version number in the main program -->
+    <release:action phase="commit-release">sed -i &quot;s/^version = '.*'$/version = '$RELEASE_VERSION'/&quot; 0compile</release:action>
+  </release:management>
+
   <group main="0compile" self-test="tests/testcompile.py">
     <implementation id="." version="0.10-post"/>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
