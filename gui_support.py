@@ -83,7 +83,11 @@ class CompileBox(gtk.Dialog):
 				def done_build():
 					self.add_msg('\nBuild successful. Now register or publish the build.')
 				def build_failed():
-					self.add_msg('\nPlease notify the developers of this problem (this will transmit '
+					self.add_msg('\nIf the messages displayed above indicate a missing dependency (e.g. no C compiler '
+						     "or a library that isn't available through Zero Install) then install it using your "
+						     'normal package manager and click on Build again. Note that for libraries you often '
+						     'need the -dev version of the package. '
+						     '\nOtherwise, please notify the developers of this problem (this will transmit '
 						     'the contents of the build/build-failure.log file):')
 					end = self.buffer.get_end_iter()
 					anchor = self.buffer.create_child_anchor(end)
