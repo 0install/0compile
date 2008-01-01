@@ -127,11 +127,10 @@ class CompileBox(gtk.Dialog):
 				box.destroy()
 				if resp == gtk.RESPONSE_OK:
 					def done_publish():
-						self.add_msg("\nYou can copy-and-paste the <group> from this file "
-							"into the main feed. If you don't have a main feed then see "
-							"http://0install.net/injector-packagers.html for instructions on "
-							"creating one "
-							"(basically, you need to create a GPG key and then sign the XML file).")
+						self.add_msg("\nYou can use '0publish --local' to add this "
+							"into the main feed. If you don't have a main feed then this "
+							"will create one. See"
+							"http://0install.net/injector-packagers.html for more information.")
 					self.run_command((sys.executable, main_path,
 						'publish', box.archive_dir.get_text()), done_publish)
 			elif resp == gtk.RESPONSE_CANCEL or resp == gtk.RESPONSE_DELETE_EVENT:
