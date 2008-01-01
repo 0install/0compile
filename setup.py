@@ -95,9 +95,6 @@ def save_environment(policy):
 	if download_base:
 		root.setAttributeNS(XMLNS_0COMPILE, 'compile:download-base-url', download_base)
 
-	needed_ifaces = policy.implementation.keys()
-	needed_ifaces.sort(lambda a, b: cmp(a.uri, b.uri))
-
 	impl = policy.implementation[policy.get_interface(policy.root)]
 	command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
 	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
