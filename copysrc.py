@@ -23,6 +23,7 @@ def do_copy_src(args):
 	shutil.copytree(path, 'src', symlinks = True)
 	# Make all files writable by the owner
 	for root, dirs, files in os.walk('src'):
+		os.chmod(root, os.stat(root).st_mode | 0200)
 		for f in files:
 			path = os.path.join(root, f)
 			if not os.path.islink(path):
