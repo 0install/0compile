@@ -7,6 +7,11 @@ __builtins__._ = lambda x: x
 from optparse import OptionParser
 import os, sys, tempfile, shutil, traceback
 from logging import info, debug
+
+zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
+if zeroinstall_dir:
+	sys.path.insert(1, zeroinstall_dir)
+
 import zeroinstall
 
 if map(int, zeroinstall.version.split('.')) < [0, 24]:

@@ -28,7 +28,7 @@ For a full tutorial, see 0compile's homepage.</description>
     <implementation id="." version="0.10-post"/>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="0.28"/>
-      <environment insert="" mode="prepend" name="PYTHONPATH"/>
+      <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
     </requires>
   </group>
 </interface>
