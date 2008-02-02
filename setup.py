@@ -6,6 +6,7 @@ from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
 
 from zeroinstall.injector import model, selections
+from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall.injector.policy import Policy
 from zeroinstall import SafeException
 
@@ -64,7 +65,7 @@ def setup(interface, create_dir, prompt):
 	if not policy.ready:
 		raise Exception('Internal error: required source components not found!')
 
-	root_iface = policy.get_interface(policy.root)
+	root_iface = iface_cache.get_interface(policy.root)
 	impl = policy.implementation[root_iface]
 	min_version = parse_version(impl.metadata.get(XMLNS_0COMPILE + ' min-version', None))
 	if min_version and min_version > parse_version(__main__.version):
@@ -95,7 +96,7 @@ def save_environment(policy):
 	if download_base:
 		root.setAttributeNS(XMLNS_0COMPILE, 'compile:download-base-url', download_base)
 
-	impl = policy.implementation[policy.get_interface(policy.root)]
+	impl = policy.implementation[iface_cache.get_interface(policy.root)]
 	command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
 	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
 	root.setAttributeNS(XMLNS_0COMPILE, 'compile:command', command)
