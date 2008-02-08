@@ -6,7 +6,12 @@ from os.path import join
 
 from zeroinstall.injector import model, selections, qdom
 from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
-from zeroinstall.injector import namespaces, basedir, reader
+from zeroinstall.injector import namespaces, reader
+try:
+	from zeroinstall.injector import basedir
+except ImportError:
+	from zeroinstall.support import basedir
+
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
 from zeroinstall.injector import run
