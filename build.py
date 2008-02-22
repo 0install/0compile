@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, time, shutil
+import sys, os, __main__, time, shutil, glob
 from os.path import join
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
@@ -76,6 +76,20 @@ def do_build_internal(args):
 				if isinstance(b, EnvironmentBinding):
 					dep_impl = buildenv.chosen_impl(dep.interface)
 					do_env_binding(b, lookup(dep_impl.id))
+
+	mappings = []
+	for impl in buildenv.selections.selections.values():
+		new_mappings = impl.attrs.get(XMLNS_0COMPILE + ' lib-mappings', '')
+		if new_mappings:
+			new_mappings = new_mappings.split(' ')
+			for mapping in new_mappings:
+				assert ':' in mapping, "lib-mappings missing ':' in '%s' from '%s'" % (mapping, impl.feed)
+				name, major_version = mapping.split(':', 1)
+				assert '/' not in mapping, "lib-mappings '%s' contains a / in the version number (from '%s')!" % (mapping, impl.feed)
+				mappings.append((name, major_version))
+	
+	if mappings:
+		set_up_mappings(mappings)
 
 	if args == ['--shell']:
 		spawn_and_check(find_in_path('sh'), [])
@@ -206,6 +220,11 @@ def write_sample_interface(buildenv, iface, src_impl):
 	main = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-main')
 	if main:
 		group.setAttributeNS(None, 'main', main)
+
+	lib_mappings = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-lib-mappings')
+	if lib_mappings:
+		root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:compile', XMLNS_0COMPILE)
+		group.setAttributeNS(XMLNS_0COMPILE, 'compile:lib-mappings', lib_mappings)
 	
 	for d in src_impl.dependencies:
 		# 0launch < 0.32 messed up the namespace...
@@ -237,5 +256,48 @@ def write_sample_interface(buildenv, iface, src_impl):
 	close(root)
 
 	doc.writexml(file(path, 'w'))
+
+def set_up_mappings(mappings):
+	"""Create a temporary directory with symlinks for each of the library mappings."""
+	# The find_library function takes a short-name and major version of a library and
+	# returns the full path of the library.
+	libdirs = ['/lib', '/usr/lib']
+	for d in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
+		if d: libdirs.append(d)
+
+	def add_ldconf(config_file):
+		if not os.path.isfile(config_file):
+			return
+		for line in file(config_file):
+			d = line.strip()
+			if d.startswith('include '):
+				glob_pattern = d.split(' ', 1)[1]
+				for conf in glob.glob(glob_pattern):
+					add_ldconf(conf)
+			elif d and not d.startswith('#'):
+				libdirs.append(d)
+	add_ldconf('/etc/ld.so.conf')
+
+	def find_library(name, major):
+		wanted = 'lib%s.so.%s' % (name, major)
+		for d in libdirs:
+			path = os.path.join(d, wanted)
+			if os.path.exists(path):
+				return path
+		print "WARNING: library '%s' not found (searched '%s')!" % (wanted, libdirs)
+		return None
+
+	mappings_dir = os.path.join(os.environ['TMPDIR'], 'lib-mappings')
+	os.mkdir(mappings_dir)
+
+	old_path = os.environ.get('LIBRARY_PATH', '')
+	if old_path: old_path = ':' + old_path
+	os.environ['LIBRARY_PATH'] = mappings_dir + old_path
+
+	for name, major_version in mappings:
+		target = find_library(name, major_version)
+		if target:
+			print "Adding mapping lib%s.so -> %s" % (name, target)
+			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + '.so'))
 
 __main__.commands.append(do_build)

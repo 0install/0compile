@@ -88,6 +88,13 @@ def save_environment(policy):
 		download_base = BuildEnv().download_base_url
 
 	sels = selections.Selections(policy)
+
+	# Copy mappings metadata
+	for iface, impl in policy.implementation.iteritems():
+		mappings = impl.metadata.get(XMLNS_0COMPILE + ' lib-mappings', None)
+		if mappings:
+			sels.selections[iface.uri].attrs[XMLNS_0COMPILE + ' lib-mappings'] = mappings
+
 	doc = sels.toDOM()
 	root = doc.documentElement
 
@@ -100,12 +107,11 @@ def save_environment(policy):
 	command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
 	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
 	root.setAttributeNS(XMLNS_0COMPILE, 'compile:command', command)
-	binary_main = impl.metadata.get(XMLNS_0COMPILE + ' binary-main', None)
-	if binary_main:
-		root.setAttributeNS(XMLNS_0COMPILE, 'compile:binary-main', binary_main)
-	metadir = impl.metadata.get(XMLNS_0COMPILE + ' metadir', None)
-	if metadir:
-		root.setAttributeNS(XMLNS_0COMPILE, 'compile:metadir', metadir)
+
+	for name in ['binary-main', 'binary-lib-mappings', 'metadir']:
+		value = impl.metadata.get(XMLNS_0COMPILE + ' ' + name, None)
+		if value:
+			root.setAttributeNS(XMLNS_0COMPILE, 'compile:' + name, value)
 
 	doc.writexml(file(ENV_FILE, 'w'), addindent = '  ', newl = '\n')
 
