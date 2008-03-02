@@ -35,14 +35,17 @@ def do_setup(args):
 			if create_dir.endswith('.xml'):
 				create_dir = create_dir[:-4]
 			assert '/' not in create_dir
+			assert create_dir is not '.'
 		elif len(args) == 2:
 			create_dir = args[1]
+			if create_dir == '.':
+				create_dir = None
 		else:
 			raise __main__.UsageError()
 
 		interface = model.canonical_iface_uri(args[0])
 
-		if os.path.exists(create_dir):
+		if create_dir and os.path.exists(create_dir):
 			raise SafeException("Directory '%s' already exists." % create_dir)
 	
 	setup(interface, create_dir, prompt)
