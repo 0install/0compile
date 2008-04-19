@@ -111,7 +111,7 @@ def save_environment(policy):
 	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
 	root.setAttributeNS(XMLNS_0COMPILE, 'compile:command', command)
 
-	for name in ['binary-main', 'binary-lib-mappings', 'metadir']:
+	for name in ['binary-main', 'binary-lib-mappings', 'metadir', 'dup-src']:
 		value = impl.metadata.get(XMLNS_0COMPILE + ' ' + name, None)
 		if value:
 			root.setAttributeNS(XMLNS_0COMPILE, 'compile:' + name, value)

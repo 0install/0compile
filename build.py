@@ -19,6 +19,7 @@ def do_env_binding(binding, path):
 
 def do_build_internal(args):
 	"""build-internal"""
+	# If a sandbox is being used, we're in it now.
 	import getpass, socket, time
 
 	buildenv = BuildEnv()
@@ -90,6 +91,14 @@ def do_build_internal(args):
 	
 	if mappings:
 		set_up_mappings(mappings)
+
+	# Some programs want to put temporary build files in the source directory.
+	# Make a copy of the source if needed.
+	dup_src_type = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' dup-src')
+	if dup_src_type == 'true':
+		dup_src(shutil.copyfile)
+	elif dup_src_type:
+		raise Exception("Unknown dup-src value '%s'" % dup_src_type)
 
 	if args == ['--shell']:
 		spawn_and_check(find_in_path('sh'), [])
@@ -299,5 +308,21 @@ def set_up_mappings(mappings):
 		if target:
 			print "Adding mapping lib%s.so -> %s" % (name, target)
 			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + '.so'))
+
+def dup_src(fn):
+	srcdir = os.environ['SRCDIR'] + '/'
+	for root, dirs, files in os.walk(srcdir):
+		assert root.startswith(srcdir)
+		reldir = root[len(srcdir):]
+		for f in files:
+			target = os.path.join(reldir, f)
+			#print "Copy %s -> %s" % (os.path.join(root, f), target)
+			if os.path.exists(target):
+				os.unlink(target)
+			fn(os.path.join(root, f), target)
+		for d in dirs:
+			target = os.path.join(reldir, d)
+			if not os.path.isdir(target):
+				os.mkdir(target)
 
 __main__.commands.append(do_build)

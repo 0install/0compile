@@ -8,6 +8,7 @@ import support
 
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
 local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml'))
+local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml'))
 
 compile_bin = os.path.abspath('../0compile')
 assert os.path.exists(compile_bin)
@@ -74,6 +75,12 @@ class TestCompile(unittest.TestCase):
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run('0launch', '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')
+	
+	def testCopySrc(self):
+		comp_dir = os.path.join(self.tmpdir, 'cprog')
+		compile('setup', '--no-prompt', local_cprog_path, comp_dir)
+		os.chdir(comp_dir)
+		compile('build', expect = 'Hello from C')
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':

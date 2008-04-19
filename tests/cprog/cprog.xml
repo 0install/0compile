@@ -1,0 +1,13 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" xmlns:compile="http://zero-install.sourceforge.net/2006/namespaces/0compile">
+  <name>cprog</name>
+  <summary>testing</summary>
+  <description>
+    Test compiling a C program which needs to write to its own src dir.
+  </description>
+
+  <group arch="*-src" compile:dup-src='true'>
+    <implementation compile:binary-main="main" compile:command="make" id="." version="0.1"/>
+  </group>
+</interface>
