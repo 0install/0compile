@@ -6,6 +6,7 @@ from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
 
 from zeroinstall.injector import model, selections
+from zeroinstall.injector.handler import Handler
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall.injector.policy import Policy
 from zeroinstall import SafeException
@@ -61,7 +62,7 @@ def setup(interface, create_dir, prompt):
 		raise SafeException('Failed to select source files.')
 	
 	# Get the chosen versions
-	policy = Policy(interface, src = True)
+	policy = Policy(interface, handler = Handler(), src = True)
 	policy.freshness = 0
 
 	policy.recalculate()
