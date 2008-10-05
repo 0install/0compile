@@ -223,7 +223,15 @@ def write_sample_interface(buildenv, iface, src_impl):
 	addSimple(root, 'summary', iface.summary)
 	addSimple(root, 'description', iface.description)
 	feed_for = addSimple(root, 'feed-for')
-	feed_for.setAttributeNS(None, 'interface', iface.uri)
+
+	uri = iface.uri
+	if uri.startswith('/') and iface.feed_for:
+		for uri in iface.feed_for:
+			print "Note: source %s is a local feed" % iface.uri
+			print "Will use <feed-for interface='%s'> instead..." % uri
+			break
+
+	feed_for.setAttributeNS(None, 'interface', uri)
 
 	group = addSimple(root, 'group')
 	main = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-main')
