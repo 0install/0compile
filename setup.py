@@ -58,7 +58,12 @@ def setup(interface, create_dir, prompt):
 		gui_options = '--offline'
 
 	# Prompt user to choose versions
-	if os.spawnvp(os.P_WAIT, '0launch', ['0launch', gui_options, '--source', '--download-only', interface]):
+	zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
+	if zeroinstall_dir:
+		launch_prog = os.path.join(zeroinstall_dir, '0launch')
+	else:
+		launch_prog = '0launch'
+	if os.spawnvp(os.P_WAIT, launch_prog, [launch_prog, gui_options, '--source', '--download-only', interface]):
 		raise SafeException('Failed to select source files.')
 	
 	# Get the chosen versions
