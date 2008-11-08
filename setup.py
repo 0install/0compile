@@ -9,7 +9,7 @@ from zeroinstall.injector import model, selections
 from zeroinstall.injector.handler import Handler
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall.injector.policy import Policy
-from zeroinstall import SafeException
+from zeroinstall import SafeException, helpers
 
 from support import *
 
@@ -53,30 +53,23 @@ def do_setup(args):
 
 def setup(interface, create_dir, prompt):
 	if prompt:
-		gui_options = '--gui'
+		# Prompt user to choose versions
+		sels = helpers.get_selections_gui(interface, ['--source'], test_callback = None)
+		if not sels:
+			raise SafeException("Cancelled")
 	else:
-		gui_options = '--offline'
+		# Select automatically
+		policy = Policy(interface, handler = Handler(), src = True)
+		policy.freshness = 0
 
-	# Prompt user to choose versions
-	zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
-	if zeroinstall_dir:
-		launch_prog = os.path.join(zeroinstall_dir, '0launch')
-	else:
-		launch_prog = '0launch'
-	if os.spawnvp(os.P_WAIT, launch_prog, [launch_prog, gui_options, '--source', '--download-only', interface]):
-		raise SafeException('Failed to select source files.')
-	
-	# Get the chosen versions
-	policy = Policy(interface, handler = Handler(), src = True)
-	policy.freshness = 0
+		policy.recalculate()
+		if not policy.ready:
+			raise Exception('Internal error: required source components not found!')
+		sels = selections.Selections(policy)
 
-	policy.recalculate()
-	if not policy.ready:
-		raise Exception('Internal error: required source components not found!')
-
-	root_iface = iface_cache.get_interface(policy.root)
-	impl = policy.implementation[root_iface]
-	min_version = parse_version(impl.metadata.get(XMLNS_0COMPILE + ' min-version', None))
+	root_iface = iface_cache.get_interface(interface)
+	impl = sels.selections[interface]
+	min_version = parse_version(impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
 	if min_version and min_version > parse_version(__main__.version):
 		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
 				(root_iface.get_name(), impl.get_version(), format_version(min_version), __main__.version))
@@ -88,21 +81,13 @@ def setup(interface, create_dir, prompt):
 		os.chdir(create_dir)
 
 	# Store choices
-	save_environment(policy)
+	save_environment(sels)
 
-def save_environment(policy):
+def save_environment(sels):
 	download_base = None
 	if os.path.exists(ENV_FILE):
 		# Don't lose existing download URL
 		download_base = BuildEnv().download_base_url
-
-	sels = selections.Selections(policy)
-
-	# Copy mappings metadata
-	for iface, impl in policy.implementation.iteritems():
-		mappings = impl.metadata.get(XMLNS_0COMPILE + ' lib-mappings', None)
-		if mappings:
-			sels.selections[iface.uri].attrs[XMLNS_0COMPILE + ' lib-mappings'] = mappings
 
 	doc = sels.toDOM()
 	root = doc.documentElement
@@ -112,13 +97,13 @@ def save_environment(policy):
 	if download_base:
 		root.setAttributeNS(XMLNS_0COMPILE, 'compile:download-base-url', download_base)
 
-	impl = policy.implementation[iface_cache.get_interface(policy.root)]
-	command = impl.metadata.get(XMLNS_0COMPILE + ' command', None)
+	impl = sels.selections[sels.interface]
+	command = impl.attrs.get(XMLNS_0COMPILE + ' command', None)
 	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
 	root.setAttributeNS(XMLNS_0COMPILE, 'compile:command', command)
 
 	for name in ['binary-main', 'binary-lib-mappings', 'metadir', 'dup-src']:
-		value = impl.metadata.get(XMLNS_0COMPILE + ' ' + name, None)
+		value = impl.attrs.get(XMLNS_0COMPILE + ' ' + name, None)
 		if value:
 			root.setAttributeNS(XMLNS_0COMPILE, 'compile:' + name, value)
 
