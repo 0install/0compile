@@ -9,13 +9,11 @@ from xml.dom import minidom, XMLNS_NAMESPACE
 from support import *
 
 def env(name, value):
-	info('Setting %s="%s"', name, value)
 	os.environ[name] = value
+	print "%s=%s" % (name, value)
 
 def do_env_binding(binding, path):
-	os.environ[binding.name] = binding.get_value(path,
-					os.environ.get(binding.name, None))
-	info("%s=%s", binding.name, os.environ[binding.name])
+	env(binding.name, binding.get_value(path, os.environ.get(binding.name, None)))
 
 def do_build_internal(args):
 	"""build-internal"""
@@ -67,6 +65,7 @@ def do_build_internal(args):
 	env('DISTDIR', buildenv.distdir)
 	env('SRCDIR', buildenv.srcdir)
 	os.chdir(builddir)
+	print "cd", builddir
 
 	for needed_iface in buildenv.selections.selections:
 		impl = buildenv.chosen_impl(needed_iface)
