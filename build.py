@@ -50,11 +50,10 @@ def do_build_internal(args):
 	# Create the patch
 	orig_impl = buildenv.chosen_impl(buildenv.interface)
 	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.version)
-	if os.path.isdir('src'):
-		orig_src = lookup(orig_impl.id)
+	if buildenv.user_srcdir:
 		# (ignore errors; will already be shown on stderr)
 		os.system("diff -urN '%s' src > %s" %
-			(orig_src.replace('\\', '\\\\').replace("'", "\\'"),
+			(buildenv.orig_srcdir.replace('\\', '\\\\').replace("'", "\\'"),
 			 patch_file))
 		if os.path.getsize(patch_file) == 0:
 			os.unlink(patch_file)
@@ -63,7 +62,7 @@ def do_build_internal(args):
 
 	env('BUILDDIR', builddir)
 	env('DISTDIR', buildenv.distdir)
-	env('SRCDIR', buildenv.srcdir)
+	env('SRCDIR', buildenv.user_srcdir or buildenv.orig_srcdir)
 	os.chdir(builddir)
 	print "cd", builddir
 

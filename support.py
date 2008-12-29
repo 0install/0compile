@@ -3,6 +3,7 @@
 
 import os, sys, tempfile, shutil, traceback
 from os.path import join
+from logging import info
 
 from zeroinstall.injector import model, selections, qdom
 from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
@@ -145,7 +146,7 @@ def get_arch_name():
 	return target_os + '-' + target_machine
 
 class BuildEnv(object):
-	__slots__ = ['doc', 'selections', 'root_impl', 'srcdir', 'version_modifier',
+	__slots__ = ['doc', 'selections', 'root_impl', 'orig_srcdir', 'user_srcdir', 'version_modifier',
 		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
 		     'target_arch']
 
@@ -165,13 +166,20 @@ class BuildEnv(object):
 		self.version_modifier = self.doc.getAttribute(XMLNS_0COMPILE + ' version-modifier')
 
 		self.root_impl = self.selections.selections[self.interface]
+		self.orig_srcdir = os.path.realpath(lookup(self.root_impl.id))
+		self.user_srcdir = None
 
 		if os.path.isdir('src'):
-			self.srcdir = os.path.realpath('src')
-			if not self.version_modifier:
-				self.version_modifier = '-1'
-		else:
-			self.srcdir = lookup(self.root_impl.id)
+			self.user_srcdir = os.path.realpath('src')
+			if self.user_srcdir == self.orig_srcdir or \
+			   self.user_srcdir.startswith(self.orig_srcdir + '/') or \
+			   self.orig_srcdir.startswith(self.user_srcdir + '/'):
+				info("Ignoring 'src' directory because it coincides with %s",
+					self.orig_srcdir)
+				self.user_srcdir = None
+			else:
+				if not self.version_modifier:
+					self.version_modifier = '-1'
 
 		self.target_arch = get_arch_name()
 
