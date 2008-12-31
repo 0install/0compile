@@ -13,9 +13,10 @@ from zeroinstall import SafeException, helpers
 
 from support import *
 
-def do_setup(args):
+def do_setup(args, get_dir_callback = None):
 	"setup [ SOURCE-URI [ DIR ] ]"
 	if len(args) == 0:
+		assert get_dir_callback is None
 		buildenv = BuildEnv()
 		interface = buildenv.interface
 		assert interface
@@ -24,12 +25,16 @@ def do_setup(args):
 	else:
 		buildenv = BuildEnv(need_config = False)
 		interface = args[0]
+		if get_dir_callback:
+			assert len(args) == 1
 		if len(args) == 1:
 			create_dir = os.path.basename(interface)
 			if create_dir.endswith('.xml'):
 				create_dir = create_dir[:-4]
 			assert '/' not in create_dir
 			assert create_dir is not '.'
+			if get_dir_callback:
+				create_dir = get_dir_callback(create_dir)
 		elif len(args) == 2:
 			create_dir = args[1]
 			if create_dir == '.':
@@ -50,9 +55,6 @@ def do_setup(args):
 			raise SafeException("Directory '%s' already exists." % create_dir)
 		buildenv.get_selections()
 
-	setup(buildenv, create_dir)
-
-def setup(buildenv, create_dir):
 	if create_dir:
 		if os.path.exists(create_dir):
 			raise SafeException("Directory '%s' already exists." % create_dir)

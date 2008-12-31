@@ -117,8 +117,15 @@ class CompileBox(gtk.Dialog):
 						self.add_msg("Feed '%s' is already registered for interface '%s'!\n" % (feed, iface.uri))
 						return
 				box.buffer.insert_at_cursor("Registering feed '%s'\n" % feed)
-				iface.feeds.append(model.Feed(feed, arch = None, user_override = True))
+				iface.extra_feeds.append(model.Feed(feed, arch = None, user_override = True))
 				writer.save_interface(iface)
+				print "\nFeed list for interface '%s' is now:" % iface.get_name()
+				if iface.feeds:
+					for f in iface.feeds:
+						print "- " + f.uri
+				else:
+					print "(no feeds)"
+
 				box.buffer.insert_at_cursor("You can now close this window.\n")
 			elif resp == RESPONSE_PUBLISH:
 				buildenv = BuildEnv()
