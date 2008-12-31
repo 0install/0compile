@@ -224,17 +224,29 @@ class BuildEnv:
 			stream.close()
 
 	def get_selections(self, prompt = False):
-		if self._selections and not prompt:
+		if self._selections:
+			assert not prompt
 			return self._selections
-		options = []
-		if prompt:
-			options.append('--gui')
-		child = subprocess.Popen(['0launch', '--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
-		try:
-			self._selections = selections.Selections(qdom.parse(child.stdout))
-		finally:
-			if child.wait():
-				raise SafeException("0launch --get-selections failed (exit code %d)" % child.returncode)
+
+		selections_file = self.config.get('compile', 'selections')
+		if selections_file:
+			if prompt:
+				raise SafeException("Selections are fixed by %s" % selections_file)
+			stream = file(selections_file)
+			try:
+				self._selections = selections.Selections(qdom.parse(stream))
+			finally:
+				stream.close()
+		else:
+			options = []
+			if prompt:
+				options.append('--gui')
+			child = subprocess.Popen(['0launch', '--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
+			try:
+				self._selections = selections.Selections(qdom.parse(child.stdout))
+			finally:
+				if child.wait():
+					raise SafeException("0launch --get-selections failed (exit code %d)" % child.returncode)
 		return self._selections
 
 def depth(node):

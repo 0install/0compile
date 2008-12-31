@@ -5,7 +5,7 @@ import sys, os, __main__
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
 
-from zeroinstall.injector import model, selections
+from zeroinstall.injector import model, selections, namespaces
 from zeroinstall.injector.handler import Handler
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall.injector.policy import Policy
@@ -20,6 +20,7 @@ def do_setup(args):
 		interface = buildenv.interface
 		assert interface
 		create_dir = None
+		buildenv.get_selections(prompt = True)
 	else:
 		buildenv = BuildEnv(need_config = False)
 		interface = args[0]
@@ -36,12 +37,19 @@ def do_setup(args):
 		else:
 			raise __main__.UsageError()
 
-		buildenv.config.set('compile', 'interface', model.canonical_iface_uri(args[0]))
+		iface_uri = model.canonical_iface_uri(args[0])
+		if iface_uri.startswith('/'):
+			root = qdom.parse(file(iface_uri))
+			if root.uri == namespaces.XMLNS_IFACE and root.name == 'selections':
+				# Looks like this is a selections file, not an interface.
+				buildenv.config.set('compile', 'selections', iface_uri)
+				iface_uri = root.getAttribute('interface')
+		buildenv.config.set('compile', 'interface', iface_uri)
 
 		if create_dir and os.path.exists(create_dir):
 			raise SafeException("Directory '%s' already exists." % create_dir)
+		buildenv.get_selections()
 
-	buildenv.get_selections(prompt = True)
 	setup(buildenv, create_dir)
 
 def setup(buildenv, create_dir):
@@ -51,7 +59,6 @@ def setup(buildenv, create_dir):
 		os.mkdir(create_dir)
 		os.chdir(create_dir)
 
-	# Store choices
 	buildenv.save()
 
 def save_environment(sels):
