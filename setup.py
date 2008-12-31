@@ -58,6 +58,7 @@ def setup(buildenv, create_dir):
 			raise SafeException("Directory '%s' already exists." % create_dir)
 		os.mkdir(create_dir)
 		os.chdir(create_dir)
+		print "Created directory %s" % create_dir
 
 	buildenv.save()
 

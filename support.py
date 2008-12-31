@@ -162,6 +162,7 @@ class BuildEnv:
 		self.config.set('compile', 'version-modifier', '')
 		self.config.set('compile', 'interface', '')
 		self.config.set('compile', 'selections', '')
+		self.config.set('compile', 'metadir', '0install')
 
 		self.config.read(ENV_FILE)
 
@@ -170,22 +171,6 @@ class BuildEnv:
 		return
 
 		#self.root_impl = self.selections.selections[self.interface]
-		self.orig_srcdir = os.path.realpath(lookup(self.root_impl.id))
-		self.user_srcdir = None
-
-		if os.path.isdir('src'):
-			self.user_srcdir = os.path.realpath('src')
-			if self.user_srcdir == self.orig_srcdir or \
-			   self.user_srcdir.startswith(self.orig_srcdir + '/') or \
-			   self.orig_srcdir.startswith(self.user_srcdir + '/'):
-				info("Ignoring 'src' directory because it coincides with %s",
-					self.orig_srcdir)
-				self.user_srcdir = None
-			else:
-				if not self.version_modifier:
-					self.version_modifier = '-1'
-
-		self.target_arch = get_arch_name()
 
 		self.iface_name = os.path.basename(self.interface)
 		if self.iface_name.endswith('.xml'):
@@ -196,23 +181,42 @@ class BuildEnv:
 
 		self.archive_stem = '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier or "")
 
-		distdir_name = 'dist-' + get_arch_name().lower()
-		assert '/' not in distdir_name
-		self.distdir = os.path.realpath(distdir_name)
-
-		metadir = self.doc.getAttribute(XMLNS_0COMPILE + ' metadir')
-		if metadir is None:
-			metadir = '0install'
-		assert not metadir.startswith('/')
-		self.metadir = join(self.distdir, metadir)
-		self.local_iface_file = join(self.metadir, '%s.xml' % self.iface_name)
-
 	interface = property(lambda self: self.config.get('compile', 'interface'))
 
+	@property
+	def distdir(self):
+		distdir_name = 'dist-' + get_arch_name().lower()
+		assert '/' not in distdir_name
+		return os.path.realpath(distdir_name)
+
+	@property
+	def metadir(self):
+		metadir = self.config.get('compile', 'metadir')
+		assert not metadir.startswith('/')
+		return join(self.distdir, metadir)
+
+	@property
+	def local_iface_file(self):
+		leaf = os.path.basename(self.interface)
+		if not leaf.endswith('.xml'): leaf += '.xml'
+		return join(self.metadir, leaf)
+
+	@property
+	def target_arch(self):
+		return get_arch_name()
+
+	@property
+	def version_modifier(self):
+		vm = self.config.get('compile', 'version-modifier')
+		if vm: return vm
+		if self.user_srcdir:
+			return '-1'
+		return ''
 	
 	def chosen_impl(self, uri):
-		assert uri in self.selections.selections
-		return self.selections.selections[uri]
+		sels = self.get_selections()
+		assert uri in sels.selections
+		return sels.selections[uri]
 
 	local_download_iface = property(lambda self: '%s-%s%s.xml' % (self.iface_name, self.root_impl.version, self.version_modifier or ""))
 
@@ -255,6 +259,21 @@ class BuildEnv:
 			finally:
 				if child.wait():
 					raise SafeException("0launch --get-selections failed (exit code %d)" % child.returncode)
+
+		self.root_impl = self._selections.selections[self.interface]
+
+		self.orig_srcdir = os.path.realpath(lookup(self.root_impl.id))
+		self.user_srcdir = None
+
+		if os.path.isdir('src'):
+			self.user_srcdir = os.path.realpath('src')
+			if self.user_srcdir == self.orig_srcdir or \
+			   self.user_srcdir.startswith(self.orig_srcdir + '/') or \
+			   self.orig_srcdir.startswith(self.user_srcdir + '/'):
+				info("Ignoring 'src' directory because it coincides with %s",
+					self.orig_srcdir)
+				self.user_srcdir = None
+
 		return self._selections
 
 def depth(node):

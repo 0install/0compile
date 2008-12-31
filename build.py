@@ -21,13 +21,14 @@ def do_build_internal(args):
 	import getpass, socket, time
 
 	buildenv = BuildEnv()
+	sels = buildenv.get_selections()
 
 	builddir = os.path.realpath('build')
 	ensure_dir(buildenv.metadir)
 
 	build_env_xml = join(buildenv.metadir, 'build-environment.xml')
 
-	buildenv_doc = buildenv.selections.toDOM()
+	buildenv_doc = buildenv.get_selections().toDOM()
 
 	# Create build-environment.xml file
 	root = buildenv_doc.documentElement
@@ -47,15 +48,14 @@ def do_build_internal(args):
 	src_impl = buildenv.chosen_impl(buildenv.interface)
 	write_sample_interface(buildenv, src_iface, src_impl)
 
-	# Create the patch
-	orig_impl = buildenv.chosen_impl(buildenv.interface)
-
-	min_version = parse_version(orig_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
+	# Check 0compile is new enough
+	min_version = parse_version(src_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
 	if min_version and min_version > parse_version(__main__.version):
 		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %	# XXX: testme
-				(root_iface.get_name(), orig_impl.get_version(), format_version(min_version), __main__.version))
+				(root_iface.get_name(), src_impl.get_version(), format_version(min_version), __main__.version))
 
-	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.version)
+	# Create the patch
+	patch_file = join(buildenv.metadir, 'from-%s.patch' % src_impl.version)
 	if buildenv.user_srcdir:
 		# (ignore errors; will already be shown on stderr)
 		os.system("diff -urN '%s' src > %s" %
@@ -72,18 +72,18 @@ def do_build_internal(args):
 	os.chdir(builddir)
 	print "cd", builddir
 
-	for needed_iface in buildenv.selections.selections:
+	for needed_iface in sels.selections:
 		impl = buildenv.chosen_impl(needed_iface)
 		assert impl
 		for dep in impl.dependencies:
-			dep_iface = buildenv.selections.selections[dep.interface]
+			dep_iface = sels.selections[dep.interface]
 			for b in dep.bindings:
 				if isinstance(b, EnvironmentBinding):
 					dep_impl = buildenv.chosen_impl(dep.interface)
 					do_env_binding(b, lookup(dep_impl.id))
 
 	mappings = []
-	for impl in buildenv.selections.selections.values():
+	for impl in sels.selections.values():
 		new_mappings = impl.attrs.get(XMLNS_0COMPILE + ' lib-mappings', '')
 		if new_mappings:
 			new_mappings = new_mappings.split(' ')
@@ -98,7 +98,7 @@ def do_build_internal(args):
 
 	# Some programs want to put temporary build files in the source directory.
 	# Make a copy of the source if needed.
-	dup_src_type = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' dup-src')
+	dup_src_type = src_impl.attrs.get(XMLNS_0COMPILE + ' dup-src', None)
 	if dup_src_type == 'true':
 		dup_src(shutil.copyfile)
 	elif dup_src_type:
@@ -107,7 +107,7 @@ def do_build_internal(args):
 	if args == ['--shell']:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
-		command = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' command')
+		command = src_impl.attrs[XMLNS_0COMPILE + ' command']
 
 		# Remove any existing log files
 		for log in ['build.log', 'build-success.log', 'build-failure.log']:
@@ -165,6 +165,7 @@ def do_build_internal(args):
 def do_build(args):
 	"""build [ --nosandbox ] [ --shell ]"""
 	buildenv = BuildEnv()
+	sels = buildenv.get_selections()
 
 	builddir = os.path.realpath('build')
 
@@ -184,7 +185,7 @@ def do_build(args):
 		# Why did we need this?
 		#readable.append(get_cached_iface_path(buildenv.interface))
 
-		for selection in buildenv.selections.selections.values():
+		for selection in sels.selections.values():
 			readable.append(lookup(selection.id))
 
 		options = []
@@ -238,11 +239,11 @@ def write_sample_interface(buildenv, iface, src_impl):
 	feed_for.setAttributeNS(None, 'interface', uri)
 
 	group = addSimple(root, 'group')
-	main = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-main')
+	main = src_impl.attrs.get(XMLNS_0COMPILE + ' binary-main', None)
 	if main:
 		group.setAttributeNS(None, 'main', main)
 
-	lib_mappings = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-lib-mappings')
+	lib_mappings = src_impl.attrs.get(XMLNS_0COMPILE + ' binary-lib-mappings', None)
 	if lib_mappings:
 		root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:compile', XMLNS_0COMPILE)
 		group.setAttributeNS(XMLNS_0COMPILE, 'compile:lib-mappings', lib_mappings)
@@ -268,8 +269,9 @@ def write_sample_interface(buildenv, iface, src_impl):
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.version)
 
-	if buildenv.version_modifier:
-		impl_elem.setAttributeNS(None, 'version-modifier', buildenv.version_modifier)
+	version_modifier = buildenv.version_modifier
+	if version_modifier:
+		impl_elem.setAttributeNS(None, 'version-modifier', version_modifier)
 
 	impl_elem.setAttributeNS(None, 'id', '..')
 	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))

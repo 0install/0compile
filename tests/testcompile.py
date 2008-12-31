@@ -13,6 +13,9 @@ local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cpr
 compile_bin = os.path.abspath('../0compile')
 assert os.path.exists(compile_bin)
 
+if 'DISPLAY' in os.environ:
+	del os.environ['DISPLAY']
+
 # Ensure it's cached now, to avoid extra output during the tests
 if subprocess.call(['0launch', '--source', '-vc', '--download-only', hello_uri]):
 	raise Exception("Failed to download hello world test program")
@@ -40,8 +43,8 @@ class TestCompile(unittest.TestCase):
 		shutil.rmtree(self.tmpdir)
 
 	def testBadCommand(self):
-		compile('foo', '--no-prompt', expect = 'usage: 0compile')
-		compile('setup', '--no-prompt', hello_uri, self.tmpdir, expect = 'already exists')
+		compile('foo', expect = 'usage: 0compile')
+		compile('setup', hello_uri, self.tmpdir, expect = 'already exists')
 		os.chdir(self.tmpdir)
 		compile('setup', expect = 'Run 0compile from a directory containing')
 		compile('build', expect = 'Run 0compile from a directory containing')
@@ -49,14 +52,12 @@ class TestCompile(unittest.TestCase):
 
 	def testCompileNoDir(self):
 		os.chdir(self.tmpdir)
-		compile('setup', '--no-prompt', hello_uri)
+		compile('setup', hello_uri, expect = 'Created directory')
 		os.chdir('GNU-Hello')
-		compile('setup', '--no-prompt')
 
 	def testCompile(self):
-		compile('setup', '--no-prompt', hello_uri, self.hello_dir)
+		compile('setup', hello_uri, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
-		compile('setup', '--no-prompt')
 
 		compile('build', expect = 'Executing: "$SRCDIR/configure"')
 
@@ -69,7 +70,7 @@ class TestCompile(unittest.TestCase):
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testLocal(self):
-		compile('setup', '--no-prompt', local_hello_path, self.hello_dir)
+		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
 		compile('build', expect = 'Executing: ls -l')
 		target_dir = 'dist-%s' % support.get_arch_name().lower()
@@ -79,7 +80,7 @@ class TestCompile(unittest.TestCase):
 	
 	def testCopySrc(self):
 		comp_dir = os.path.join(self.tmpdir, 'cprog')
-		compile('setup', '--no-prompt', local_cprog_path, comp_dir)
+		compile('setup', local_cprog_path, comp_dir, expect = 'Created directory')
 		os.chdir(comp_dir)
 		compile('build', expect = 'Hello from C')
 
