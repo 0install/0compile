@@ -10,7 +10,7 @@ hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
 local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml'))
 local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml'))
 
-compile_bin = os.path.abspath('../0compile')
+compile_bin = os.path.abspath('0compile-coverage')
 assert os.path.exists(compile_bin)
 
 if 'DISPLAY' in os.environ:
@@ -36,6 +36,7 @@ def run(*args, **kwargs):
 
 class TestCompile(unittest.TestCase):
 	def setUp(self):
+		os.chdir('/')
 		self.tmpdir = tempfile.mkdtemp(prefix = '0compile-test-')
 		self.hello_dir = os.path.join(self.tmpdir, 'hello')
 	
