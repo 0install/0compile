@@ -60,18 +60,19 @@ class TestCompile(unittest.TestCase):
 
 		compile('build', expect = 'Executing: "$SRCDIR/configure"')
 
-		target_dir = 'gnu-hello-%s-1.3' % support.get_arch_name().lower()
+		target_dir = 'dist-%s' % support.get_arch_name().lower()
+		archive_stem = 'gnu-hello-%s-1.3' % support.get_arch_name().lower()
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run('%s/bin/hello' % target_dir, expect = 'Hello, world!')
 		run('0launch', '%s/0install/GNU-Hello.xml' % target_dir, expect = 'Hello, world!')
-		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % target_dir)
+		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testLocal(self):
 		compile('setup', '--no-prompt', local_hello_path, self.hello_dir)
 		os.chdir(self.hello_dir)
 		compile('build', expect = 'Executing: ls -l')
-		target_dir = 'hello2-%s-0.1' % support.get_arch_name().lower()
+		target_dir = 'dist-%s' % support.get_arch_name().lower()
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run('0launch', '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')

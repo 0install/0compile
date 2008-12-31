@@ -148,7 +148,7 @@ def get_arch_name():
 class BuildEnv(object):
 	__slots__ = ['doc', 'selections', 'root_impl', 'orig_srcdir', 'user_srcdir', 'version_modifier',
 		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
-		     'target_arch']
+		     'target_arch', 'archive_stem']
 
 	interface = property(lambda self: self.selections.interface)
 
@@ -189,8 +189,10 @@ class BuildEnv(object):
 		self.iface_name = self.iface_name.replace(' ', '-')
 		if self.iface_name.endswith('-src'):
 			self.iface_name = self.iface_name[:-4]
-		uname = os.uname()
-		distdir_name = '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier or "")
+
+		self.archive_stem = '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier or "")
+
+		distdir_name = 'dist-' + get_arch_name().lower()
 		assert '/' not in distdir_name
 		self.distdir = os.path.realpath(distdir_name)
 

@@ -25,28 +25,16 @@ def do_publish(args):
 		raise SafeException("Directory '%s' does not exist. Try 'compile build'." % buildenv.distdir)
 
 	distdir = os.path.basename(buildenv.distdir)
-	archive_name = distdir + '.tar.bz2'
-
-	gnutar = None
-	for command in ['gtar', 'tar', 'gnutar', 'star']:
-		if find_in_path(command):
-			stream = os.popen("'%s' --version 2>&1" % command)
-			try:
-				version = stream.read()
-				if 'GNU tar' in version or \
-				   'star' in version:
-					gnutar = command
-					break
-			finally:
-				stream.close()
-	if not gnutar:
-		raise SafeException("GNU tar not found in $PATH")
+	archive_name = buildenv.archive_stem + '.tar.bz2'
 
 	# Make all directories in the archive user writable
 	for main, dirs, files in os.walk(distdir):
 		os.chmod(main, os.stat(main).st_mode | 0200)
 
-	spawn_and_check(find_in_path(gnutar), ['cjf', archive_name, distdir])
+	import tarfile
+	archive = tarfile.open(archive_name, mode = 'w:bz2')
+	archive.add(distdir, buildenv.archive_stem)
+	archive.close()
 
 	download_url = os.path.join(buildenv.download_base_url, archive_name)
 	shutil.copyfile(buildenv.local_iface_file, buildenv.local_download_iface)
@@ -54,7 +42,7 @@ def do_publish(args):
 	spawn_and_check(find_in_path('0launch'),
 		['http://0install.net/2006/interfaces/0publish', buildenv.local_download_iface,
 		'--archive-url', download_url,
-		'--archive-extract', distdir])
+		'--archive-extract', buildenv.archive_stem])
 
 	print "Now upload '%s' as:\n%s\n" % (archive_name, download_url)
 
