@@ -14,22 +14,14 @@ from zeroinstall import SafeException, helpers
 from support import *
 
 def do_setup(args):
-	"setup [--no-prompt] [ SOURCE-URI [ DIR ] ]"
-	prompt = True
-	if args and args[0] == '--no-prompt':
-		del args[0]
-		prompt = False
-
+	"setup [ SOURCE-URI [ DIR ] ]"
 	if len(args) == 0:
-		if not os.path.isfile(ENV_FILE):
-			raise SafeException("Run 0compile from a directory containing a '%s' file, or "
-					    "specify a source URI as an argument." % ENV_FILE)
-		
 		buildenv = BuildEnv()
 		interface = buildenv.interface
 		assert interface
 		create_dir = None
 	else:
+		buildenv = BuildEnv(need_config = False)
 		interface = args[0]
 		if len(args) == 1:
 			create_dir = os.path.basename(interface)
@@ -44,36 +36,15 @@ def do_setup(args):
 		else:
 			raise __main__.UsageError()
 
-		interface = model.canonical_iface_uri(args[0])
+		buildenv.config.set('compile', 'interface', model.canonical_iface_uri(args[0]))
 
 		if create_dir and os.path.exists(create_dir):
 			raise SafeException("Directory '%s' already exists." % create_dir)
-	
-	setup(interface, create_dir, prompt)
 
-def setup(interface, create_dir, prompt):
-	if prompt:
-		# Prompt user to choose versions
-		sels = helpers.get_selections_gui(interface, ['--source'], test_callback = None)
-		if not sels:
-			raise SafeException("Cancelled")
-	else:
-		# Select automatically
-		policy = Policy(interface, handler = Handler(), src = True)
-		policy.freshness = 0
+	buildenv.get_selections(prompt = True)
+	setup(buildenv, create_dir)
 
-		policy.recalculate()
-		if not policy.ready:
-			raise Exception('Internal error: required source components not found!')
-		sels = selections.Selections(policy)
-
-	root_iface = iface_cache.get_interface(interface)
-	impl = sels.selections[interface]
-	min_version = parse_version(impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
-	if min_version and min_version > parse_version(__main__.version):
-		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
-				(root_iface.get_name(), impl.get_version(), format_version(min_version), __main__.version))
-
+def setup(buildenv, create_dir):
 	if create_dir:
 		if os.path.exists(create_dir):
 			raise SafeException("Directory '%s' already exists." % create_dir)
@@ -81,7 +52,7 @@ def setup(interface, create_dir, prompt):
 		os.chdir(create_dir)
 
 	# Store choices
-	save_environment(sels)
+	buildenv.save()
 
 def save_environment(sels):
 	download_base = None

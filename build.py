@@ -49,6 +49,12 @@ def do_build_internal(args):
 
 	# Create the patch
 	orig_impl = buildenv.chosen_impl(buildenv.interface)
+
+	min_version = parse_version(orig_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
+	if min_version and min_version > parse_version(__main__.version):
+		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %	# XXX: testme
+				(root_iface.get_name(), orig_impl.get_version(), format_version(min_version), __main__.version))
+
 	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.version)
 	if buildenv.user_srcdir:
 		# (ignore errors; will already be shown on stderr)

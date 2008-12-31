@@ -2,8 +2,10 @@
 # See http://0install.net/0compile.html
 
 import os, sys, tempfile, shutil, traceback
+import subprocess
 from os.path import join
 from logging import info
+import ConfigParser
 
 from zeroinstall.injector import model, selections, qdom
 from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
@@ -18,7 +20,7 @@ from zeroinstall import SafeException
 from zeroinstall.injector import run
 from zeroinstall.zerostore import Stores, Store, NotStored
 
-ENV_FILE = '0compile-env.xml'
+ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
 if os.path.isdir('dependencies'):
@@ -145,27 +147,29 @@ def get_arch_name():
 		target_machine = 'i486'	# (sensible default)
 	return target_os + '-' + target_machine
 
-class BuildEnv(object):
-	__slots__ = ['doc', 'selections', 'root_impl', 'orig_srcdir', 'user_srcdir', 'version_modifier',
-		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
-		     'target_arch', 'archive_stem']
+class BuildEnv:
+	#__slots__ = ['doc', 'selections', 'root_impl', 'orig_srcdir', 'user_srcdir', 'version_modifier',
+	#	     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
+	#	     'target_arch', 'archive_stem', 'config']
 
-	interface = property(lambda self: self.selections.interface)
-
-	def __init__(self):
-		if not os.path.isfile(ENV_FILE):
+	def __init__(self, need_config = True):
+		if need_config and not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
-		self.doc = qdom.parse(file(ENV_FILE))
-		if self.doc.name == 'build-environment':
-			raise SafeException(("Sorry, this %s file is in an old format that is no longer supported. "
-					     "Please delete it and try again.") % os.path.abspath(ENV_FILE))
-		self.selections = selections.Selections(self.doc)
 
-		self.download_base_url = self.doc.getAttribute(XMLNS_0COMPILE + ' download-base-url')
+		self.config = ConfigParser.RawConfigParser()
+		self.config.add_section('compile')
+		self.config.set('compile', 'download-base-url', '')
+		self.config.set('compile', 'version-modifier', '')
+		self.config.set('compile', 'interface', '')
+		self.config.set('compile', 'selections', '')
 
-		self.version_modifier = self.doc.getAttribute(XMLNS_0COMPILE + ' version-modifier')
+		self.config.read(ENV_FILE)
 
-		self.root_impl = self.selections.selections[self.interface]
+		self._selections = None
+
+		return
+
+		#self.root_impl = self.selections.selections[self.interface]
 		self.orig_srcdir = os.path.realpath(lookup(self.root_impl.id))
 		self.user_srcdir = None
 
@@ -202,12 +206,36 @@ class BuildEnv(object):
 		assert not metadir.startswith('/')
 		self.metadir = join(self.distdir, metadir)
 		self.local_iface_file = join(self.metadir, '%s.xml' % self.iface_name)
+
+	interface = property(lambda self: self.config.get('compile', 'interface'))
+
 	
 	def chosen_impl(self, uri):
 		assert uri in self.selections.selections
 		return self.selections.selections[uri]
 
 	local_download_iface = property(lambda self: '%s-%s%s.xml' % (self.iface_name, self.root_impl.version, self.version_modifier or ""))
+
+	def save(self):
+		stream = file(ENV_FILE, 'w')
+		try:
+			self.config.write(stream)
+		finally:
+			stream.close()
+
+	def get_selections(self, prompt = False):
+		if self._selections and not prompt:
+			return self._selections
+		options = []
+		if prompt:
+			options.append('--gui')
+		child = subprocess.Popen(['0launch', '--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
+		try:
+			self._selections = selections.Selections(qdom.parse(child.stdout))
+		finally:
+			if child.wait():
+				raise SafeException("0launch --get-selections failed (exit code %d)" % child.returncode)
+		return self._selections
 
 def depth(node):
 	root = node.ownerDocument.documentElement
