@@ -51,8 +51,8 @@ def do_build_internal(args):
 	# Check 0compile is new enough
 	min_version = parse_version(src_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
 	if min_version and min_version > parse_version(__main__.version):
-		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %	# XXX: testme
-				(root_iface.get_name(), src_impl.get_version(), format_version(min_version), __main__.version))
+		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
+				(src_iface.get_name(), src_impl.version, format_version(min_version), __main__.version))
 
 	# Create the patch
 	patch_file = join(buildenv.metadir, 'from-%s.patch' % src_impl.version)

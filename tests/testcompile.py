@@ -7,6 +7,7 @@ sys.path.insert(0, '..')
 import support
 
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
+local_bad_version = os.path.realpath(os.path.join(os.path.dirname(__file__), 'bad-version.xml'))
 local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml'))
 local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml'))
 
@@ -79,6 +80,11 @@ class TestCompile(unittest.TestCase):
 
 		run('0launch', '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')
 	
+	def testBadVersion(self):
+		compile('setup', local_bad_version, self.hello_dir, expect = 'Created directory')
+		os.chdir(self.hello_dir)
+		compile('build', expect = 'hello2-0.1 requires 0compile >= 300000')
+
 	def testCopySrc(self):
 		comp_dir = os.path.join(self.tmpdir, 'cprog')
 		compile('setup', local_cprog_path, comp_dir, expect = 'Created directory')
