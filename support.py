@@ -170,16 +170,15 @@ class BuildEnv:
 
 		return
 
-		#self.root_impl = self.selections.selections[self.interface]
-
-		self.iface_name = os.path.basename(self.interface)
-		if self.iface_name.endswith('.xml'):
-			self.iface_name = self.iface_name[:-4]
-		self.iface_name = self.iface_name.replace(' ', '-')
-		if self.iface_name.endswith('-src'):
-			self.iface_name = self.iface_name[:-4]
-
-		self.archive_stem = '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier or "")
+	@property
+	def iface_name(self):
+		iface_name = os.path.basename(self.interface)
+		if iface_name.endswith('.xml'):
+			iface_name = iface_name[:-4]
+		iface_name = iface_name.replace(' ', '-')
+		if iface_name.endswith('-src'):
+			iface_name = iface_name[:-4]
+		return iface_name
 
 	interface = property(lambda self: self.config.get('compile', 'interface'))
 
@@ -197,9 +196,7 @@ class BuildEnv:
 
 	@property
 	def local_iface_file(self):
-		leaf = os.path.basename(self.interface)
-		if not leaf.endswith('.xml'): leaf += '.xml'
-		return join(self.metadir, leaf)
+		return join(self.metadir, self.iface_name + '.xml')
 
 	@property
 	def target_arch(self):
@@ -212,6 +209,15 @@ class BuildEnv:
 		if self.user_srcdir:
 			return '-1'
 		return ''
+
+	@property
+	def archive_stem(self):
+		self.get_selections()
+		return '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier)
+
+	@property
+	def download_base_url(self):
+		return self.config.get('compile', 'download-base-url')
 	
 	def chosen_impl(self, uri):
 		sels = self.get_selections()
