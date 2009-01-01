@@ -56,38 +56,10 @@ def do_setup(args, get_dir_callback = None):
 		buildenv.get_selections()
 
 	if create_dir:
-		if os.path.exists(create_dir):
-			raise SafeException("Directory '%s' already exists." % create_dir)
 		os.mkdir(create_dir)
 		os.chdir(create_dir)
 		print "Created directory %s" % create_dir
 
 	buildenv.save()
-
-def save_environment(sels):
-	download_base = None
-	if os.path.exists(ENV_FILE):
-		# Don't lose existing download URL
-		download_base = BuildEnv().download_base_url
-
-	doc = sels.toDOM()
-	root = doc.documentElement
-
-	root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:compile', XMLNS_0COMPILE)
-
-	if download_base:
-		root.setAttributeNS(XMLNS_0COMPILE, 'compile:download-base-url', download_base)
-
-	impl = sels.selections[sels.interface]
-	command = impl.attrs.get(XMLNS_0COMPILE + ' command', None)
-	if not command: raise SafeException("Missing 'compile:command' attribute on <implementation>.")
-	root.setAttributeNS(XMLNS_0COMPILE, 'compile:command', command)
-
-	for name in ['binary-main', 'binary-lib-mappings', 'metadir', 'dup-src']:
-		value = impl.attrs.get(XMLNS_0COMPILE + ' ' + name, None)
-		if value:
-			root.setAttributeNS(XMLNS_0COMPILE, 'compile:' + name, value)
-
-	doc.writexml(file(ENV_FILE, 'w'), addindent = '  ', newl = '\n')
 
 __main__.commands.append(do_setup)

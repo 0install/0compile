@@ -8,6 +8,7 @@ sys.path.insert(0, '..')
 import support
 
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
+hello_selections = os.path.realpath(os.path.join(os.path.dirname(__file__), 'selections.xml'))
 local_bad_version = os.path.realpath(os.path.join(os.path.dirname(__file__), 'bad-version.xml'))
 local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml'))
 local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml'))
@@ -95,21 +96,26 @@ class TestCompile(unittest.TestCase):
 		compile('copy-src', 'foo', expect = 'usage')
 		compile('copy-src', expect = 'Copied as')
 		compile('copy-src', expect = "Directory '")
+
+		# 'src' exists, but no changes
 		compile('diff')
 		compile('build', expect = 'Hello from C')
 		target_dir = 'dist-%s' % support.get_arch_name().lower()
 		patch_file = os.path.join(target_dir, '0install/from-0.1.patch')
 		assert not os.path.exists(patch_file)
 
+		# 'src' contains a change
 		prog = file('src/main.c').read()
 		prog = prog.replace('Hello', 'Goodbye')
 		stream = file('src/main.c', 'w')
 		stream.write(prog)
 		stream.close()
 		compile('diff', expect = 'diff')
-
+		shutil.rmtree('build')
 		compile('build', expect = 'Goodbye from C')
 		assert os.path.exists(patch_file)
+
+		# 'src' does not exist
 		shutil.rmtree('src')
 		shutil.rmtree('build')
 		compile('build', expect = 'Hello from C')
@@ -120,6 +126,12 @@ class TestCompile(unittest.TestCase):
 		os.chdir(self.hello_dir)
 		compile('include-deps', expect = 'Copied 1 depend')
 		compile('include-deps', expect = 'Copied 0 depend')
+
+	def testSetup(self):
+		compile('setup', hello_selections, self.hello_dir,
+			expect = 'Created directory')
+		compile('setup', hello_selections, self.hello_dir,
+			expect = "Directory '")
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
