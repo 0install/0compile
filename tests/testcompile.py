@@ -2,6 +2,7 @@
 import sys, tempfile, os, shutil, tempfile, subprocess
 from StringIO import StringIO
 import unittest
+from zeroinstall.support import ro_rmtree
 
 sys.path.insert(0, '..')
 import support
@@ -42,7 +43,7 @@ class TestCompile(unittest.TestCase):
 		self.hello_dir = os.path.join(self.tmpdir, 'hello')
 	
 	def tearDown(self):
-		shutil.rmtree(self.tmpdir)
+		ro_rmtree(self.tmpdir)
 
 	def testBadCommand(self):
 		compile('foo', expect = 'usage: 0compile')
@@ -110,8 +111,15 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Goodbye from C')
 		assert os.path.exists(patch_file)
 		shutil.rmtree('src')
+		shutil.rmtree('build')
 		compile('build', expect = 'Hello from C')
 		assert not os.path.exists(patch_file)
+
+	def testInlcudeDeps(self):
+		compile('setup', hello_uri, self.hello_dir, expect = 'Created directory')
+		os.chdir(self.hello_dir)
+		compile('include-deps', expect = 'Copied 1 depend')
+		compile('include-deps', expect = 'Copied 0 depend')
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
