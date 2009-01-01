@@ -191,8 +191,20 @@ class BuildEnv:
 
 	@property
 	def archive_stem(self):
-		self.get_selections()
-		return '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier)
+		# Use the version that we actually built, not the version we would build now
+		feed = self.load_built_feed()
+		assert len(feed.implementations) == 1
+		version = feed.implementations.values()[0].get_version()
+		return '%s-%s-%s' % (self.iface_name.lower(), self.target_arch.lower(), version)
+
+	def load_built_feed(self):
+		path = self.local_iface_file
+		stream = file(path)
+		try:
+			feed = model.ZeroInstallFeed(qdom.parse(stream), local_path = path)
+		finally:
+			stream.close()
+		return feed
 
 	@property
 	def download_base_url(self):
@@ -203,7 +215,10 @@ class BuildEnv:
 		assert uri in sels.selections
 		return sels.selections[uri]
 
-	local_download_iface = property(lambda self: '%s-%s%s.xml' % (self.iface_name, self.root_impl.version, self.version_modifier or ""))
+	@property
+	def local_download_iface(self):
+		impl, = self.load_built_feed().implementations.values()
+		return '%s-%s.xml' % (self.iface_name, impl.get_version())
 
 	def save(self):
 		stream = file(ENV_FILE, 'w')
