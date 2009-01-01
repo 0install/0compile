@@ -21,6 +21,7 @@ class CompileBox(gtk.Dialog):
 	child = None
 
 	def __init__(self, interface):
+		assert interface
 		gtk.Dialog.__init__(self, _("Compile '%s'") % interface.split('/')[-1])	# No rsplit on Python 2.3
 		self.set_has_separator(False)
 		self.set_default_size(gtk.gdk.screen_width() / 2, gtk.gdk.screen_height() / 2)
@@ -114,14 +115,7 @@ class CompileBox(gtk.Dialog):
 				box.buffer.insert_at_cursor("Registering feed '%s'\n" % feed)
 				iface.extra_feeds.append(model.Feed(feed, arch = None, user_override = True))
 				writer.save_interface(iface)
-				print "\nFeed list for interface '%s' is now:" % iface.get_name()
-				if iface.feeds:
-					for f in iface.feeds:
-						print "- " + f.uri
-				else:
-					print "(no feeds)"
-
-				box.buffer.insert_at_cursor("You can now close this window.\n")
+				box.buffer.insert_at_cursor("Done. You can now close this window.\n")
 			elif resp == RESPONSE_PUBLISH:
 				buildenv = BuildEnv()
 				box = PublishBox(self, buildenv)

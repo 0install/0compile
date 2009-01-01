@@ -21,9 +21,8 @@ def do_gui(args):
 
 	try:
 		if len(args) == 0:
-			buildenv = BuildEnv()
+			pass
 		elif len(args) == 1:
-			buildenv = BuildEnv(need_config = False)
 			import setup
 			def get_dir_callback(default_dir):
 				compile_dir = gui_support.choose_dir(_('Create build directory'), default_dir)
@@ -34,6 +33,7 @@ def do_gui(args):
 		else:
 			raise __main__.UsageError()
 
+		buildenv = BuildEnv()
 		box = gui_support.CompileBox(buildenv.interface)
 		box.connect('destroy', lambda b: gtk.main_quit())
 		box.show()
