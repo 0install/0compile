@@ -33,8 +33,13 @@ def lookup(id):
 	except NotStored, ex:
 		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
 
-def ensure_dir(d):
-	if os.path.isdir(d): return
+def ensure_dir(d, clean = False):
+	if os.path.isdir(d):
+		if clean:
+			print "Removing", d
+			shutil.rmtree(d)
+		else:
+			return
 	if os.path.exists(d):
 		raise SafeException("'%s' exists, but is not a directory!" % d)
 	os.mkdir(d)

@@ -5,6 +5,7 @@ import sys, os, __main__, time, shutil, glob
 from os.path import join
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
+from optparse import OptionParser
 
 from support import *
 
@@ -20,31 +21,13 @@ class NoImpl:
 	version = "none"
 no_impl = NoImpl()
 
-def do_build_internal(args):
+def do_build_internal(options, args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
 	import getpass, socket, time
 
 	buildenv = BuildEnv()
 	sels = buildenv.get_selections()
-	old_sels = buildenv.load_built_selections()
-
-	if old_sels:
-		# See if things have changed since the last build
-		changed = False
-		all_ifaces = set(sels.selections) | set(old_sels.selections)
-		for x in all_ifaces:
-			old_impl = old_sels.selections.get(x, no_impl)
-			new_impl = sels.selections.get(x, no_impl)
-			if old_impl.version != new_impl.version:
-				print "Version change for %s: %s -> %s" % (x, old_impl.version, new_impl.version)
-				changed = True
-			elif old_impl.id != new_impl.id:
-				print "Version change for %s: %s -> %s" % (x, old_impl.id, new_impl.id)
-				changed = True
-		if changed:
-			print "Build dependencies have changed."
-			return 1
 
 	builddir = os.path.realpath('build')
 	ensure_dir(buildenv.metadir)
@@ -127,7 +110,7 @@ def do_build_internal(args):
 	elif dup_src_type:
 		raise Exception("Unknown dup-src value '%s'" % dup_src_type)
 
-	if args == ['--shell']:
+	if options.shell:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
 		command = src_impl.attrs[XMLNS_0COMPILE + ' command']
@@ -186,17 +169,50 @@ def do_build_internal(args):
 			log.close()
 
 def do_build(args):
-	"""build [ --nosandbox ] [ --shell ]"""
+	"""build [ --no-sandbox ] [ --shell | --force | --clean ]"""
 	buildenv = BuildEnv()
 	sels = buildenv.get_selections()
+	old_sels = buildenv.load_built_selections()
+
+	parser = OptionParser(usage="usage: %prog build [options]")
+
+	parser.add_option('', "--no-sandbox", help="disable use of sandboxing", action='store_true')
+	parser.add_option("-s", "--shell", help="run a shell instead of building", action='store_true')
+	parser.add_option("-c", "--clean", help="remove the build directories", action='store_true')
+	parser.add_option("-f", "--force", help="build even if dependencies have changed", action='store_true')
+
+	parser.disable_interspersed_args()
+
+	(options, args2) = parser.parse_args(args)
 
 	builddir = os.path.realpath('build')
 
-	ensure_dir(builddir)
-	ensure_dir(buildenv.distdir)
+	if old_sels:
+		# See if things have changed since the last build
+		changed = False
+		all_ifaces = set(sels.selections) | set(old_sels.selections)
+		for x in all_ifaces:
+			old_impl = old_sels.selections.get(x, no_impl)
+			new_impl = sels.selections.get(x, no_impl)
+			if old_impl.version != new_impl.version:
+				print "Version change for %s: %s -> %s" % (x, old_impl.version, new_impl.version)
+				changed = True
+			elif old_impl.id != new_impl.id:
+				print "Version change for %s: %s -> %s" % (x, old_impl.id, new_impl.id)
+				changed = True
+		if changed:
+			print "Build dependencies have changed!"
+			if not (options.force or options.clean):
+				print
+				print "To build anyway, use: 0compile build --force"
+				print "To do a clean build:  0compile build --clean"
+				return 1
 
-	if args[:1] == ['--nosandbox']:
-		return do_build_internal(args[1:])
+	ensure_dir(builddir, options.clean)
+	ensure_dir(buildenv.distdir, options.clean)
+
+	if options.no_sandbox:
+		return do_build_internal(options, args2)
 
 	tmpdir = tempfile.mkdtemp(prefix = '0compile-')
 	try:
@@ -214,7 +230,7 @@ def do_build(args):
 
 		readable.append('/etc')	# /etc/ld.*
 
-		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, [sys.argv[0]] + options + ['build', '--nosandbox'] + args)
+		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, [sys.argv[0]] + options + ['build', '--no-sandbox'] + args)
 	finally:
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
