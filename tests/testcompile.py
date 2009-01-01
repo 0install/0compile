@@ -65,7 +65,7 @@ class TestCompile(unittest.TestCase):
 
 		compile('build', expect = 'Executing: "$SRCDIR/configure"')
 
-		target_dir = 'dist-%s' % support.get_arch_name().lower()
+		target_dir = 'gnu-hello-%s' % support.get_arch_name().lower()
 		archive_stem = 'gnu-hello-%s-1.3' % support.get_arch_name().lower()
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
@@ -77,7 +77,7 @@ class TestCompile(unittest.TestCase):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
 		compile('build', expect = 'Executing: ls -l')
-		target_dir = 'dist-%s' % support.get_arch_name().lower()
+		target_dir = 'hello2-%s' % support.get_arch_name().lower()
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run('0launch', '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')
@@ -100,7 +100,7 @@ class TestCompile(unittest.TestCase):
 		# 'src' exists, but no changes
 		compile('diff')
 		compile('--verbose', 'build', expect = 'Hello from C')
-		target_dir = 'dist-%s' % support.get_arch_name().lower()
+		target_dir = 'cprog-%s' % support.get_arch_name().lower()
 		patch_file = os.path.join(target_dir, '0install/from-0.1.patch')
 		assert not os.path.exists(patch_file)
 

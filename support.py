@@ -163,7 +163,7 @@ class BuildEnv:
 
 	@property
 	def distdir(self):
-		distdir_name = 'dist-' + get_arch_name().lower()
+		distdir_name = '%s-%s' % (self.iface_name.lower(), get_arch_name().lower())
 		assert '/' not in distdir_name
 		return os.path.realpath(distdir_name)
 
