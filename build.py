@@ -182,9 +182,6 @@ def do_build(args):
 		writable = ['build', buildenv.distdir, tmpdir]
 		env('TMPDIR', tmpdir)
 
-		# Why did we need this?
-		#readable.append(get_cached_iface_path(buildenv.interface))
-
 		for selection in sels.selections.values():
 			readable.append(lookup(selection.id))
 

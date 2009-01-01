@@ -10,10 +10,7 @@ import ConfigParser
 from zeroinstall.injector import model, selections, qdom
 from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
 from zeroinstall.injector import namespaces, reader
-try:
-	from zeroinstall.injector import basedir
-except ImportError:
-	from zeroinstall.support import basedir
+from zeroinstall.support import basedir
 
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
@@ -35,18 +32,6 @@ def lookup(id):
 		return iface_cache.stores.lookup(id)
 	except NotStored, ex:
 		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
-
-# No longer used
-def get_cached_iface_path(uri):
-	if uri.startswith('/'):
-		if not os.path.isfile(uri):
-			raise SafeException("Local source interface '%s' does not exist!" % uri)
-		return uri
-	else:
-		path = basedir.load_first_cache(namespaces.config_site, 'interfaces', escape(uri))
-		if path and os.path.isfile(path):
-			return path
-		raise SafeException("Interface '%s' not found in cache. Hint: try '0compile setup'" % uri)
 
 def ensure_dir(d):
 	if os.path.isdir(d): return
@@ -80,12 +65,6 @@ def wait_for_child(child):
 			raise SafeException('Command failed with exit status %d' % exit_code)
 	else:
 		raise SafeException('Command failed with signal %d' % WTERMSIG(status))
-
-def children(parent, uri, name):
-	"""Yield all direct children with the given name."""
-	for x in parent.childNodes:
-		if x.nodeType == Node.ELEMENT_NODE and x.namespaceURI == uri and x.localName == name:
-			yield x
 
 def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	child = os.fork()
@@ -290,16 +269,10 @@ def depth(node):
 		depth += 1
 	return depth
 
-if hasattr(model, 'format_version'):
-	format_version = model.format_version
-	parse_version = model.parse_version
-else:
-	def format_version(v):
-		return '.'.join(v)
-	parse_version = reader.parse_version
+format_version = model.format_version
+parse_version = model.parse_version
 
 def parse_bool(s):
 	if s == 'true': return True
 	if s == 'false': return False
 	raise SafeException('Expected "true" or "false" but got "%s"' % s)
-

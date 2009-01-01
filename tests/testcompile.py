@@ -147,6 +147,8 @@ class TestCompile(unittest.TestCase):
 			expect = "Directory '")
 		compile('setup', hello_selections, '.', 'foo',
 			expect = "usage")
+		os.chdir(self.hello_dir)
+		compile('setup', expect = "Selections are fixed")
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
