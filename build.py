@@ -5,6 +5,7 @@ import sys, os, __main__, time, shutil, glob
 from os.path import join
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
+from optparse import OptionParser
 
 from support import *
 
@@ -15,19 +16,25 @@ def env(name, value):
 def do_env_binding(binding, path):
 	env(binding.name, binding.get_value(path, os.environ.get(binding.name, None)))
 
-def do_build_internal(args):
+class NoImpl:
+	id = "none"
+	version = "none"
+no_impl = NoImpl()
+
+def do_build_internal(options, args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
 	import getpass, socket, time
 
 	buildenv = BuildEnv()
+	sels = buildenv.get_selections()
 
 	builddir = os.path.realpath('build')
 	ensure_dir(buildenv.metadir)
 
 	build_env_xml = join(buildenv.metadir, 'build-environment.xml')
 
-	buildenv_doc = buildenv.selections.toDOM()
+	buildenv_doc = buildenv.get_selections().toDOM()
 
 	# Create build-environment.xml file
 	root = buildenv_doc.documentElement
@@ -47,9 +54,14 @@ def do_build_internal(args):
 	src_impl = buildenv.chosen_impl(buildenv.interface)
 	write_sample_interface(buildenv, src_iface, src_impl)
 
+	# Check 0compile is new enough
+	min_version = parse_version(src_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
+	if min_version and min_version > parse_version(__main__.version):
+		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
+				(src_iface.get_name(), src_impl.version, format_version(min_version), __main__.version))
+
 	# Create the patch
-	orig_impl = buildenv.chosen_impl(buildenv.interface)
-	patch_file = join(buildenv.metadir, 'from-%s.patch' % orig_impl.version)
+	patch_file = join(buildenv.metadir, 'from-%s.patch' % src_impl.version)
 	if buildenv.user_srcdir:
 		# (ignore errors; will already be shown on stderr)
 		os.system("diff -urN '%s' src > %s" %
@@ -66,18 +78,18 @@ def do_build_internal(args):
 	os.chdir(builddir)
 	print "cd", builddir
 
-	for needed_iface in buildenv.selections.selections:
+	for needed_iface in sels.selections:
 		impl = buildenv.chosen_impl(needed_iface)
 		assert impl
 		for dep in impl.dependencies:
-			dep_iface = buildenv.selections.selections[dep.interface]
+			dep_iface = sels.selections[dep.interface]
 			for b in dep.bindings:
 				if isinstance(b, EnvironmentBinding):
 					dep_impl = buildenv.chosen_impl(dep.interface)
 					do_env_binding(b, lookup(dep_impl.id))
 
 	mappings = []
-	for impl in buildenv.selections.selections.values():
+	for impl in sels.selections.values():
 		new_mappings = impl.attrs.get(XMLNS_0COMPILE + ' lib-mappings', '')
 		if new_mappings:
 			new_mappings = new_mappings.split(' ')
@@ -92,16 +104,16 @@ def do_build_internal(args):
 
 	# Some programs want to put temporary build files in the source directory.
 	# Make a copy of the source if needed.
-	dup_src_type = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' dup-src')
+	dup_src_type = src_impl.attrs.get(XMLNS_0COMPILE + ' dup-src', None)
 	if dup_src_type == 'true':
 		dup_src(shutil.copyfile)
 	elif dup_src_type:
 		raise Exception("Unknown dup-src value '%s'" % dup_src_type)
 
-	if args == ['--shell']:
+	if options.shell:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
-		command = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' command')
+		command = src_impl.attrs[XMLNS_0COMPILE + ' command']
 
 		# Remove any existing log files
 		for log in ['build.log', 'build-success.log', 'build-failure.log']:
@@ -157,16 +169,50 @@ def do_build_internal(args):
 			log.close()
 
 def do_build(args):
-	"""build [ --nosandbox ] [ --shell ]"""
+	"""build [ --no-sandbox ] [ --shell | --force | --clean ]"""
 	buildenv = BuildEnv()
+	sels = buildenv.get_selections()
+	old_sels = buildenv.load_built_selections()
+
+	parser = OptionParser(usage="usage: %prog build [options]")
+
+	parser.add_option('', "--no-sandbox", help="disable use of sandboxing", action='store_true')
+	parser.add_option("-s", "--shell", help="run a shell instead of building", action='store_true')
+	parser.add_option("-c", "--clean", help="remove the build directories", action='store_true')
+	parser.add_option("-f", "--force", help="build even if dependencies have changed", action='store_true')
+
+	parser.disable_interspersed_args()
+
+	(options, args2) = parser.parse_args(args)
 
 	builddir = os.path.realpath('build')
 
-	ensure_dir(builddir)
-	ensure_dir(buildenv.distdir)
+	if old_sels:
+		# See if things have changed since the last build
+		changed = False
+		all_ifaces = set(sels.selections) | set(old_sels.selections)
+		for x in all_ifaces:
+			old_impl = old_sels.selections.get(x, no_impl)
+			new_impl = sels.selections.get(x, no_impl)
+			if old_impl.version != new_impl.version:
+				print "Version change for %s: %s -> %s" % (x, old_impl.version, new_impl.version)
+				changed = True
+			elif old_impl.id != new_impl.id:
+				print "Version change for %s: %s -> %s" % (x, old_impl.id, new_impl.id)
+				changed = True
+		if changed:
+			print "Build dependencies have changed!"
+			if not (options.force or options.clean):
+				print
+				print "To build anyway, use: 0compile build --force"
+				print "To do a clean build:  0compile build --clean"
+				return 1
 
-	if args[:1] == ['--nosandbox']:
-		return do_build_internal(args[1:])
+	ensure_dir(builddir, options.clean)
+	ensure_dir(buildenv.distdir, options.clean)
+
+	if options.no_sandbox:
+		return do_build_internal(options, args2)
 
 	tmpdir = tempfile.mkdtemp(prefix = '0compile-')
 	try:
@@ -175,10 +221,7 @@ def do_build(args):
 		writable = ['build', buildenv.distdir, tmpdir]
 		env('TMPDIR', tmpdir)
 
-		# Why did we need this?
-		#readable.append(get_cached_iface_path(buildenv.interface))
-
-		for selection in buildenv.selections.selections.values():
+		for selection in sels.selections.values():
 			readable.append(lookup(selection.id))
 
 		options = []
@@ -187,7 +230,7 @@ def do_build(args):
 
 		readable.append('/etc')	# /etc/ld.*
 
-		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, [sys.argv[0]] + options + ['build', '--nosandbox'] + args)
+		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, [sys.argv[0]] + options + ['build', '--no-sandbox'] + args)
 	finally:
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
@@ -232,11 +275,11 @@ def write_sample_interface(buildenv, iface, src_impl):
 	feed_for.setAttributeNS(None, 'interface', uri)
 
 	group = addSimple(root, 'group')
-	main = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-main')
+	main = src_impl.attrs.get(XMLNS_0COMPILE + ' binary-main', None)
 	if main:
 		group.setAttributeNS(None, 'main', main)
 
-	lib_mappings = buildenv.doc.getAttribute(XMLNS_0COMPILE + ' binary-lib-mappings')
+	lib_mappings = src_impl.attrs.get(XMLNS_0COMPILE + ' binary-lib-mappings', None)
 	if lib_mappings:
 		root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:compile', XMLNS_0COMPILE)
 		group.setAttributeNS(XMLNS_0COMPILE, 'compile:lib-mappings', lib_mappings)
@@ -262,8 +305,9 @@ def write_sample_interface(buildenv, iface, src_impl):
 	impl_elem = addSimple(group, 'implementation')
 	impl_elem.setAttributeNS(None, 'version', src_impl.version)
 
-	if buildenv.version_modifier:
-		impl_elem.setAttributeNS(None, 'version-modifier', buildenv.version_modifier)
+	version_modifier = buildenv.version_modifier
+	if version_modifier:
+		impl_elem.setAttributeNS(None, 'version-modifier', version_modifier)
 
 	impl_elem.setAttributeNS(None, 'id', '..')
 	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))

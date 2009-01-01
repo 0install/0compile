@@ -11,40 +11,30 @@ from support import *
 
 def do_gui(args):
 	"gui [--no-prompt] [SOURCE-URI]"
-	prompt = True
 	if args and args[0] == '--no-prompt':
 		del args[0]
-		prompt = False
+		# This option no longer has any effect, since it is the default.
+		# However, 0launch's GUI passes it.
 
 	import gui_support
 	import gtk
 
-	if len(args) == 0:
-		env = BuildEnv()
-		interface = env.interface
-		build_dir = None
-		prompt = False
-	elif len(args) == 1:
-		interface = args[0]
-		default_dir = os.path.basename(interface)
-		if default_dir.endswith('.xml'):
-			default_dir = default_dir[:-4]
-		assert '/' not in default_dir
-
-		interface = model.canonical_iface_uri(args[0])
-
-		build_dir = gui_support.choose_dir(_('Create build directory'), default_dir)
-		if not build_dir: return
-	else:
-		raise __main__.UsageError()
-
 	try:
-		import setup
-		setup.setup(interface, build_dir, prompt)
-		if build_dir:
-			os.chdir(build_dir)
+		if len(args) == 0:
+			buildenv = BuildEnv()
+		elif len(args) == 1:
+			buildenv = BuildEnv(need_config = False)
+			import setup
+			def get_dir_callback(default_dir):
+				compile_dir = gui_support.choose_dir(_('Create build directory'), default_dir)
+				if compile_dir:
+					return compile_dir
+				raise SafeException("Cancelled at user's request")
+			setup.do_setup(args, get_dir_callback)
+		else:
+			raise __main__.UsageError()
 
-		box = gui_support.CompileBox(interface)
+		box = gui_support.CompileBox(buildenv.interface)
 		box.connect('destroy', lambda b: gtk.main_quit())
 		box.show()
 

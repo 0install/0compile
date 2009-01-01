@@ -2,23 +2,22 @@
 # See http://0install.net/0compile.html
 
 import os, sys, tempfile, shutil, traceback
+import subprocess
 from os.path import join
 from logging import info
+import ConfigParser
 
 from zeroinstall.injector import model, selections, qdom
 from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
 from zeroinstall.injector import namespaces, reader
-try:
-	from zeroinstall.injector import basedir
-except ImportError:
-	from zeroinstall.support import basedir
+from zeroinstall.support import basedir
 
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
 from zeroinstall.injector import run
 from zeroinstall.zerostore import Stores, Store, NotStored
 
-ENV_FILE = '0compile-env.xml'
+ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
 if os.path.isdir('dependencies'):
@@ -34,20 +33,13 @@ def lookup(id):
 	except NotStored, ex:
 		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
 
-# No longer used
-def get_cached_iface_path(uri):
-	if uri.startswith('/'):
-		if not os.path.isfile(uri):
-			raise SafeException("Local source interface '%s' does not exist!" % uri)
-		return uri
-	else:
-		path = basedir.load_first_cache(namespaces.config_site, 'interfaces', escape(uri))
-		if path and os.path.isfile(path):
-			return path
-		raise SafeException("Interface '%s' not found in cache. Hint: try '0compile setup'" % uri)
-
-def ensure_dir(d):
-	if os.path.isdir(d): return
+def ensure_dir(d, clean = False):
+	if os.path.isdir(d):
+		if clean:
+			print "Removing", d
+			shutil.rmtree(d)
+		else:
+			return
 	if os.path.exists(d):
 		raise SafeException("'%s' exists, but is not a directory!" % d)
 	os.mkdir(d)
@@ -78,12 +70,6 @@ def wait_for_child(child):
 			raise SafeException('Command failed with exit status %d' % exit_code)
 	else:
 		raise SafeException('Command failed with signal %d' % WTERMSIG(status))
-
-def children(parent, uri, name):
-	"""Yield all direct children with the given name."""
-	for x in parent.childNodes:
-		if x.nodeType == Node.ELEMENT_NODE and x.namespaceURI == uri and x.localName == name:
-			yield x
 
 def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	child = os.fork()
@@ -145,27 +131,148 @@ def get_arch_name():
 		target_machine = 'i486'	# (sensible default)
 	return target_os + '-' + target_machine
 
-class BuildEnv(object):
-	__slots__ = ['doc', 'selections', 'root_impl', 'orig_srcdir', 'user_srcdir', 'version_modifier',
-		     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
-		     'target_arch', 'archive_stem']
-
-	interface = property(lambda self: self.selections.interface)
-
-	def __init__(self):
-		if not os.path.isfile(ENV_FILE):
+class BuildEnv:
+	def __init__(self, need_config = True):
+		if need_config and not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
-		self.doc = qdom.parse(file(ENV_FILE))
-		if self.doc.name == 'build-environment':
-			raise SafeException(("Sorry, this %s file is in an old format that is no longer supported. "
-					     "Please delete it and try again.") % os.path.abspath(ENV_FILE))
-		self.selections = selections.Selections(self.doc)
 
-		self.download_base_url = self.doc.getAttribute(XMLNS_0COMPILE + ' download-base-url')
+		self.config = ConfigParser.RawConfigParser()
+		self.config.add_section('compile')
+		self.config.set('compile', 'download-base-url', '')
+		self.config.set('compile', 'version-modifier', '')
+		self.config.set('compile', 'interface', '')
+		self.config.set('compile', 'selections', '')
+		self.config.set('compile', 'metadir', '0install')
 
-		self.version_modifier = self.doc.getAttribute(XMLNS_0COMPILE + ' version-modifier')
+		self.config.read(ENV_FILE)
 
-		self.root_impl = self.selections.selections[self.interface]
+		self._selections = None
+
+		return
+
+	@property
+	def iface_name(self):
+		iface_name = os.path.basename(self.interface)
+		if iface_name.endswith('.xml'):
+			iface_name = iface_name[:-4]
+		iface_name = iface_name.replace(' ', '-')
+		if iface_name.endswith('-src'):
+			iface_name = iface_name[:-4]
+		return iface_name
+
+	interface = property(lambda self: self.config.get('compile', 'interface'))
+
+	@property
+	def distdir(self):
+		distdir_name = '%s-%s' % (self.iface_name.lower(), get_arch_name().lower())
+		assert '/' not in distdir_name
+		return os.path.realpath(distdir_name)
+
+	@property
+	def metadir(self):
+		metadir = self.config.get('compile', 'metadir')
+		assert not metadir.startswith('/')
+		return join(self.distdir, metadir)
+
+	@property
+	def local_iface_file(self):
+		return join(self.metadir, self.iface_name + '.xml')
+
+	@property
+	def target_arch(self):
+		return get_arch_name()
+
+	@property
+	def version_modifier(self):
+		vm = self.config.get('compile', 'version-modifier')
+		if vm: return vm
+		if self.user_srcdir:
+			return '-1'
+		return ''
+
+	@property
+	def archive_stem(self):
+		# Use the version that we actually built, not the version we would build now
+		feed = self.load_built_feed()
+		assert len(feed.implementations) == 1
+		version = feed.implementations.values()[0].get_version()
+		return '%s-%s-%s' % (self.iface_name.lower(), self.target_arch.lower(), version)
+
+	def load_built_feed(self):
+		path = self.local_iface_file
+		stream = file(path)
+		try:
+			feed = model.ZeroInstallFeed(qdom.parse(stream), local_path = path)
+		finally:
+			stream.close()
+		return feed
+
+	def load_built_selections(self):
+		path = join(self.metadir, 'build-environment.xml')
+		if os.path.exists(path):
+			stream = file(path)
+			try:
+				return selections.Selections(qdom.parse(stream))
+			finally:
+				stream.close()
+		return None
+
+	@property
+	def download_base_url(self):
+		return self.config.get('compile', 'download-base-url')
+	
+	def chosen_impl(self, uri):
+		sels = self.get_selections()
+		assert uri in sels.selections
+		return sels.selections[uri]
+
+	@property
+	def local_download_iface(self):
+		impl, = self.load_built_feed().implementations.values()
+		return '%s-%s.xml' % (self.iface_name, impl.get_version())
+
+	def save(self):
+		stream = file(ENV_FILE, 'w')
+		try:
+			self.config.write(stream)
+		finally:
+			stream.close()
+
+	def get_selections(self, prompt = False):
+		if self._selections:
+			assert not prompt
+			return self._selections
+
+		selections_file = self.config.get('compile', 'selections')
+		if selections_file:
+			if prompt:
+				raise SafeException("Selections are fixed by %s" % selections_file)
+			stream = file(selections_file)
+			try:
+				self._selections = selections.Selections(qdom.parse(stream))
+			finally:
+				stream.close()
+			from zeroinstall.injector import fetch
+			from zeroinstall.injector.handler import Handler
+			handler = Handler()
+			fetcher = fetch.Fetcher(handler)
+			blocker = self._selections.download_missing(iface_cache, fetcher)
+			if blocker:
+				print "Waiting for selected implementations to be downloaded..."
+				handler.wait_for_blocker(blocker)
+		else:
+			options = []
+			if prompt:
+				options.append('--gui')
+			child = subprocess.Popen(['0launch', '--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
+			try:
+				self._selections = selections.Selections(qdom.parse(child.stdout))
+			finally:
+				if child.wait():
+					raise SafeException("0launch --get-selections failed (exit code %d)" % child.returncode)
+
+		self.root_impl = self._selections.selections[self.interface]
+
 		self.orig_srcdir = os.path.realpath(lookup(self.root_impl.id))
 		self.user_srcdir = None
 
@@ -177,37 +284,8 @@ class BuildEnv(object):
 				info("Ignoring 'src' directory because it coincides with %s",
 					self.orig_srcdir)
 				self.user_srcdir = None
-			else:
-				if not self.version_modifier:
-					self.version_modifier = '-1'
 
-		self.target_arch = get_arch_name()
-
-		self.iface_name = os.path.basename(self.interface)
-		if self.iface_name.endswith('.xml'):
-			self.iface_name = self.iface_name[:-4]
-		self.iface_name = self.iface_name.replace(' ', '-')
-		if self.iface_name.endswith('-src'):
-			self.iface_name = self.iface_name[:-4]
-
-		self.archive_stem = '%s-%s-%s%s' % (self.iface_name.lower(), self.target_arch.lower(), self.root_impl.version, self.version_modifier or "")
-
-		distdir_name = 'dist-' + get_arch_name().lower()
-		assert '/' not in distdir_name
-		self.distdir = os.path.realpath(distdir_name)
-
-		metadir = self.doc.getAttribute(XMLNS_0COMPILE + ' metadir')
-		if metadir is None:
-			metadir = '0install'
-		assert not metadir.startswith('/')
-		self.metadir = join(self.distdir, metadir)
-		self.local_iface_file = join(self.metadir, '%s.xml' % self.iface_name)
-	
-	def chosen_impl(self, uri):
-		assert uri in self.selections.selections
-		return self.selections.selections[uri]
-
-	local_download_iface = property(lambda self: '%s-%s%s.xml' % (self.iface_name, self.root_impl.version, self.version_modifier or ""))
+		return self._selections
 
 def depth(node):
 	root = node.ownerDocument.documentElement
@@ -217,16 +295,10 @@ def depth(node):
 		depth += 1
 	return depth
 
-if hasattr(model, 'format_version'):
-	format_version = model.format_version
-	parse_version = model.parse_version
-else:
-	def format_version(v):
-		return '.'.join(v)
-	parse_version = reader.parse_version
+format_version = model.format_version
+parse_version = model.parse_version
 
 def parse_bool(s):
 	if s == 'true': return True
 	if s == 'false': return False
 	raise SafeException('Expected "true" or "false" but got "%s"' % s)
-

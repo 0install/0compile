@@ -16,7 +16,8 @@ def do_include_deps(args):
 
 	dirs_to_copy = []
 
-	for needed_iface in buildenv.interfaces:
+	sels = buildenv.get_selections()
+	for needed_iface in sels.selections:
 		impl = buildenv.chosen_impl(needed_iface)
 		assert impl
 		if impl.id.startswith('/'):

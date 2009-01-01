@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" xmlns:compile="http://zero-install.sourceforge.net/2006/namespaces/0compile">
+  <name>hello2</name>
+  <summary>testing</summary>
+  <description>
+    Test compiling a program with a minimum required version of 0compile.
+  </description>
+
+  <group arch="*-src">
+    <implementation id="." compile:min-version='300000' version="0.1" compile:binary-main='hello2' compile:command='ls -l "$ROXLIB" &amp;&amp; cp "$SRCDIR/hello2" "$DISTDIR"'/>
+  </group>
+</interface>

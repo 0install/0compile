@@ -14,10 +14,8 @@ def do_publish(args):
 		if not buildenv.download_base_url:
 			raise SafeException("No download base set. Give the URL for a remote directory.")
 	elif len(args) == 1:
-		buildenv.download_base_url = args[0]
-		doc = minidom.parse(file(ENV_FILE))
-		doc.documentElement.setAttributeNS(XMLNS_0COMPILE, 'compile:download-base-url', args[0])
-		doc.writexml(file(ENV_FILE, 'w'))
+		buildenv.config.set('compile', 'download-base-url', args[0])
+		buildenv.save()
 
 	info("Using download base URL: %s", buildenv.download_base_url)
 
