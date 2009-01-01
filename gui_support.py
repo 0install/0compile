@@ -65,18 +65,6 @@ class CompileBox(gtk.Dialog):
 				import setup
 				def done_setup():
 					buildenv = BuildEnv()
-					to_delete = [x for x in ['build', buildenv.distdir] if os.path.isdir(x)]
-					if not to_delete:
-						pass
-					elif confirm(self, ("After changing source versions, it's a "
-						"good idea to delete the existing build files (%s). Delete existing directories?") %
-						' and '.join(['"%s"' % d for d in to_delete]), gtk.STOCK_CLEAR):
-						def done_clean():
-							self.add_msg('Now use Build to compile the chosen source code.')
-						self.run_command([find_in_path('rm'), '-rf'] + to_delete, done_clean)
-						return
-					else:
-						self.add_msg('Not cleaning up existing build files.')
 					self.add_msg('Now use Build to compile the chosen source code.')
 				self.run_command((sys.executable, main_path, 'setup'), done_setup)
 			elif resp == RESPONSE_BUILD:
@@ -105,7 +93,14 @@ class CompileBox(gtk.Dialog):
 								"list if you want to discuss the problem)")
 						self.run_command((sys.executable, main_path, 'report-bug'), done_notify)
 					button.connect('clicked', report_bug)
-				box.run_command((sys.executable, main_path, 'build'), done_build, build_failed)
+				buildenv = BuildEnv()
+				changes = buildenv.get_build_changes()
+				if changes:
+					options = get_build_options(box, '\n'.join(changes) + '\n\nIt would be best to do a clean (full) build.')
+				else:
+					options = []
+				if options is not None:
+					box.run_command([sys.executable, main_path, 'build'] + options, done_build, build_failed)
 			elif resp == RESPONSE_REGISTER:
 				buildenv = BuildEnv()
 
@@ -301,27 +296,30 @@ class ButtonMixed(gtk.Button):
 		align.add(box)
 		align.show_all()
 
-def confirm(parent, message, stock_icon, action = None):
-	"""Display a <Cancel>/<Action> dialog. Result is true if the user
-	chooses the action, false otherwise. If action is given then that
-	is used as the text instead of the default for the stock item. Eg:
-	if rox.confirm('Really delete everything?', gtk.STOCK_DELETE): delete()
-	"""
+def get_build_options(parent, message):
 	box = gtk.MessageDialog(parent, 0, gtk.MESSAGE_QUESTION,
 				gtk.BUTTONS_CANCEL, message)
-	if action:
-		button = ButtonMixed(stock_icon, action)
-	else:
-		button = gtk.Button(stock = stock_icon)
+
+	button = ButtonMixed(gtk.STOCK_GO_FORWARD, 'Force')
+	button.show()
+	box.add_action_widget(button, 2)
+
+	button = ButtonMixed(gtk.STOCK_CLEAR, 'Clean')
 	button.set_flags(gtk.CAN_DEFAULT)
 	button.show()
-	box.add_action_widget(button, gtk.RESPONSE_OK)
+	box.add_action_widget(button, 1)
+
 	box.set_position(gtk.WIN_POS_CENTER)
 	box.set_title(_('Confirm:'))
-	box.set_default_response(gtk.RESPONSE_OK)
+	box.set_default_response(1)
 	resp = box.run()
 	box.destroy()
-	return resp == int(gtk.RESPONSE_OK)
+
+	if resp == 1:
+		return ['--clean']
+	elif resp == 2:
+		return ['--force']
+	return None
 
 class PublishBox(gtk.MessageDialog):
 	def __init__(self, parent, buildenv):
