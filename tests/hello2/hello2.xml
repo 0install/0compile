@@ -6,8 +6,9 @@
   <description>
     Test compiling a program with a runtime dependency.
   </description>
+  <feed-for interface='http://localhost/hello2.xml'/>
 
-  <group arch="*-src">
+  <group arch="*-src" compile:binary-lib-mappings='foo:2'>
     <requires compile:include-binary='true' interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
       <environment insert="ROX-Lib2/python" name="ROXLIB"/>
     </requires>

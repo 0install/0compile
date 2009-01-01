@@ -99,7 +99,7 @@ class TestCompile(unittest.TestCase):
 
 		# 'src' exists, but no changes
 		compile('diff')
-		compile('build', expect = 'Hello from C')
+		compile('--verbose', 'build', expect = 'Hello from C')
 		target_dir = 'dist-%s' % support.get_arch_name().lower()
 		patch_file = os.path.join(target_dir, '0install/from-0.1.patch')
 		assert not os.path.exists(patch_file)
@@ -115,6 +115,17 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Goodbye from C')
 		assert os.path.exists(patch_file)
 
+		# Test dup-src's unlinking while we're here
+		compile('build', expect = 'Goodbye from C')
+
+		# 'src' contains an error
+		stream = file('src/main.c', 'w')
+		stream.write('this is not valid C!')
+		stream.close()
+		shutil.rmtree('build')
+		compile('build', expect = 'Build failed')
+		assert os.path.exists('build/build-failure.log')
+
 		# 'src' does not exist
 		shutil.rmtree('src')
 		shutil.rmtree('build')
@@ -124,6 +135,8 @@ class TestCompile(unittest.TestCase):
 	def testInlcudeDeps(self):
 		compile('setup', hello_uri, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
+		os.unlink('0compile.properties')
+		compile('setup', hello_uri, '.')
 		compile('include-deps', expect = 'Copied 1 depend')
 		compile('include-deps', expect = 'Copied 0 depend')
 
@@ -132,6 +145,8 @@ class TestCompile(unittest.TestCase):
 			expect = 'Created directory')
 		compile('setup', hello_selections, self.hello_dir,
 			expect = "Directory '")
+		compile('setup', hello_selections, '.', 'foo',
+			expect = "usage")
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
