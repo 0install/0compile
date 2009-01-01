@@ -127,10 +127,6 @@ def get_arch_name():
 	return target_os + '-' + target_machine
 
 class BuildEnv:
-	#__slots__ = ['doc', 'selections', 'root_impl', 'orig_srcdir', 'user_srcdir', 'version_modifier',
-	#	     'download_base_url', 'distdir', 'metadir', 'local_iface_file', 'iface_name',
-	#	     'target_arch', 'archive_stem', 'config']
-
 	def __init__(self, need_config = True):
 		if need_config and not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
@@ -205,6 +201,16 @@ class BuildEnv:
 		finally:
 			stream.close()
 		return feed
+
+	def load_built_selections(self):
+		path = join(self.metadir, 'build-environment.xml')
+		if os.path.exists(path):
+			stream = file(path)
+			try:
+				return selections.Selections(qdom.parse(stream))
+			finally:
+				stream.close()
+		return None
 
 	@property
 	def download_base_url(self):

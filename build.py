@@ -15,6 +15,11 @@ def env(name, value):
 def do_env_binding(binding, path):
 	env(binding.name, binding.get_value(path, os.environ.get(binding.name, None)))
 
+class NoImpl:
+	id = "none"
+	version = "none"
+no_impl = NoImpl()
+
 def do_build_internal(args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
@@ -22,6 +27,24 @@ def do_build_internal(args):
 
 	buildenv = BuildEnv()
 	sels = buildenv.get_selections()
+	old_sels = buildenv.load_built_selections()
+
+	if old_sels:
+		# See if things have changed since the last build
+		changed = False
+		all_ifaces = set(sels.selections) | set(old_sels.selections)
+		for x in all_ifaces:
+			old_impl = old_sels.selections.get(x, no_impl)
+			new_impl = sels.selections.get(x, no_impl)
+			if old_impl.version != new_impl.version:
+				print "Version change for %s: %s -> %s" % (x, old_impl.version, new_impl.version)
+				changed = True
+			elif old_impl.id != new_impl.id:
+				print "Version change for %s: %s -> %s" % (x, old_impl.id, new_impl.id)
+				changed = True
+		if changed:
+			print "Build dependencies have changed."
+			return 1
 
 	builddir = os.path.realpath('build')
 	ensure_dir(buildenv.metadir)
