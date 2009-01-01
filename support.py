@@ -23,6 +23,11 @@ XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 if os.path.isdir('dependencies'):
 	iface_cache.stores.stores.append(Store(os.path.realpath('dependencies')))
 
+class NoImpl:
+	id = "none"
+	version = "none"
+no_impl = NoImpl()
+
 def lookup(id):
 	if id.startswith('/'):
 		if os.path.isdir(id):
@@ -286,6 +291,22 @@ class BuildEnv:
 				self.user_srcdir = None
 
 		return self._selections
+
+	def get_build_changes(self):
+		sels = self.get_selections()
+		old_sels = self.load_built_selections()
+		changes = []
+		if old_sels:
+			# See if things have changed since the last build
+			all_ifaces = set(sels.selections) | set(old_sels.selections)
+			for x in all_ifaces:
+				old_impl = old_sels.selections.get(x, no_impl)
+				new_impl = sels.selections.get(x, no_impl)
+				if old_impl.version != new_impl.version:
+					changes.append("Version change for %s: %s -> %s" % (x, old_impl.version, new_impl.version))
+				elif old_impl.id != new_impl.id:
+					changes.append("Version change for %s: %s -> %s" % (x, old_impl.id, new_impl.id))
+		return changes
 
 def depth(node):
 	root = node.ownerDocument.documentElement

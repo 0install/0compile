@@ -16,11 +16,6 @@ def env(name, value):
 def do_env_binding(binding, path):
 	env(binding.name, binding.get_value(path, os.environ.get(binding.name, None)))
 
-class NoImpl:
-	id = "none"
-	version = "none"
-no_impl = NoImpl()
-
 def do_build_internal(options, args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
@@ -172,7 +167,6 @@ def do_build(args):
 	"""build [ --no-sandbox ] [ --shell | --force | --clean ]"""
 	buildenv = BuildEnv()
 	sels = buildenv.get_selections()
-	old_sels = buildenv.load_built_selections()
 
 	parser = OptionParser(usage="usage: %prog build [options]")
 
@@ -187,26 +181,15 @@ def do_build(args):
 
 	builddir = os.path.realpath('build')
 
-	if old_sels:
-		# See if things have changed since the last build
-		changed = False
-		all_ifaces = set(sels.selections) | set(old_sels.selections)
-		for x in all_ifaces:
-			old_impl = old_sels.selections.get(x, no_impl)
-			new_impl = sels.selections.get(x, no_impl)
-			if old_impl.version != new_impl.version:
-				print "Version change for %s: %s -> %s" % (x, old_impl.version, new_impl.version)
-				changed = True
-			elif old_impl.id != new_impl.id:
-				print "Version change for %s: %s -> %s" % (x, old_impl.id, new_impl.id)
-				changed = True
-		if changed:
-			print "Build dependencies have changed!"
-			if not (options.force or options.clean):
-				print
-				print "To build anyway, use: 0compile build --force"
-				print "To do a clean build:  0compile build --clean"
-				return 1
+	changes = buildenv.get_build_changes()
+	if changes:
+		if not (options.force or options.clean):
+			raise SafeException("Build dependencies have changed:\n" +
+					'\n'.join(changes) + "\n\n" +
+					"To build anyway, use: 0compile build --force\n" +
+					"To do a clean build:  0compile build --clean")
+		if not options.no_sandbox:
+			print "Build dependencies have changed:\n" + '\n'.join(changes)
 
 	ensure_dir(builddir, options.clean)
 	ensure_dir(buildenv.distdir, options.clean)
