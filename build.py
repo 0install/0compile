@@ -101,7 +101,8 @@ def do_build_internal(options, args):
 	# Make a copy of the source if needed.
 	dup_src_type = src_impl.attrs.get(XMLNS_0COMPILE + ' dup-src', None)
 	if dup_src_type == 'true':
-		dup_src(shutil.copyfile)
+		dup_src(shutil.copy2)
+		env('SRCDIR', builddir)
 	elif dup_src_type:
 		raise Exception("Unknown dup-src value '%s'" % dup_src_type)
 
