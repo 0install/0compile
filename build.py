@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, time, shutil, glob
+import sys, os, __main__, time, shutil, glob, codecs
 from os.path import join
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
@@ -298,7 +298,11 @@ def write_sample_interface(buildenv, iface, src_impl):
 	close(group)
 	close(root)
 
-	doc.writexml(file(path, 'w'))
+	stream = codecs.open(path, 'w', encoding = 'utf-8')
+	try:
+		doc.writexml(stream)
+	finally:
+		stream.close()
 
 def set_up_mappings(mappings):
 	"""Create a temporary directory with symlinks for each of the library mappings."""
