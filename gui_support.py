@@ -125,7 +125,7 @@ class CompileBox(gtk.Dialog):
 					def done_publish():
 						self.add_msg("\nYou can use '0publish --local' to add this "
 							"into the main feed. If you don't have a main feed then this "
-							"will create one. See"
+							"will create one. See "
 							"http://0install.net/injector-packagers.html for more information.")
 					self.run_command((sys.executable, main_path,
 						'publish', box.archive_dir.get_text()), done_publish)
