@@ -13,6 +13,9 @@
 .B 0compile publish
 [\fBDOWNLOAD-BASE-URL\fP]
 
+.B 0compile autopublish
+[\fBDOWNLOAD-BASE-URL\fP]
+
 .B 0compile clean
 
 .B 0compile copy-src
@@ -69,6 +72,12 @@ The command will also create an XML file which can be used to download and run t
 .SH CLEAN
 
 Deletes the 'build' and distribution directories, if present.
+
+.SH AUTOPUBLISH
+
+Convenience command, which does "clean, build, publish, clean". On success,
+this results in a new package archive and a feed file generated from a clean
+build. On failure, the build directories remain for investigation.
 
 .SH COPY-SRC
 
