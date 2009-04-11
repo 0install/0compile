@@ -4,6 +4,8 @@
 
 .SH SYNOPSIS
 
+.B 0compile autocompile SOURCE-URI
+
 .B 0compile setup
 [\fB--no-prompt\fP] [\fBSOURCE-URI\fP [\fBDIR\fP] ]
 
@@ -32,6 +34,20 @@
 .SH DESCRIPTION
 .PP
 0compile can be used to compile a Zero Install package from its source code.
+
+.SH AUTOCOMPILE
+
+.PP
+Download and build the source code for the given program. Also download and build
+any missing dependencies, recursively. The resulting binaries will be placed in the
+Zero Install implementation cache (just like normal binary downloads). The result is
+a set of XML files describing the binaries. These XML files are registered (with
+"0launch --feed") so that the new binaries are available for use.
+
+.PP
+On error, 0compile will display the name of the temporary directory in which it was
+compiling the component which failed. You can cd to this directory and fix the problem
+using the other 0compile commands.
 
 .SH SETUP
 
