@@ -20,6 +20,22 @@ arch.machine_groups['newbuild'] = arch.machine_groups.get(arch._uname[-1], 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
+# 0launch 0.40 not released yet, so include a copy here
+class VersionRestriction(model.Restriction):
+	"""Only select implementations with a particular version number."""
+
+	def __init__(self, version):
+		"""@param version: the required version number
+		@see: L{parse_version}; use this to pre-process the version number
+		"""
+		self.version = version
+
+	def meets_restriction(self, impl):
+		return impl.version == self.version
+
+	def __str__(self):
+		return "(restriction: version = %s)" % model.format_version(self.version)
+
 class AutocompileCache(iface_cache.IfaceCache):
 	def __init__(self):
 		iface_cache.IfaceCache.__init__(self)
@@ -99,7 +115,7 @@ def do_autocompile(args):
 		iface = p.solver.iface_cache.get_interface(iface_uri)
 		p.solver.record_details = True
 		if version:
-			p.solver.extra_restrictions[iface] = [model.VersionRestriction(model.parse_version(version))]
+			p.solver.extra_restrictions[iface] = [VersionRestriction(model.parse_version(version))]
 
 		# For testing...
 		#p.target_arch = arch.Architecture(os_ranks = {'FreeBSD': 0, None: 1}, machine_ranks = {'i386': 0, None: 1, 'newbuild': 2})
