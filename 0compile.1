@@ -40,9 +40,9 @@
 .PP
 Download and build the source code for the given program. Also download and build
 any missing dependencies, recursively. The resulting binaries will be placed in the
-Zero Install implementation cache (just like normal binary downloads). The result is
-a set of XML files describing the binaries. These XML files are registered (with
-"0launch --feed") so that the new binaries are available for use.
+Zero Install implementation cache (just like normal binary downloads). A feed file
+describing each new binary is created under $XDG_CONFIG_DIRS/0install.net/0compile/builds/
+and registered with Zero Install (using "0launch --feed").
 
 .PP
 On error, 0compile will display the name of the temporary directory in which it was
