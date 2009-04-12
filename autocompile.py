@@ -94,11 +94,18 @@ def do_autocompile(args):
 	h = handler.Handler()
 
 	@tasks.async
-	def recursive_build(iface_uri):
+	def recursive_build(iface_uri, version = None):
 		p = policy.Policy(iface_uri, handler = h, src = True)
+		iface = p.solver.iface_cache.get_interface(iface_uri)
 		p.solver.record_details = True
+		if version:
+			p.solver.extra_restrictions[iface] = [model.VersionRestriction(model.parse_version(version))]
 
-		print "Selecting versions for %s..." % iface_uri
+		# For testing...
+		#p.target_arch = arch.Architecture(os_ranks = {'FreeBSD': 0, None: 1}, machine_ranks = {'i386': 0, None: 1, 'newbuild': 2})
+
+		print (' %s ' % iface_uri).center(76, '=')
+		print "\nSelecting versions..."
 		solved = p.solve_with_downloads()
 		if solved:
 			yield solved
@@ -113,6 +120,13 @@ def do_autocompile(args):
 
 		print "\nPlan:\n"
 		pretty_print_plan(p.solver, p.root)
+
+		for iface, impl in p.solver.selections.iteritems():
+			if impl.id.startswith('0compile='):
+				print
+				build = recursive_build(iface.uri, impl.get_version())
+				yield build
+				tasks.check(build)
 
 	h.wait_for_blocker(recursive_build(iface_uri))
 
