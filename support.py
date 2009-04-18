@@ -20,14 +20,16 @@ from zeroinstall.zerostore import Stores, Store, NotStored
 ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
-if os.path.isdir('dependencies'):
-	iface_cache.stores.stores.append(Store(os.path.realpath('dependencies')))
-
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
-	launch_prog = os.path.join(zeroinstall_dir, '0launch')
+	launch_prog = [os.path.join(zeroinstall_dir, '0launch')]
 else:
-	launch_prog = '0launch'
+	launch_prog = ['0launch']
+
+if os.path.isdir('dependencies'):
+	dep_dir = os.path.realpath('dependencies')
+	iface_cache.stores.stores.append(Store(dep_dir))
+	launch_prog += ['--with-store', dep_dir]
 
 class NoImpl:
 	id = "none"
@@ -275,7 +277,7 @@ class BuildEnv:
 			options = []
 			if prompt:
 				options.append('--gui')
-			child = subprocess.Popen([launch_prog, '--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
+			child = subprocess.Popen(launch_prog + ['--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
 			try:
 				self._selections = selections.Selections(qdom.parse(child.stdout))
 			finally:
