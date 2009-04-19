@@ -209,7 +209,11 @@ class BuildEnv:
 		feed = self.load_built_feed()
 		assert len(feed.implementations) == 1
 		version = feed.implementations.values()[0].get_version()
-		return '%s-%s-%s' % (self.iface_name.lower(), self.target_arch.lower(), version)
+
+		# Don't use the feed's name, as it may contain the version number
+		name = feed.get_name().lower().replace(' ', '-')
+
+		return '%s-%s-%s' % (name, self.target_arch.lower(), version)
 
 	def load_built_feed(self):
 		path = self.local_iface_file
