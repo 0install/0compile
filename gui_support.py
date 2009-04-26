@@ -107,14 +107,25 @@ class CompileBox(gtk.Dialog):
 
 				iface = iface_cache.get_interface(interface)
 				reader.update_from_cache(iface)
+
+				# Register using the feed-for, if available
+				real_iface = iface
+				for uri in iface.feed_for or []:
+					real_iface = iface_cache.get_interface(uri)
+					self.add_msg("Registering as a feed for %s" % real_iface.uri)
+					break
+				else:
+					if iface.uri.startswith('/'):
+						self.add_msg("Warning: no <feed-for> in local feed %s!" % iface.uri)
+
 				feed = buildenv.local_iface_file
-				for f in iface.feeds or []:
+				for f in real_iface.feeds or []:
 					if f.uri == feed:
-						self.add_msg("Feed '%s' is already registered for interface '%s'!\n" % (feed, iface.uri))
+						self.add_msg("Feed '%s' is already registered for interface '%s'!\n" % (feed, real_iface.uri))
 						return
 				box.buffer.insert_at_cursor("Registering feed '%s'\n" % feed)
-				iface.extra_feeds.append(model.Feed(feed, arch = None, user_override = True))
-				writer.save_interface(iface)
+				real_iface.extra_feeds.append(model.Feed(feed, arch = None, user_override = True))
+				writer.save_interface(real_iface)
 				box.buffer.insert_at_cursor("Done. You can now close this window.\n")
 			elif resp == RESPONSE_PUBLISH:
 				buildenv = BuildEnv()
