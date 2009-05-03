@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, time, shutil, glob, codecs
+import sys, os, __main__, time, shutil, glob, codecs, subprocess
 from os.path import join
 from logging import info
 from xml.dom import minidom, XMLNS_NAMESPACE
@@ -137,24 +137,20 @@ def do_build_internal(options, args):
 			print >>log, "Executing: " + command
 
 			# Tee the output to the console and to the log
-			from popen2 import Popen4
-			child = Popen4(command)
-			child.tochild.close()
+			child = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 			while True:
-				data = os.read(child.fromchild.fileno(), 100)
+				data = os.read(child.stdout.fileno(), 100)
 				if not data: break
 				sys.stdout.write(data)
 				log.write(data)
 			status = child.wait()
 			failure = None
-			if os.WIFEXITED(status):
-				exit_code = os.WEXITSTATUS(status)
-				if exit_code == 0:
-					print >>log, "Build successful"
-				else:
-					failure = "Build failed with exit code %d" % exit_code
+			if status == 0:
+				print >>log, "Build successful"
+			elif status > 0:
+				failure = "Build failed with exit code %d" % status
 			else:
-				failure = "Build failure: exited due to signal %d" % os.WTERMSIG(status)
+				failure = "Build failure: exited due to signal %d" % (-status)
 			if failure:
 				print >>log, failure
 				os.rename('build.log', 'build-failure.log')
