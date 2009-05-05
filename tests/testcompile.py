@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python
 import sys, tempfile, os, shutil, tempfile, subprocess
 from StringIO import StringIO
 import unittest
