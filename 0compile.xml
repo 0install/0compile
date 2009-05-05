@@ -25,7 +25,7 @@ For a full tutorial, see 0compile's homepage.</description>
   </release:management>
 
   <group main="0compile" self-test="tests/testcompile.py">
-    <implementation id="." version="0.15-post"/>
+    <implementation id="." released="2009-05-05" version="0.16"/>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="0.40"/>
       <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
