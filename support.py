@@ -173,7 +173,7 @@ class BuildEnv:
 			iface_name = iface_name[:-4]
 		return iface_name
 
-	interface = property(lambda self: self.config.get('compile', 'interface'))
+	interface = property(lambda self: model.canonical_iface_uri(self.config.get('compile', 'interface')))
 
 	@property
 	def distdir(self):
