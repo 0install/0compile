@@ -136,7 +136,7 @@ def do_build_internal(options, args):
 					else:
 						do_env_binding(b, lookup(dep_impl.id))
 
-	mappings = []
+	mappings = {}
 	for impl in sels.selections.values():
 		new_mappings = impl.attrs.get(XMLNS_0COMPILE + ' lib-mappings', '')
 		if new_mappings:
@@ -145,7 +145,12 @@ def do_build_internal(options, args):
 				assert ':' in mapping, "lib-mappings missing ':' in '%s' from '%s'" % (mapping, impl.feed)
 				name, major_version = mapping.split(':', 1)
 				assert '/' not in mapping, "lib-mappings '%s' contains a / in the version number (from '%s')!" % (mapping, impl.feed)
-				mappings.append((name, major_version))
+				mappings[name] = 'lib%s.so.%s' % (name, major_version)
+		impl_path = lookup(impl.id)
+		for libdirname in ['lib', 'usr/lib', 'lib64', 'usr/lib64']:
+			libdir = os.path.join(impl_path, libdirname)
+			if os.path.isdir(libdir):
+				find_broken_version_symlinks(libdir, mappings)
 
 	if mappings:
 		set_up_mappings(mappings)
@@ -358,13 +363,25 @@ def write_sample_interface(buildenv, iface, src_impl):
 	finally:
 		stream.close()
 
+def find_broken_version_symlinks(libdir, mappings):
+	"""libdir may be a legacy -devel package containing lib* symlinks whose
+	targets would be provided by the corresponding runtime package. If so,
+	create fixed symlinks under $TMPDIR with the real location."""
+	for x in os.listdir(libdir):
+		if x.startswith('lib') and x.endswith('.so'):
+			path = os.path.join(libdir, x)
+			if os.path.islink(path):
+				target = os.readlink(path)
+				if '/' not in target and not os.path.exists(os.path.join(libdir, target)):
+					print "Broken link %s -> %s; will relocate..." % (x, target)
+					mappings[x[3:-3]] = target
+
 def set_up_mappings(mappings):
 	"""Create a temporary directory with symlinks for each of the library mappings."""
-	# The find_library function takes a short-name and major version of a library and
-	# returns the full path of the library.
-	libdirs = ['/lib', '/usr/lib']
+	libdirs = []
 	for d in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
 		if d: libdirs.append(d)
+	libdirs += ['/lib', '/usr/lib']
 
 	def add_ldconf(config_file):
 		if not os.path.isfile(config_file):
@@ -379,8 +396,9 @@ def set_up_mappings(mappings):
 				libdirs.append(d)
 	add_ldconf('/etc/ld.so.conf')
 
-	def find_library(name, major):
-		wanted = 'lib%s.so.%s' % (name, major)
+	def find_library(name, wanted):
+		# Takes a short-name and target name of a library and returns
+		# the full path of the library.
 		for d in libdirs:
 			path = os.path.join(d, wanted)
 			if os.path.exists(path):
@@ -395,8 +413,8 @@ def set_up_mappings(mappings):
 	if old_path: old_path = ':' + old_path
 	os.environ['LIBRARY_PATH'] = mappings_dir + old_path
 
-	for name, major_version in mappings:
-		target = find_library(name, major_version)
+	for name, wanted in mappings.items():
+		target = find_library(name, wanted)
 		if target:
 			print "Adding mapping lib%s.so -> %s" % (name, target)
 			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + '.so'))
