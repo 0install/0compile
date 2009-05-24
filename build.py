@@ -9,12 +9,62 @@ from optparse import OptionParser
 
 from support import *
 
+# If we have to modify any pkg-config files, we put the new versions in $TMPDIR/PKG_CONFIG_OVERRIDES
+PKG_CONFIG_OVERRIDES = 'pkg-config-overrides'
+
 def env(name, value):
 	os.environ[name] = value
 	print "%s=%s" % (name, value)
 
 def do_env_binding(binding, path):
 	env(binding.name, binding.get_value(path, os.environ.get(binding.name, None)))
+
+def correct_for_64bit(base, rel_path):
+	"""If rel_path starts lib or usr/lib and doesn't exist, try with lib64 instead."""
+	if os.path.exists(os.path.join(base, rel_path)):
+		return rel_path
+
+	if rel_path.startswith('lib/') or rel_path.startswith('usr/lib/'):
+		new_rel_path = rel_path.replace('lib/', 'lib64/', 1)
+		if os.path.exists(os.path.join(base, new_rel_path)):
+			return new_rel_path
+
+	return rel_path
+
+def write_pc(name, lines):
+	overrides_dir = os.path.join(os.environ['TMPDIR'], PKG_CONFIG_OVERRIDES)
+	if not os.path.isdir(overrides_dir):
+		os.mkdir(overrides_dir)
+	stream = open(os.path.join(overrides_dir, name), 'w')
+	stream.write(''.join(lines))
+	stream.close()
+
+def do_pkg_config_binding(binding, impl):
+	feed_name = impl.feed.split('/')[-1]
+	path = lookup(impl.id)
+	new_insert = correct_for_64bit(path, binding.insert)
+	if new_insert != binding.insert:
+		print "PKG_CONFIG_PATH dir <%s>/%s not found; using %s instead" % (feed_name, binding.insert, new_insert)
+		binding = model.EnvironmentBinding(binding.name,
+					new_insert,
+					binding.default,
+					binding.mode)
+
+	orig_path = os.path.join(path, binding.insert)
+	if os.path.isdir(orig_path):
+		for pc in os.listdir(orig_path):
+			stream = open(os.path.join(orig_path, pc))
+			lines = stream.readlines()
+			stream.close()
+			for i, line in enumerate(lines):
+				if '=' not in line: continue
+				name, value = [x.strip() for x in line.split('=', 1)]
+				if name == 'prefix' and value.startswith('/'):
+					print "Absolute prefix=%s in %s; overriding..." % (value, feed_name)
+					lines[i] = 'prefix=%s/%s\n' % (path, value[1:])
+					write_pc(pc, lines)
+					break
+	do_env_binding(binding, path)
 
 def do_build_internal(options, args):
 	"""build-internal"""
@@ -81,7 +131,10 @@ def do_build_internal(options, args):
 			for b in dep.bindings:
 				if isinstance(b, EnvironmentBinding):
 					dep_impl = buildenv.chosen_impl(dep.interface)
-					do_env_binding(b, lookup(dep_impl.id))
+					if b.name == 'PKG_CONFIG_PATH':
+						do_pkg_config_binding(b, dep_impl)
+					else:
+						do_env_binding(b, lookup(dep_impl.id))
 
 	mappings = []
 	for impl in sels.selections.values():
@@ -93,9 +146,14 @@ def do_build_internal(options, args):
 				name, major_version = mapping.split(':', 1)
 				assert '/' not in mapping, "lib-mappings '%s' contains a / in the version number (from '%s')!" % (mapping, impl.feed)
 				mappings.append((name, major_version))
-	
+
 	if mappings:
 		set_up_mappings(mappings)
+
+	overrides_dir = os.path.join(os.environ['TMPDIR'], PKG_CONFIG_OVERRIDES)
+	if os.path.isdir(overrides_dir):
+		add_overrides = model.EnvironmentBinding('PKG_CONFIG_PATH', PKG_CONFIG_OVERRIDES)
+		do_env_binding(add_overrides, os.environ['TMPDIR'])
 
 	# Some programs want to put temporary build files in the source directory.
 	# Make a copy of the source if needed.
