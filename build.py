@@ -66,6 +66,30 @@ def do_pkg_config_binding(binding, impl):
 					break
 	do_env_binding(binding, path)
 
+def fixup_generated_pkgconfig_file(pc_file):
+	stream = open(pc_file)
+	lines = stream.readlines()
+	stream.close()
+	for i, line in enumerate(lines):
+		if '=' not in line: continue
+		name, value = [x.strip() for x in line.split('=', 1)]
+		if name == 'prefix' and value.startswith('/'):
+			print "Absolute prefix=%s in %s; fixing..." % (value, pc_file)
+			rel_path = os.path.relpath(value, os.path.dirname(pc_file))	# Requires Python 2.6
+			lines[i] = 'prefix=${pcfiledir}/%s\n' % rel_path
+			write_pc(pc_file, lines)
+			break
+
+# After doing a build, check that we didn't generate pkgconfig files with absolute paths
+# Rewrite if so
+def fixup_generated_pkgconfig_files():
+	for root, dirs, files in os.walk(os.environ['DISTDIR']):
+		if os.path.basename(root) == 'pkgconfig':
+			for f in files:
+				if f.endswith('.pc'):
+					info("Checking generated pkgconfig file '%s'", f)
+					fixup_generated_pkgconfig_file(os.path.join(root, f))
+
 def do_build_internal(options, args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
@@ -210,6 +234,7 @@ def do_build_internal(options, args):
 			failure = None
 			if status == 0:
 				print >>log, "Build successful"
+				fixup_generated_pkgconfig_files()
 			elif status > 0:
 				failure = "Build failed with exit code %d" % status
 			else:
