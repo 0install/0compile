@@ -334,11 +334,17 @@ def write_sample_interface(buildenv, iface, src_impl):
 	feed_for = addSimple(root, 'feed-for')
 
 	uri = iface.uri
-	if uri.startswith('/') and iface.feed_for:
-		for uri in iface.feed_for:
-			print "Note: source %s is a local feed" % iface.uri
+	if uri.startswith('/'):
+		print "Note: source %s is a local feed" % iface.uri
+		for feed_uri in iface.feed_for or []:
+			uri = feed_uri
 			print "Will use <feed-for interface='%s'> instead..." % uri
 			break
+		else:
+			master_feed = minidom.parse(uri).documentElement
+			if master_feed.hasAttribute('uri'):
+				uri = master_feed.getAttribute('uri')
+				print "Will use <feed-for interface='%s'> instead..." % uri
 
 	feed_for.setAttributeNS(None, 'interface', uri)
 
