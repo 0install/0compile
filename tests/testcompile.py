@@ -2,7 +2,10 @@
 import sys, tempfile, os, shutil, tempfile, subprocess
 from StringIO import StringIO
 import unittest
-from zeroinstall.support import ro_rmtree
+from zeroinstall.support import ro_rmtree, basedir
+from zeroinstall.zerostore import Stores
+
+stores = Stores()
 
 sys.path.insert(0, '..')
 import support
@@ -37,11 +40,35 @@ def run(*args, **kwargs):
 	elif got:
 		raise Exception("Expected nothing, got '%s'" % got)
 
+# Detect accidental network access
+os.environ['http_proxy'] = 'localhost:1111'
+
+for x in ['GNUPGHOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME']:
+	if x in os.environ:
+		del os.environ[x]
+user_cache_dir = os.environ['XDG_CACHE_DIRS'] = basedir.xdg_cache_home
+
 class TestCompile(unittest.TestCase):
 	def setUp(self):
 		os.chdir('/')
 		self.tmpdir = tempfile.mkdtemp(prefix = '0compile-test-')
 		self.hello_dir = os.path.join(self.tmpdir, 'hello')
+
+		os.environ['HOME'] = self.tmpdir
+		reload(basedir)
+
+		config_dir = basedir.save_config_path('0install.net', 'injector')
+		stream = open(os.path.join(config_dir, 'implementation-dirs'), 'w')
+		for x in stores.stores:
+			stream.write(x.dir + '\n')
+		stream.close()
+
+		stream = open(os.path.join(config_dir, 'global'), 'w')
+		stream.write('[global]\n'
+				'freshness = -1\n'
+				'help_with_testing = True\n'
+				'network_use = off-line\n')
+		stream.close()
 	
 	def tearDown(self):
 		ro_rmtree(self.tmpdir)
@@ -73,6 +100,10 @@ class TestCompile(unittest.TestCase):
 		run('0launch', '%s/0install/GNU-Hello.xml' % target_dir, expect = 'Hello, world!')
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
+	def testAutocompile(self):
+		compile('autocompile', hello_uri, expect = "Registering feed...")
+		run('0launch', hello_uri, expect = 'Hello, world!')
+
 	def testLocal(self):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
