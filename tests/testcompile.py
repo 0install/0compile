@@ -163,6 +163,9 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Hello from C')
 		assert not os.path.exists(patch_file)
 
+		pc_data = open(os.path.join(target_dir, 'pkgconfig', 'cprog.pc')).read()
+		assert pc_data == "prefix=${pcfiledir}/..\n", `pc_data`
+
 	def testInlcudeDeps(self):
 		compile('setup', hello_uri, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)

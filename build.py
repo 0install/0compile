@@ -9,6 +9,40 @@ from optparse import OptionParser
 
 from support import *
 
+if hasattr(os.path, 'relpath'):
+	relpath = os.path.relpath
+else:
+	# Copied from Python 2.6 (GPL compatible license)
+	# Copyright Python Software Foundation
+
+	# Return the longest prefix of all list elements.
+	def commonprefix(m):
+		"Given a list of pathnames, returns the longest common leading component"
+		if not m: return ''
+		s1 = min(m)
+		s2 = max(m)
+		for i, c in enumerate(s1):
+			if c != s2[i]:
+				return s1[:i]
+		return s1
+
+	def relpath(path, start):
+		"""Return a relative version of a path"""
+
+		if not path:
+			raise ValueError("no path specified")
+
+		start_list = os.path.abspath(start).split('/')
+		path_list = os.path.abspath(path).split('/')
+
+		# Work out how much of the filepath is shared by start and path.
+		i = len(commonprefix([start_list, path_list]))
+
+		rel_list = ['..'] * (len(start_list)-i) + path_list[i:]
+		if not rel_list:
+			return '.'
+		return join(*rel_list)
+
 # If we have to modify any pkg-config files, we put the new versions in $TMPDIR/PKG_CONFIG_OVERRIDES
 PKG_CONFIG_OVERRIDES = 'pkg-config-overrides'
 
@@ -75,7 +109,7 @@ def fixup_generated_pkgconfig_file(pc_file):
 		name, value = [x.strip() for x in line.split('=', 1)]
 		if name == 'prefix' and value.startswith('/'):
 			print "Absolute prefix=%s in %s; fixing..." % (value, pc_file)
-			rel_path = os.path.relpath(value, os.path.dirname(pc_file))	# Requires Python 2.6
+			rel_path = relpath(value, os.path.dirname(pc_file))	# Requires Python 2.6
 			lines[i] = 'prefix=${pcfiledir}/%s\n' % rel_path
 			write_pc(pc_file, lines)
 			break
