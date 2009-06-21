@@ -295,8 +295,12 @@ class GTKAutoCompiler(AutoCompiler):
 
 			def insert_at_end_and_scroll(self, data, *tags):
 				# TODO: data might not be complete UTF-8; buffer until EOL?
-				self.vscroll = self.widget.get_vadjustment()
-				near_end = self.vscroll.upper - self.vscroll.page_size * 1.5 < self.vscroll.value
+				vscroll = self.widget.get_vadjustment()
+				if not vscroll:
+					# Widget has been destroyed
+					print data,
+					return
+				near_end = vscroll.upper - vscroll.page_size * 1.5 < vscroll.value
 				end = self.buffer.get_end_iter()
 				self.buffer.insert_with_tags_by_name(end, data, *tags)
 				if near_end:
