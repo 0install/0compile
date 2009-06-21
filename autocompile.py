@@ -198,9 +198,8 @@ class AutoCompiler:
 		# For testing...
 		#p.target_arch = arch.Architecture(os_ranks = {'FreeBSD': 0, None: 1}, machine_ranks = {'i386': 0, None: 1, 'newbuild': 2})
 
-		self.heading(iface_uri)
-
 		while True:
+			self.heading(iface_uri)
 			self.note("\nSelecting versions for %s..." % iface.get_name())
 			solved = p.solve_with_downloads()
 			if solved:
