@@ -312,8 +312,8 @@ class GTKAutoCompiler(AutoCompiler):
 
 		def response(wd, resp):
 			if self.child is not None:
-				self.note_error('Sending TERM signal to build process...')
-				os.kill(self.child.pid, signal.SIGTERM)
+				self.note_error('Sending TERM signal to build process group %d...' % self.child.pid)
+				os.kill(-self.child.pid, signal.SIGTERM)
 			else:
 				self.closed.trigger()
 		w.connect('response', response)
@@ -346,7 +346,12 @@ class GTKAutoCompiler(AutoCompiler):
 
 		self.details.insert_at_end_and_scroll('Building %s\n' % iface_name, 'heading')
 
-		self.child = subprocess.Popen([sys.executable, sys.argv[0], 'build'], stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+		# Group all the child processes so we can kill them easily
+		def become_group_leader():
+			os.setpgid(0, 0)
+		self.child = subprocess.Popen([sys.executable, sys.argv[0], 'build'],
+						stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
+						preexec_fn = become_group_leader)
 
 		while True:
 			yield tasks.InputBlocker(self.child.stdout, 'output from child')
