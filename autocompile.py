@@ -358,7 +358,7 @@ class GTKAutoCompiler(AutoCompiler):
 		# Group all the child processes so we can kill them easily
 		def become_group_leader():
 			os.setpgid(0, 0)
-		self.child = subprocess.Popen([sys.executable, sys.argv[0], 'build'],
+		self.child = subprocess.Popen([sys.executable, '-u', sys.argv[0], 'build'],
 						stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
 						preexec_fn = become_group_leader)
 

@@ -332,7 +332,7 @@ def do_build(args):
 
 		readable.append('/etc')	# /etc/ld.*
 
-		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, [sys.argv[0]] + options + ['build', '--no-sandbox'] + args)
+		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, ['-u', sys.argv[0]] + options + ['build', '--no-sandbox'] + args)
 	finally:
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
