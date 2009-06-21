@@ -60,8 +60,9 @@ class MyHandler(handler.Handler):
 		self.compiler.downloads_changed()
 
 class AutoCompiler:
-	def __init__(self, iface_uri):
+	def __init__(self, iface_uri, options):
 		self.iface_uri = iface_uri
+		self.options = options
 		self.handler = MyHandler()
 		self.handler.compiler = self
 
@@ -166,7 +167,12 @@ class AutoCompiler:
 
 			self.note("Implementation metadata written to %s" % local_feed)
 
-			self.note("Storing build in cache...")
+			store = policy.solver.iface_cache.stores
+			if self.options.local:
+				store = store.stores[0]
+				self.note("Storing build in local cache %s..." % store.dir)
+			else:
+				self.note("Storing build in cache...")
 			policy.solver.iface_cache.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
 			self.note("Registering feed...")
@@ -246,8 +252,8 @@ class AutoCompiler:
 		self.overall.insert_at_cursor(msg + '\n')
 
 class GTKAutoCompiler(AutoCompiler):
-	def __init__(self, iface_uri):
-		AutoCompiler.__init__(self, iface_uri)
+	def __init__(self, iface_uri, options):
+		AutoCompiler.__init__(self, iface_uri, options)
 		self.child = None
 
 		import pygtk; pygtk.require('2.0')
@@ -372,15 +378,16 @@ def do_autocompile(args):
 	parser = OptionParser(usage="usage: %prog autocompile [options]")
 
 	parser.add_option('', "--gui", help="graphical interface", action='store_true')
+	parser.add_option('', "--local", help="store in user cache, not system cache", action='store_true')
 	(options, args2) = parser.parse_args(args)
 	if len(args2) != 1:
 		raise __main__.UsageError()
 
 	iface_uri = model.canonical_iface_uri(args2[0])
 	if options.gui:
-		compiler = GTKAutoCompiler(iface_uri)
+		compiler = GTKAutoCompiler(iface_uri, options)
 	else:
-		compiler = AutoCompiler(iface_uri)
+		compiler = AutoCompiler(iface_uri, options)
 
 	compiler.build()
 
