@@ -59,6 +59,12 @@ class MyHandler(handler.Handler):
 	def downloads_changed(self):
 		self.compiler.downloads_changed()
 
+	def confirm_trust_keys(self, interface, sigs, iface_xml):
+		if hasattr(self.compiler, 'confirm_trust_keys'):
+			return self.compiler.confirm_trust_keys(interface, sigs, iface_xml)
+		else:
+			return handler.Handler.confirm_trust_keys(self, interface, sigs, iface_xml)
+
 class AutoCompiler:
 	def __init__(self, iface_uri, options):
 		self.iface_uri = iface_uri
@@ -375,6 +381,10 @@ class GTKAutoCompiler(AutoCompiler):
 			self.details.insert_at_end_and_scroll('Build process exited with error status %d\n' % code, 'error')
 			raise SafeException('Build process exited with error status %d' % code)
 		self.details.insert_at_end_and_scroll('Build completed successfully\n', 'heading')
+
+	def confirm_trust_keys(self, interface, sigs, iface_xml):
+		from zeroinstall.gtkui import trust_box
+		return trust_box.confirm_trust(interface, sigs, iface_xml, parent = self.dialog)
 
 def do_autocompile(args):
 	"""autocompile [--gui] URI"""
