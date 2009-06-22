@@ -173,12 +173,9 @@ class AutoCompiler:
 
 			self.note("Implementation metadata written to %s" % local_feed)
 
-			store = policy.solver.iface_cache.stores
-			if self.options.local:
-				store = store.stores[0]
-				self.note("Storing build in local cache %s..." % store.dir)
-			else:
-				self.note("Storing build in cache...")
+			# No point adding it to the system store when only the user has the feed...
+			store = policy.solver.iface_cache.stores.stores[0]
+			self.note("Storing build in user cache %s..." % store.dir)
 			policy.solver.iface_cache.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
 			self.note("Registering feed...")
@@ -448,7 +445,6 @@ def do_autocompile(args):
 	parser = OptionParser(usage="usage: %prog autocompile [options]")
 
 	parser.add_option('', "--gui", help="graphical interface", action='store_true')
-	parser.add_option('', "--local", help="store in user cache, not system cache", action='store_true')
 	(options, args2) = parser.parse_args(args)
 	if len(args2) != 1:
 		raise __main__.UsageError()

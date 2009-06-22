@@ -101,7 +101,7 @@ class TestCompile(unittest.TestCase):
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testAutocompile(self):
-		compile('autocompile', '--local', hello_uri, expect = "Registering feed...")
+		compile('autocompile', hello_uri, expect = "Registering feed...")
 		run('0launch', hello_uri, expect = 'Hello, world!')
 
 	def testLocal(self):
