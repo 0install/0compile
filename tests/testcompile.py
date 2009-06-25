@@ -163,8 +163,14 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Hello from C')
 		assert not os.path.exists(patch_file)
 
+		# Check we fixed the .pc files...
 		pc_data = open(os.path.join(target_dir, 'pkgconfig', 'cprog.pc')).read()
 		assert pc_data == "prefix=${pcfiledir}/..\n", `pc_data`
+
+		# Check we removed the bad .la files...
+		assert not os.path.exists(os.path.join(target_dir, 'lib', 'bad.la'))	# libtool - bad
+		assert os.path.exists(os.path.join(target_dir, 'lib', 'good.la'))	# Ends in .la, but not a libtool archive
+		assert os.path.exists(os.path.join(target_dir, 'lib', 'nice.ok'))	# Doesn't end in .la
 
 	def testInlcudeDeps(self):
 		compile('setup', hello_uri, self.hello_dir, expect = 'Created directory')

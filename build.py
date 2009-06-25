@@ -3,7 +3,7 @@
 
 import sys, os, __main__, time, shutil, glob, codecs, subprocess
 from os.path import join
-from logging import info
+from logging import info, warn
 from xml.dom import minidom, XMLNS_NAMESPACE
 from optparse import OptionParser
 
@@ -123,6 +123,29 @@ def fixup_generated_pkgconfig_files():
 				if f.endswith('.pc'):
 					info("Checking generated pkgconfig file '%s'", f)
 					fixup_generated_pkgconfig_file(os.path.join(root, f))
+
+def remove_la_file(path):
+	# Read the contents...
+	stream = open(path)
+	data = stream.read()
+	stream.close()
+
+	# Check it really is a libtool archive...
+	if 'Please DO NOT delete this file' not in data:
+		warn("Ignoring %s; doesn't look like a libtool archive", path)
+		return
+
+	os.unlink(path)
+	print "Removed %s (.la files contain absolute paths)" % path
+
+# libtool archives contain hard-coded paths. Lucky, modern systems don't need them, so remove
+# them.
+def remove_la_files():
+	for root, dirs, files in os.walk(os.environ['DISTDIR']):
+		if os.path.basename(root) == 'lib':
+			for f in files:
+				if f.endswith('.la'):
+					remove_la_file(os.path.join(root, f))
 
 def do_build_internal(options, args):
 	"""build-internal"""
@@ -269,6 +292,7 @@ def do_build_internal(options, args):
 			if status == 0:
 				print >>log, "Build successful"
 				fixup_generated_pkgconfig_files()
+				remove_la_files()
 			elif status > 0:
 				failure = "Build failed with exit code %d" % status
 			else:
