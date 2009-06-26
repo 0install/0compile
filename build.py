@@ -13,7 +13,7 @@ if hasattr(os.path, 'relpath'):
 	relpath = os.path.relpath
 else:
 	# Copied from Python 2.6 (GPL compatible license)
-	# Copyright Python Software Foundation
+	# Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006 Python Software Foundation; All Rights Reserved
 
 	# Return the longest prefix of all list elements.
 	def commonprefix(m):
