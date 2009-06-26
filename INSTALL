@@ -1,0 +1,11 @@
+Don't be confused by the setup.py... that's for the "0compile setup" subcommand!
+
+If you got this by cloning a GIT repository, register the feed like this:
+
+$ 0launch --feed 0compile.xml
+
+To check this version is selected by default, use:
+
+$ 0launch -g http://0install.net/2006/interfaces/0compile.xml
+
+In the Preferences box ensure "Help test new versions" is enabled.
