@@ -297,7 +297,6 @@ class GTKAutoCompiler(AutoCompiler):
 				self.buffer = buffer
 
 			def insert_at_end_and_scroll(self, data, *tags):
-				# TODO: data might not be complete UTF-8; buffer until EOL?
 				vscroll = self.widget.get_vadjustment()
 				if not vscroll:
 					# Widget has been destroyed
@@ -365,11 +364,15 @@ class GTKAutoCompiler(AutoCompiler):
 						stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
 						preexec_fn = become_group_leader)
 
+		import codecs
+		decoder = codecs.getincrementaldecoder('utf-8')(errors = 'replace')
+
 		while True:
 			yield tasks.InputBlocker(self.child.stdout, 'output from child')
 			got = os.read(self.child.stdout.fileno(), 100)
+			chars = decoder.decode(got, final = not got)
+			self.details.insert_at_end_and_scroll(chars)
 			if not got: break
-			self.details.insert_at_end_and_scroll(got)
 
 		self.child.wait()
 		code = self.child.returncode
