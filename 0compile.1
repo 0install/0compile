@@ -4,13 +4,14 @@
 
 .SH SYNOPSIS
 
-.B 0compile autocompile SOURCE-URI
+.B 0compile autocompile
+[\fB--gui\fP] SOURCE-URI
 
 .B 0compile setup
 [\fB--no-prompt\fP] [\fBSOURCE-URI\fP [\fBDIR\fP] ]
 
 .B 0compile build
-[\fB --nosandbox\fP ] [\fB--shell\fP]
+[\fB--nosandbox\fP ] [\fB--shell\fP]
 
 .B 0compile publish
 [\fBDOWNLOAD-BASE-URL\fP]
@@ -120,6 +121,10 @@ To bring up the GTK interface, which offers an newbie-friendly interface to some
 
 .B 0compile gui
 
+Note, if you want a more automatic compile-and-register operation, your probably want this instead:
+
+.B 0compile autocompile --gui URI
+
 .SH REPORT-BUG
 
 To send a bug-report about a failed build:
@@ -143,7 +148,7 @@ Display version information.
 
 .SH LICENSE
 .PP
-Copyright (C) 2007 Thomas Leonard.
+Copyright (C) 2009 Thomas Leonard.
 
 .PP
 You may redistribute copies of this program under the terms of the GNU General Public License.
