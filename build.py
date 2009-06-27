@@ -146,6 +146,8 @@ def remove_la_files():
 			for f in files:
 				if f.endswith('.la'):
 					remove_la_file(os.path.join(root, f))
+				if f.endswith('.a'):
+					warn("Found static archive '%s'; maybe build with --disable-static?", f)
 
 def do_build_internal(options, args):
 	"""build-internal"""
