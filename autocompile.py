@@ -383,64 +383,8 @@ class GTKAutoCompiler(AutoCompiler):
 		self.details.insert_at_end_and_scroll('Build completed successfully\n', 'heading')
 
 	def confirm_trust_keys(self, interface, sigs, iface_xml):
-		try:
-			from zeroinstall.gtkui import trust_box
-		except ImportError:
-			# 0launch <= 0.40
-			return self.legacy_trust_confirm(interface, sigs, iface_xml)
-		else:
-			# 0launch >= 0.41
-			return trust_box.confirm_trust(interface, sigs, iface_xml, parent = self.dialog)
-
-	@tasks.async
-	def legacy_trust_confirm(self, interface, sigs, iface_xml):
-		class DialogResponse(tasks.Blocker):
-			response = None
-			def __init__(self, dialog):
-				tasks.Blocker.__init__(self, dialog.get_title())
-				a = None
-				def response(d, resp):
-					self.response = resp
-					d.disconnect(a)
-					self.trigger()
-				a = dialog.connect('response', response)
-
-		from zeroinstall.injector import trust, gpg
-		import gtk
-		assert sigs
-		valid_sigs = [s for s in sigs if isinstance(s, gpg.ValidSig)]
-		if not valid_sigs:
-			raise SafeException('No valid signatures found on "%s". Signatures:%s' %
-					(interface.uri, ''.join(['\n- ' + str(s) for s in sigs])))
-
-		domain = trust.domain_from_url(interface.uri)
-
-		msg = "Interface: %s\n" % interface.uri
-		msg += "The interface is correctly signed with the following keys:"
-		for x in valid_sigs:
-			msg += "- %s\n" % x
-
-		if len(valid_sigs) == 1:
-			msg += "Do you want to trust this key to sign feeds from '%s'?" % domain
-		else:
-			msg += "Do you want to trust all of these keys to sign feeds from '%s'?" % domain
-
-		box = gtk.MessageDialog(self.dialog, gtk.DIALOG_DESTROY_WITH_PARENT,
-					gtk.MESSAGE_QUESTION, gtk.BUTTONS_OK_CANCEL, msg)
-		box.set_position(gtk.WIN_POS_CENTER)
-		box.show()
-		blocker = DialogResponse(box)
-		yield blocker
-		box.destroy()
-		tasks.check(blocker)
-
-		if blocker.response != gtk.RESPONSE_OK:
-			raise handler.NoTrustedKeys('Not signed with a trusted key')
-
-		for key in valid_sigs:
-			self.note("Trusting %s for %s" % (key.fingerprint, domain))
-			trust.trust_db.trust_key(key.fingerprint, domain)
-		trust.trust_db.notify()
+		from zeroinstall.gtkui import trust_box
+		return trust_box.confirm_trust(interface, sigs, iface_xml, parent = self.dialog)
 
 def do_autocompile(args):
 	"""autocompile [--gui] URI"""
