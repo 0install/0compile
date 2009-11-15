@@ -7,7 +7,8 @@ from zeroinstall.zerostore import Stores
 
 stores = Stores()
 
-sys.path.insert(0, '..')
+my_dir = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(my_dir))
 import support
 
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
@@ -16,7 +17,7 @@ local_bad_version = os.path.realpath(os.path.join(os.path.dirname(__file__), 'ba
 local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml'))
 local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml'))
 
-compile_bin = os.path.abspath('0compile-coverage')
+compile_bin = os.path.join(my_dir, '0compile-coverage')
 assert os.path.exists(compile_bin)
 
 if 'DISPLAY' in os.environ:

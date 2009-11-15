@@ -1,7 +1,12 @@
 #!/usr/bin/env python
-import unittest, os, sys
+import unittest, os, sys, tempfile, shutil, atexit
 
 my_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+
+coverdir = tempfile.mkdtemp(prefix='0compile-coverage-')
+atexit.register(shutil.rmtree, coverdir)
+
+os.environ["COVERAGE_FILE"] = os.path.join(coverdir, 'coverage')
 
 try:
 	import coverage
@@ -24,8 +29,6 @@ for name in suite_names:
 
 a = unittest.TextTestRunner(verbosity=2).run(alltests)
 
-os.chdir(my_dir)
-
 print "\nResult", a
 if not a.wasSuccessful():
 	sys.exit(1)
@@ -37,8 +40,5 @@ if coverage:
 		for x in os.listdir(d):
 			if x.endswith('.py'):
 				all_sources.append(os.path.join(d, x))
-	incl('..')
+	incl(os.path.join(my_dir, '..'))
 	coverage.report(all_sources)
-	for x in os.listdir('.'):
-		if x.startswith('.coverage'):
-			os.unlink(x)

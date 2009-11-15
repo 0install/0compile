@@ -4,7 +4,6 @@ tests_dir = os.path.dirname(os.path.abspath(__file__))
 compile_dir = os.path.dirname(tests_dir)
 sys.path.insert(0, compile_dir)
 cwd = os.path.realpath(os.getcwd())
-os.chdir(tests_dir)
 try:
 	import coverage
 	coverage.the_coverage.parallel_mode = True
@@ -17,6 +16,5 @@ try:
 	imp.load_module('__main__', file(compile_code), compile_code,
 			('.py', 'r', imp.PY_SOURCE))
 finally:
-	os.chdir(tests_dir)
 	if coverage:
 		coverage.stop()
