@@ -191,6 +191,19 @@ class TestCompile(unittest.TestCase):
 		os.chdir(self.hello_dir)
 		compile('setup', expect = "Selections are fixed")
 
+	def testReportBug(self):
+		broken_src = os.path.join(self.hello_dir, "broken.xml")
+		os.mkdir(self.hello_dir)
+		shutil.copy(local_hello_path, broken_src)
+		os.chdir(self.hello_dir)
+		compile('setup', broken_src, '.')
+		compile('build', expect = 'Build failed with exit code')
+		compile('report-bug', expect = "http://sourceforge.net")
+
+		env = support.BuildEnv()
+		os.unlink(os.path.join(env.metadir, "build-environment.xml"))
+		compile('report-bug', expect = "file+not+found")
+
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
 	sys.argv.append('-v')

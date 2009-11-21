@@ -13,6 +13,16 @@ except:
 os.chdir(cwd)
 compile_code = os.path.join(compile_dir, '0compile')
 try:
+	class DummyStream():
+		def read(self):
+			pass
+		def close(self):
+			pass
+	import urllib2
+	def cb(*args):
+		print >>sys.stderr, "urlopen called with arguments %s" % (args,)
+		return DummyStream()
+	urllib2.urlopen = cb
 	imp.load_module('__main__', file(compile_code), compile_code,
 			('.py', 'r', imp.PY_SOURCE))
 finally:

@@ -14,6 +14,14 @@ def do_report_bug(args):
 	build_log = file(log_name)
 	log_text = build_log.read()
 	build_log.close()
+
+	build_env_xml_file = join(buildenv.metadir, 'build-environment.xml')
+	if os.path.exists(build_env_xml_file):
+		build_env_xml = file(build_env_xml_file)
+		log_text += '\n\nSelected versions:\n' + build_env_xml.read()
+		build_env_xml.close()
+	else:
+		log_text += '\n\n"%s" file not found' % build_env_xml_file
 	
 	import urllib
 	from urllib2 import urlopen
