@@ -36,6 +36,9 @@ class NoImpl:
 	version = "none"
 no_impl = NoImpl()
 
+def is_package_impl(impl):
+	return impl.id.startswith("package:")
+
 def lookup(id):
 	if id.startswith('/'):
 		if os.path.isdir(id):

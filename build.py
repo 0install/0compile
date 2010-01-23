@@ -214,13 +214,17 @@ def do_build_internal(options, args):
 			for b in dep.bindings:
 				if isinstance(b, EnvironmentBinding):
 					dep_impl = buildenv.chosen_impl(dep.interface)
-					if b.name == 'PKG_CONFIG_PATH':
-						do_pkg_config_binding(b, dep_impl)
-					else:
-						do_env_binding(b, lookup(dep_impl.id))
+					if not is_package_impl(dep_impl):
+						if b.name == 'PKG_CONFIG_PATH':
+							do_pkg_config_binding(b, dep_impl)
+						else:
+							do_env_binding(b, lookup(dep_impl.id))
 
+	# These mappings are needed when mixing Zero Install -dev packages with
+	# native package binaries.
 	mappings = {}
 	for impl in sels.selections.values():
+		# Add mappings that have been set explicitly...
 		new_mappings = impl.attrs.get(XMLNS_0COMPILE + ' lib-mappings', '')
 		if new_mappings:
 			new_mappings = new_mappings.split(' ')
@@ -229,11 +233,14 @@ def do_build_internal(options, args):
 				name, major_version = mapping.split(':', 1)
 				assert '/' not in mapping, "lib-mappings '%s' contains a / in the version number (from '%s')!" % (mapping, impl.feed)
 				mappings[name] = 'lib%s.so.%s' % (name, major_version)
-		impl_path = lookup(impl.id)
-		for libdirname in ['lib', 'usr/lib', 'lib64', 'usr/lib64']:
-			libdir = os.path.join(impl_path, libdirname)
-			if os.path.isdir(libdir):
-				find_broken_version_symlinks(libdir, mappings)
+		# Auto-detect required mappings where possible...
+		# (if the -dev package is native, the symlinks will be OK)
+		if not is_package_impl(impl):
+			impl_path = lookup(impl.id)
+			for libdirname in ['lib', 'usr/lib', 'lib64', 'usr/lib64']:
+				libdir = os.path.join(impl_path, libdirname)
+				if os.path.isdir(libdir):
+					find_broken_version_symlinks(libdir, mappings)
 
 	if mappings:
 		set_up_mappings(mappings)
@@ -350,7 +357,8 @@ def do_build(args):
 		env('TMPDIR', tmpdir)
 
 		for selection in sels.selections.values():
-			readable.append(lookup(selection.id))
+			if not is_package_impl(selection):
+				readable.append(lookup(selection.id))
 
 		options = []
 		if __main__.options.verbose:
