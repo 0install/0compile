@@ -8,6 +8,8 @@ from optparse import OptionParser
 
 from support import *
 
+pubish_command = os.environ["0COMPILE_0PUBLISH"]
+
 def do_publish(args):
 	"""publish [ DOWNLOAD-BASE-URL ]"""
 
@@ -46,8 +48,8 @@ def do_publish(args):
 	download_url = os.path.join(buildenv.download_base_url, archive_name)
 	shutil.copyfile(buildenv.local_iface_file, target_feed)
 	
-	spawn_and_check(find_in_path('0launch'),
-		['http://0install.net/2006/interfaces/0publish', target_feed,
+	spawn_and_check(pubish_command,
+		[target_feed,
 		'--archive-url', download_url,
 		'--archive-extract', buildenv.archive_stem])
 
