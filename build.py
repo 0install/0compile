@@ -209,16 +209,23 @@ def do_build_internal(options, args):
 	for needed_iface in sels.selections:
 		impl = buildenv.chosen_impl(needed_iface)
 		assert impl
+
+		def process_bindings(bindings, dep_impl):
+			for b in bindings:
+				if isinstance(b, EnvironmentBinding):
+					if b.name == 'PKG_CONFIG_PATH':
+						do_pkg_config_binding(b, dep_impl)
+					else:
+						do_env_binding(b, lookup(dep_impl.id))
+
+		# Bindings that tell this component how to find itself...
+		process_bindings(impl.bindings, impl)
+
+		# Bindings that tell this component how to find its dependencies...
 		for dep in impl.dependencies:
 			dep_iface = sels.selections[dep.interface]
-			for b in dep.bindings:
-				if isinstance(b, EnvironmentBinding):
-					dep_impl = buildenv.chosen_impl(dep.interface)
-					if not is_package_impl(dep_impl):
-						if b.name == 'PKG_CONFIG_PATH':
-							do_pkg_config_binding(b, dep_impl)
-						else:
-							do_env_binding(b, lookup(dep_impl.id))
+			dep_impl = buildenv.chosen_impl(dep.interface)
+			process_bindings(dep.bindings, dep_impl)
 
 	# These mappings are needed when mixing Zero Install -dev packages with
 	# native package binaries.
