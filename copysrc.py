@@ -14,7 +14,7 @@ def do_copy_src(args):
 
 	src_impl = buildenv.chosen_impl(buildenv.interface)
 	assert src_impl
-	path = lookup(src_impl.id)
+	path = lookup(src_impl)
 	assert path
 
 	new_src = os.path.realpath('src')	# Just for better messages
@@ -45,7 +45,7 @@ def do_diff(args):
 	assert src_impl
 
 	prog = find_in_path('diff')
-	args = ['-ur', lookup(src_impl.id), new_src]
+	args = ['-ur', lookup(src_impl), new_src]
 
 	status = os.spawnv(os.P_WAIT, prog, [prog] + args)
 	if status == 0:

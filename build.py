@@ -75,7 +75,7 @@ def write_pc(name, lines):
 
 def do_pkg_config_binding(binding, impl):
 	feed_name = impl.feed.split('/')[-1]
-	path = lookup(impl.id)
+	path = lookup(impl)
 	new_insert = correct_for_64bit(path, binding.insert)
 	if new_insert != binding.insert:
 		print "PKG_CONFIG_PATH dir <%s>/%s not found; using %s instead" % (feed_name, binding.insert, new_insert)
@@ -211,12 +211,14 @@ def do_build_internal(options, args):
 		assert impl
 
 		def process_bindings(bindings, dep_impl):
+			if dep_impl.id.startswith('package:'):
+				return
 			for b in bindings:
 				if isinstance(b, EnvironmentBinding):
 					if b.name == 'PKG_CONFIG_PATH':
 						do_pkg_config_binding(b, dep_impl)
 					else:
-						do_env_binding(b, lookup(dep_impl.id))
+						do_env_binding(b, lookup(dep_impl))
 
 		# Bindings that tell this component how to find itself...
 		process_bindings(impl.bindings, impl)
@@ -243,7 +245,7 @@ def do_build_internal(options, args):
 		# Auto-detect required mappings where possible...
 		# (if the -dev package is native, the symlinks will be OK)
 		if not is_package_impl(impl):
-			impl_path = lookup(impl.id)
+			impl_path = lookup(impl)
 			for libdirname in ['lib', 'usr/lib', 'lib64', 'usr/lib64']:
 				libdir = os.path.join(impl_path, libdirname)
 				if os.path.isdir(libdir):
@@ -365,7 +367,7 @@ def do_build(args):
 
 		for selection in sels.selections.values():
 			if not is_package_impl(selection):
-				readable.append(lookup(selection.id))
+				readable.append(lookup(selection))
 
 		options = []
 		if __main__.options.verbose:

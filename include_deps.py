@@ -22,7 +22,8 @@ def do_include_deps(args):
 		assert impl
 		if impl.id.startswith('/'):
 			raise SafeException("Can't export '%s' as it's a local implementation (not supported yet; sorry)" % impl)
-		dirs_to_copy.append(lookup(impl.id))
+		if not impl.id.startswith('package:'):
+			dirs_to_copy.append(lookup(impl))
 	
 	copied = 0
 	for cached in dirs_to_copy:

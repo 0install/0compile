@@ -39,13 +39,14 @@ no_impl = NoImpl()
 def is_package_impl(impl):
 	return impl.id.startswith("package:")
 
-def lookup(id):
+def lookup(impl_or_sel):
+	id = impl_or_sel.id
 	if id.startswith('/'):
 		if os.path.isdir(id):
 			return id
 		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % id)
 	try:
-		return iface_cache.stores.lookup(id)
+		return iface_cache.stores.lookup_any(impl_or_sel.digests)
 	except NotStored, ex:
 		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
 
@@ -293,7 +294,7 @@ class BuildEnv:
 
 		self.root_impl = self._selections.selections[self.interface]
 
-		self.orig_srcdir = os.path.realpath(lookup(self.root_impl.id))
+		self.orig_srcdir = os.path.realpath(lookup(self.root_impl))
 		self.user_srcdir = None
 
 		if os.path.isdir('src'):
