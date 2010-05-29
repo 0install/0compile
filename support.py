@@ -283,7 +283,7 @@ class BuildEnv:
 				handler.wait_for_blocker(blocker)
 		else:
 			options = []
-			if prompt:
+			if prompt and '--console' not in launch_prog:
 				options.append('--gui')
 			child = subprocess.Popen(launch_prog + ['--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
 			try:
