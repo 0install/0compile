@@ -274,13 +274,17 @@ class BuildEnv:
 			finally:
 				stream.close()
 			from zeroinstall.injector import fetch
-			from zeroinstall.injector.handler import Handler
-			handler = Handler()
-			fetcher = fetch.Fetcher(handler)
+			from zeroinstall.injector import handler
+			if os.isatty(1):
+				h = handler.ConsoleHandler()
+			else:
+				h = handler.Handler()
+
+			fetcher = fetch.Fetcher(h)
 			blocker = self._selections.download_missing(iface_cache, fetcher)
 			if blocker:
 				print "Waiting for selected implementations to be downloaded..."
-				handler.wait_for_blocker(blocker)
+				h.wait_for_blocker(blocker)
 		else:
 			options = []
 			if prompt and '--console' not in launch_prog:

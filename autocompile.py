@@ -8,7 +8,7 @@ from optparse import OptionParser
 from zeroinstall import SafeException
 from zeroinstall.injector import arch, handler, policy, model, iface_cache, selections, namespaces, writer, reader
 from zeroinstall.zerostore import manifest
-from zeroinstall.support import tasks, basedir
+from zeroinstall.support import tasks, basedir, ro_rmtree
 
 from support import BuildEnv
 
@@ -55,30 +55,11 @@ class AutocompileCache(iface_cache.IfaceCache):
 
 policy.iface_cache = AutocompileCache()
 
-class MyHandler(handler.Handler):
-	def downloads_changed(self):
-		self.compiler.downloads_changed()
-
-	def confirm_import_feed(self, pending, valid_sigs):
-		if hasattr(self.compiler, 'confirm_import_feed'):
-			return self.compiler.confirm_import_feed(pending, valid_sigs)
-		else:
-			return handler.Handler.confirm_import_feed(self, pending, valid_sigs)
-
 class AutoCompiler:
-	def __init__(self, iface_uri, options):
+	def __init__(self, iface_uri, options, handler):
 		self.iface_uri = iface_uri
 		self.options = options
-		self.handler = MyHandler()
-		self.handler.compiler = self
-
-	def downloads_changed(self):
-		if self.handler.monitored_downloads:
-			self.note('Downloads in progress:')
-			for x in self.handler.monitored_downloads:
-				self.note('- %s' % x)
-		else:
-			self.note('No downloads remaining.')
+		self.handler = handler
 
 	def pretty_print_plan(self, solver, root, indent = '- '):
 		"""Display a tree showing the selected implementations."""
@@ -194,7 +175,7 @@ class AutoCompiler:
 			self.note("\nBuild failed: leaving build directory %s for inspection...\n" % tmpdir)
 			raise
 		else:
-			shutil.rmtree(tmpdir)
+			ro_rmtree(tmpdir)
 
 	@tasks.async
 	def recursive_build(self, iface_uri, version = None):
@@ -254,9 +235,19 @@ class AutoCompiler:
 	def note_error(self, msg):
 		self.overall.insert_at_cursor(msg + '\n')
 
+class GUIHandler(handler.Handler):
+	def downloads_changed(self):
+		self.compiler.downloads_changed()
+
+	def confirm_import_feed(self, pending, valid_sigs):
+		return handler.Handler.confirm_import_feed(self, pending, valid_sigs)
+
 class GTKAutoCompiler(AutoCompiler):
 	def __init__(self, iface_uri, options):
-		AutoCompiler.__init__(self, iface_uri, options)
+		handler = GUIHandler()
+		handler.compiler = self
+
+		AutoCompiler.__init__(self, iface_uri, options, handler)
 		self.child = None
 
 		import pygtk; pygtk.require('2.0')
@@ -328,6 +319,14 @@ class GTKAutoCompiler(AutoCompiler):
 			else:
 				self.closed.trigger()
 		w.connect('response', response)
+
+	def downloads_changed(self):
+		if self.handler.monitored_downloads:
+			self.note('Downloads in progress:')
+			for x in self.handler.monitored_downloads:
+				self.note('- %s' % x)
+		else:
+			self.note('No downloads remaining.')
 
 	def heading(self, msg):
 		self.overall.insert_at_end_and_scroll(msg + '\n', 'heading')
@@ -403,7 +402,8 @@ def do_autocompile(args):
 	if options.gui:
 		compiler = GTKAutoCompiler(iface_uri, options)
 	else:
-		compiler = AutoCompiler(iface_uri, options)
+		h = handler.ConsoleHandler()
+		compiler = AutoCompiler(iface_uri, options, h)
 
 	compiler.build()
 
