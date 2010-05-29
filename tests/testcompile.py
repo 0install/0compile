@@ -178,7 +178,7 @@ class TestCompile(unittest.TestCase):
 		os.chdir(self.hello_dir)
 		os.unlink('0compile.properties')
 		compile('setup', hello_uri, '.')
-		compile('include-deps', expect = 'Copied 1 depend')
+		compile('include-deps', expect = 'dependencies to')
 		compile('include-deps', expect = 'Copied 0 depend')
 
 	def testSetup(self):
