@@ -30,7 +30,7 @@ commands = []
 import autocompile, setup, clean, copysrc, build, publish, gui, bugs, include_deps
 import support
 
-version = '0.19.1'
+version = '0.20'
 
 parser = OptionParser(usage="usage: %prog " + 
 			  '\n       %prog '.join([c.__doc__ for c in commands]))
