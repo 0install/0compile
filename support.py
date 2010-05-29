@@ -160,6 +160,7 @@ class BuildEnv:
 		self.config.set('compile', 'interface', '')
 		self.config.set('compile', 'selections', '')
 		self.config.set('compile', 'metadir', '0install')
+		self.config.set('compile', 'distdir', '')
 
 		self.config.read(ENV_FILE)
 
@@ -181,7 +182,8 @@ class BuildEnv:
 
 	@property
 	def distdir(self):
-		distdir_name = '%s-%s' % (self.iface_name.lower(), get_arch_name().lower())
+		distdir_name = self.config.get('compile', 'distdir') or \
+			'%s-%s' % (self.iface_name.lower(), get_arch_name().lower())
 		assert '/' not in distdir_name
 		return os.path.realpath(distdir_name)
 
