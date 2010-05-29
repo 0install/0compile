@@ -1,12 +1,14 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, popen2
+import sys, os, __main__
 import pygtk; pygtk.require('2.0')
 import gtk, gobject
-from zeroinstall.injector import reader, writer
 
-from support import *
+from zeroinstall.injector import reader, writer, model
+from zeroinstall.injector.iface_cache import iface_cache
+
+from support import BuildEnv, _
 
 RESPONSE_SETUP = 1
 RESPONSE_BUILD = 2
@@ -63,9 +65,7 @@ class CompileBox(gtk.Dialog):
 
 		def response(box, resp):
 			if resp == RESPONSE_SETUP:
-				import setup
 				def done_setup():
-					buildenv = BuildEnv()
 					self.add_msg('Now use Build to compile the chosen source code.')
 				self.run_command((sys.executable, main_path, 'setup'), done_setup)
 			elif resp == RESPONSE_BUILD:

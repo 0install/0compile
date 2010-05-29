@@ -1,9 +1,12 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__
-from logging import info
-from support import *
+import os, __main__
+import shutil
+
+from zeroinstall import SafeException
+
+from support import BuildEnv, lookup, find_in_path
 
 def do_copy_src(args):
 	"""copy-src"""

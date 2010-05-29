@@ -6,8 +6,14 @@ from os.path import join
 from logging import info, warn
 from xml.dom import minidom, XMLNS_NAMESPACE
 from optparse import OptionParser
+import tempfile
 
-from support import *
+from zeroinstall import SafeException
+from zeroinstall.injector import model, namespaces
+from zeroinstall.injector.iface_cache import iface_cache
+
+from support import BuildEnv, ensure_dir, XMLNS_0COMPILE, is_package_impl, parse_bool, depth
+from support import spawn_and_check, find_in_path, ENV_FILE, lookup, spawn_maybe_sandboxed
 
 if hasattr(os.path, 'relpath'):
 	relpath = os.path.relpath
@@ -152,7 +158,7 @@ def remove_la_files():
 def do_build_internal(options, args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
-	import getpass, socket, time
+	import getpass, socket
 
 	buildenv = BuildEnv()
 	sels = buildenv.get_selections()
@@ -183,10 +189,10 @@ def do_build_internal(options, args):
 	write_sample_interface(buildenv, src_iface, src_impl)
 
 	# Check 0compile is new enough
-	min_version = parse_version(src_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
-	if min_version and min_version > parse_version(__main__.version):
+	min_version = model.parse_version(src_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
+	if min_version and min_version > model.parse_version(__main__.version):
 		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
-				(src_iface.get_name(), src_impl.version, format_version(min_version), __main__.version))
+				(src_iface.get_name(), src_impl.version, model.format_version(min_version), __main__.version))
 
 	# Create the patch
 	patch_file = join(buildenv.metadir, 'from-%s.patch' % src_impl.version)
@@ -214,7 +220,7 @@ def do_build_internal(options, args):
 			if dep_impl.id.startswith('package:'):
 				return
 			for b in bindings:
-				if isinstance(b, EnvironmentBinding):
+				if isinstance(b, model.EnvironmentBinding):
 					if b.name == 'PKG_CONFIG_PATH':
 						do_pkg_config_binding(b, dep_impl)
 					else:
@@ -225,7 +231,6 @@ def do_build_internal(options, args):
 
 		# Bindings that tell this component how to find its dependencies...
 		for dep in impl.dependencies:
-			dep_iface = sels.selections[dep.interface]
 			dep_impl = buildenv.chosen_impl(dep.interface)
 			process_bindings(dep.bindings, dep_impl)
 

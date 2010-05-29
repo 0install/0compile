@@ -1,12 +1,14 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__
+import os, __main__
 from logging import info
-from xml.dom import minidom
 from optparse import OptionParser
+import shutil
 
-from support import *
+from zeroinstall import SafeException
+
+from support import BuildEnv, spawn_and_check
 
 pubish_command = os.environ["0COMPILE_0PUBLISH"]
 

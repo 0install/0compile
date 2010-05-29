@@ -1,21 +1,19 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import os, sys, tempfile, shutil, traceback
+import os, sys, shutil, traceback
 import subprocess
 from os.path import join
 from logging import info
 import ConfigParser
 
 from zeroinstall.injector import model, selections, qdom
-from zeroinstall.injector.model import Interface, Implementation, EnvironmentBinding, escape
-from zeroinstall.injector import namespaces, reader
-from zeroinstall.support import basedir
 
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
-from zeroinstall.injector import run
-from zeroinstall.zerostore import Stores, Store, NotStored
+from zeroinstall.zerostore import Store, NotStored
+
+def _(x): return x
 
 ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
@@ -86,7 +84,7 @@ def wait_for_child(child):
 		else:
 			raise SafeException('Command failed with exit status %d' % exit_code)
 	else:
-		raise SafeException('Command failed with signal %d' % WTERMSIG(status))
+		raise SafeException('Command failed with signal %d' % os.WTERMSIG(status))
 
 def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	child = os.fork()
@@ -333,9 +331,6 @@ def depth(node):
 		node = node.parentNode
 		depth += 1
 	return depth
-
-format_version = model.format_version
-parse_version = model.parse_version
 
 def parse_bool(s):
 	if s == 'true': return True

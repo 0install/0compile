@@ -3,7 +3,7 @@
 
 import __main__, shutil, os
 
-from support import *
+from support import BuildEnv
 
 def do_clean(args):
 	"""clean"""

@@ -3,11 +3,11 @@
 
 # This is normally called by 0launch's GUI.
 
-import sys, os, __main__
-from zeroinstall.injector.iface_cache import iface_cache
-from logging import info
+import sys, __main__
 
-from support import *
+from zeroinstall import SafeException
+
+from support import BuildEnv, _
 
 def do_gui(args):
 	"gui [--no-prompt] [SOURCE-URI]"

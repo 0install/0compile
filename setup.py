@@ -1,17 +1,12 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__
-from logging import info
-from xml.dom import minidom, XMLNS_NAMESPACE
+import os, __main__
 
-from zeroinstall.injector import model, selections, namespaces
-from zeroinstall.injector.handler import Handler
-from zeroinstall.injector.iface_cache import iface_cache
-from zeroinstall.injector.policy import Policy
-from zeroinstall import SafeException, helpers
+from zeroinstall.injector import model, namespaces, qdom
+from zeroinstall import SafeException
 
-from support import *
+from support import BuildEnv
 
 def do_setup(args, get_dir_callback = None):
 	"setup [ SOURCE-URI [ DIR ] ]"

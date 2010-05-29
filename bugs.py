@@ -1,10 +1,10 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__
-from logging import info
+import os, __main__
+from os.path import join
 
-from support import *
+from support import BuildEnv
 
 def do_report_bug(args):
 	"""report-bug"""
