@@ -28,13 +28,9 @@ class AutocompileCache(iface_cache.IfaceCache):
 		iface_cache.IfaceCache.__init__(self)
 		self.done = set()
 
-	def get_interface(self, uri):
-		iface = iface_cache.IfaceCache.get_interface(self, uri)
-		if not iface: return None
-		feed = iface._main_feed
-
-		# Note: when a feed is updated, a new ZeroInstallFeed object is created,
-		# so record whether we've seen the feed, not the interface.
+	def get_feed(self, url, force = False):
+		feed = iface_cache.IfaceCache.get_feed(self, url, force)
+		if not feed: return None
 
 		if feed not in self.done:
 			self.done.add(feed)
@@ -47,11 +43,13 @@ class AutocompileCache(iface_cache.IfaceCache):
 			for x in srcs:
 				new_id = '0compile=' + x.id
 				if not new_id in feed.implementations:
-					new = feed._get_impl(new_id)
+					new = model.ZeroInstallImplementation(feed, new_id, None)
+					feed.implementations[new_id] = new
+					new.digests.append(new_id)
 					new.set_arch(host_arch)
 					new.version = x.version
 
-		return iface
+		return feed
 
 policy.iface_cache = AutocompileCache()
 
