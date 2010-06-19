@@ -206,5 +206,4 @@ class TestCompile(unittest.TestCase):
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':
-	sys.argv.append('-v')
 	unittest.main()
