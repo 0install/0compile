@@ -23,6 +23,10 @@ arch.machine_groups['newbuild'] = arch.machine_groups.get(arch._uname[-1], 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
+class DummyDownloadSource(model.RetrievalMethod):
+	"""0launch >= 0.46 won't select implementations without a download source."""
+	pass
+
 class AutocompileCache(iface_cache.IfaceCache):
 	def __init__(self):
 		iface_cache.IfaceCache.__init__(self)
@@ -44,6 +48,7 @@ class AutocompileCache(iface_cache.IfaceCache):
 				new_id = '0compile=' + x.id
 				if not new_id in feed.implementations:
 					new = model.ZeroInstallImplementation(feed, new_id, None)
+					new.download_sources.append(DummyDownloadSource())
 					feed.implementations[new_id] = new
 					new.digests.append(new_id)
 					new.set_arch(host_arch)
@@ -85,12 +90,12 @@ class AutoCompiler:
 
 	def print_details(self, solver):
 		"""Dump debugging details."""
-		self.note("\nDetails of all components and versions considered:")
+		self.note("\nFailed. Details of all components and versions considered:")
 		for iface in solver.details:
 			self.note('\n%s\n' % iface.get_name())
 			for impl, note in solver.details[iface]:
 				self.note('%s (%s) : %s' % (impl.get_version(), impl.arch or '*-*', note or 'OK'))
-		self.note("\nEnd details")
+		self.note("\nEnd details\n")
 
 	@tasks.async
 	def compile_and_register(self, policy):
