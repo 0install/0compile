@@ -25,7 +25,7 @@ For a full tutorial, see 0compile's homepage.</description>
   </release:management>
 
   <group main="0compile" self-test="tests/testcompile.py">
-    <implementation id="." released="2010-06-24" version="0.21"/>
+    <implementation id="." version="0.21-post"/>
     <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib" use="testing"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
