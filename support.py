@@ -8,6 +8,7 @@ from logging import info
 import ConfigParser
 
 from zeroinstall.injector import model, selections, qdom
+from zeroinstall.injector.arch import canonicalize_os, canonicalize_machine
 
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
@@ -141,7 +142,8 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 
 def get_arch_name():
 	uname = os.uname()
-	target_os, target_machine = uname[0], uname[-1]
+	target_os = canonicalize_os(uname[0])
+	target_machine = canonicalize_machine(uname[4])
 	if target_machine in ('i585', 'i686'):
 		target_machine = 'i486'	# (sensible default)
 	return target_os + '-' + target_machine
