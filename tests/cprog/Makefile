@@ -4,6 +4,7 @@ PC_DIR=${DISTDIR}/pkgconfig
 all: main
 	ls -ld "${CPROG_SELF}"
 	./main
+	cp main "${DISTDIR}/"
 	[ -d "${PC_DIR}" ] || mkdir "${PC_DIR}"
 	echo "prefix=${DISTDIR}" > "${PC_DIR}/cprog.pc"
 	[ -d "${LIB_DIR}" ] || mkdir "${LIB_DIR}"
