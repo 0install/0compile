@@ -246,7 +246,10 @@ def do_build_internal(options, args):
 				assert ':' in mapping, "lib-mappings missing ':' in '%s' from '%s'" % (mapping, impl.feed)
 				name, major_version = mapping.split(':', 1)
 				assert '/' not in mapping, "lib-mappings '%s' contains a / in the version number (from '%s')!" % (mapping, impl.feed)
-				mappings[name] = 'lib%s.so.%s' % (name, major_version)
+				if sys.platform == 'darwin':
+					mappings[name] = 'lib%s.%s.dylib' % (name, major_version)
+				else:
+					mappings[name] = 'lib%s.so.%s' % (name, major_version)
 		# Auto-detect required mappings where possible...
 		# (if the -dev package is native, the symlinks will be OK)
 		if not is_package_impl(impl):
@@ -481,7 +484,7 @@ def find_broken_version_symlinks(libdir, mappings):
 	targets would be provided by the corresponding runtime package. If so,
 	create fixed symlinks under $TMPDIR with the real location."""
 	for x in os.listdir(libdir):
-		if x.startswith('lib') and x.endswith('.so'):
+		if x.startswith('lib') and (x.endswith('.so') or x.endswith('.dylib')):
 			path = os.path.join(libdir, x)
 			if os.path.islink(path):
 				target = os.readlink(path)
@@ -492,7 +495,11 @@ def find_broken_version_symlinks(libdir, mappings):
 def set_up_mappings(mappings):
 	"""Create a temporary directory with symlinks for each of the library mappings."""
 	libdirs = []
-	for d in os.environ.get('LD_LIBRARY_PATH', '').split(':'):
+	if sys.platform == 'darwin':
+		LD_LIBRARY_PATH='DYLD_LIBRARY_PATH'
+	else:
+		LD_LIBRARY_PATH='LD_LIBRARY_PATH'
+	for d in os.environ.get(LD_LIBRARY_PATH, '').split(':'):
 		if d: libdirs.append(d)
 	libdirs += ['/lib', '/usr/lib']
 
@@ -526,11 +533,15 @@ def set_up_mappings(mappings):
 	if old_path: old_path = ':' + old_path
 	os.environ['LIBRARY_PATH'] = mappings_dir + old_path
 
+	if sys.platform == 'darwin':
+		soext='.dylib'
+	else:
+		soext='.so'
 	for name, wanted in mappings.items():
 		target = find_library(name, wanted)
 		if target:
-			print "Adding mapping lib%s.so -> %s" % (name, target)
-			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + '.so'))
+			print "Adding mapping lib%s%s -> %s" % (name, soext, target)
+			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + soext))
 
 def dup_src(fn):
 	srcdir = os.environ['SRCDIR'] + '/'
