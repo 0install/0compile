@@ -144,6 +144,16 @@ def get_arch_name():
 	uname = os.uname()
 	target_os = canonicalize_os(uname[0])
 	target_machine = canonicalize_machine(uname[4])
+	if target_os == 'Darwin' and target_machine == 'i386':
+		# this system detection shell script comes from config.guess (20090918):
+		CC = os.getenv("CC_FOR_BUILD") or os.getenv("CC") or os.getenv("HOST_CC") or "cc"
+		process = subprocess.Popen("(echo '#ifdef __LP64__'; echo IS_64BIT_ARCH; echo '#endif') | " +
+		                           "(CCOPTS= %s -E - 2>/dev/null) | " % CC +
+		                           "grep IS_64BIT_ARCH >/dev/null", stdout=subprocess.PIPE, shell=True)
+		output, error = process.communicate()
+		retcode = process.poll()
+		if retcode == 0:
+			target_machine='x86_64'
 	if target_machine in ('i585', 'i686'):
 		target_machine = 'i486'	# (sensible default)
 	return target_os + '-' + target_machine
