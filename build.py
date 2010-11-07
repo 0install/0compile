@@ -483,14 +483,20 @@ def find_broken_version_symlinks(libdir, mappings):
 	"""libdir may be a legacy -devel package containing lib* symlinks whose
 	targets would be provided by the corresponding runtime package. If so,
 	create fixed symlinks under $TMPDIR with the real location."""
+	prefix = 'lib'
+	if sys.platform == 'darwin':
+		extension = '.dylib'
+	else:
+		extension = '.so'
+
 	for x in os.listdir(libdir):
-		if x.startswith('lib') and (x.endswith('.so') or x.endswith('.dylib')):
+		if x.startswith(prefix) and x.endswith(extension):
 			path = os.path.join(libdir, x)
 			if os.path.islink(path):
 				target = os.readlink(path)
 				if '/' not in target and not os.path.exists(os.path.join(libdir, target)):
 					print "Broken link %s -> %s; will relocate..." % (x, target)
-					mappings[x[3:-3]] = target
+					mappings[x[len(prefix):-len(extension)]] = target
 
 def set_up_mappings(mappings):
 	"""Create a temporary directory with symlinks for each of the library mappings."""
