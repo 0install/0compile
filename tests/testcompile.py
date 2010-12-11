@@ -23,8 +23,10 @@ assert os.path.exists(compile_bin)
 if 'DISPLAY' in os.environ:
 	del os.environ['DISPLAY']
 
+launch_command = os.path.join(os.environ['0COMPILE_ZEROINSTALL'], '0launch')
+
 # Ensure it's cached now, to avoid extra output during the tests
-if subprocess.call(['0launch', '--source', '-vc', '--download-only', hello_uri]):
+if subprocess.call([launch_command, '--source', '-vc', '--download-only', hello_uri]):
 	raise Exception("Failed to download hello world test program")
 
 def compile(*args, **kwargs):
@@ -98,12 +100,12 @@ class TestCompile(unittest.TestCase):
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run('%s/bin/hello' % target_dir, expect = 'Hello, world!')
-		run('0launch', '%s/0install/GNU-Hello.xml' % target_dir, expect = 'Hello, world!')
+		run(launch_command, '%s/0install/GNU-Hello.xml' % target_dir, expect = 'Hello, world!')
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testAutocompile(self):
 		compile('autocompile', hello_uri, expect = "Registering feed...")
-		run('0launch', hello_uri, expect = 'Hello, world!')
+		run(launch_command, hello_uri, expect = 'Hello, world!')
 
 	def testLocal(self):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
@@ -112,7 +114,7 @@ class TestCompile(unittest.TestCase):
 		target_dir = 'hello2-%s' % support.get_arch_name().lower()
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
-		run('0launch', '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')
+		run(launch_command, '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')
 	
 	def testBadVersion(self):
 		compile('setup', local_bad_version, self.hello_dir, expect = 'Created directory')
