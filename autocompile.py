@@ -7,6 +7,7 @@ from optparse import OptionParser
 
 from zeroinstall import SafeException
 from zeroinstall.injector import arch, handler, policy, model, iface_cache, selections, namespaces, writer, reader
+from zeroinstall.injector.policy import Policy
 from zeroinstall.zerostore import manifest
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
@@ -109,7 +110,12 @@ class AutoCompiler:
 		version = s.selections[policy.root].version
 		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, arch._uname[-1]))
 		if os.path.exists(local_feed):
-			raise SafeException("Build metadata file '%s' already exists!" % local_feed)
+			local_policy = Policy(local_feed)
+			if local_policy.need_download():
+				self.note("Build metadata file '%s' exists but is not ready, will force building." % local_feed)
+				os.unlink(local_feed)
+			else:
+				raise SafeException("Build metadata file '%s' already exists!" % local_feed)
 
 		tmpdir = tempfile.mkdtemp(prefix = '0compile-')
 		try:
