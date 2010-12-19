@@ -7,7 +7,7 @@ from optparse import OptionParser
 
 from zeroinstall import SafeException
 from zeroinstall.injector import arch, handler, policy, model, iface_cache, selections, namespaces, writer, reader
-from zeroinstall.zerostore import manifest
+from zeroinstall.zerostore import manifest, NotStored
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
 from support import BuildEnv
@@ -99,6 +99,20 @@ class AutoCompiler:
 
 	@tasks.async
 	def compile_and_register(self, policy):
+		def valid_autocompile_feed(binary_feed):
+			cache = policy.solver.iface_cache
+			local_feed_impls = cache.get_feed(local_feed).implementations
+			if len(local_feed_impls) != 1:
+				self.note("Invalid autocompile feed '%s'; expected exactly one implementation!" % binary_feed)
+				return False
+			impl, = local_feed_impls.values()
+			try:
+				cache.stores.lookup_any(impl.digests)
+				return True
+			except NotStored, ex:
+				self.note("Build metadata file '%s' exists but implementation is missing: %s" % (local_feed, ex))
+				return False
+
 		local_feed_dir = basedir.save_config_path('0install.net', '0compile', 'builds', model._pretty_escape(policy.root))
 		s = selections.Selections(policy)
 
@@ -109,7 +123,10 @@ class AutoCompiler:
 		version = s.selections[policy.root].version
 		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, arch._uname[-1]))
 		if os.path.exists(local_feed):
-			raise SafeException("Build metadata file '%s' already exists!" % local_feed)
+			if not valid_autocompile_feed(local_feed):
+				os.unlink(local_feed)
+			else:
+				raise SafeException("Build metadata file '%s' already exists!" % local_feed)
 
 		tmpdir = tempfile.mkdtemp(prefix = '0compile-')
 		try:
