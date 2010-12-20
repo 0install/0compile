@@ -4,9 +4,10 @@
 
 __builtins__._ = lambda x: x
 
+import locale
 from optparse import OptionParser
 import os, sys, tempfile, shutil, traceback
-from logging import info, debug
+from logging import warn, info, debug
 
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
@@ -31,6 +32,11 @@ import autocompile, setup, clean, copysrc, build, publish, gui, bugs, include_de
 import support
 
 version = '0.21'
+
+try:
+	locale.setlocale(locale.LC_ALL, '')
+except locale.Error:
+	warn('Error setting locale (eg. Invalid locale)')
 
 parser = OptionParser(usage="usage: %prog " + 
 			  '\n       %prog '.join([c.__doc__ for c in commands]))
