@@ -1,7 +1,7 @@
 # Copyright (C) 2009, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, tempfile, shutil, subprocess, signal
+import sys, os, __main__, tempfile, subprocess, signal
 from xml.dom import minidom
 from optparse import OptionParser
 

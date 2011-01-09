@@ -6,8 +6,8 @@ __builtins__._ = lambda x: x
 
 import locale
 from optparse import OptionParser
-import os, sys, tempfile, shutil, traceback
-from logging import warn, info, debug
+import os, sys
+from logging import warn
 
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
@@ -20,8 +20,6 @@ if map(int, zeroinstall.version.split('.')) < [0, 24]:
 			    "I need version 0.24 or later." % zeroinstall.version
 	sys.exit(1)
 
-from zeroinstall.injector import model, arch, run
-from zeroinstall.injector.policy import Policy
 from zeroinstall import SafeException
 
 class UsageError(SafeException): pass
