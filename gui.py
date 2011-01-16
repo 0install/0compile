@@ -14,7 +14,7 @@ def do_gui(args):
 	if args and args[0] == '--no-prompt':
 		del args[0]
 		# This option no longer has any effect, since it is the default.
-		# However, 0launch's GUI passes it.
+		# However, old versions of 0launch's GUI pass it (< 0.52)
 
 	import gui_support
 	import gtk
@@ -31,7 +31,7 @@ def do_gui(args):
 				raise SafeException("Cancelled at user's request")
 			setup.do_setup(args, get_dir_callback)
 		else:
-			raise __main__.UsageError()
+			raise SafeException("usage: 0compile gui URI")
 
 		buildenv = BuildEnv()
 		box = gui_support.CompileBox(buildenv.interface)
