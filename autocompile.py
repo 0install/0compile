@@ -172,6 +172,8 @@ class AutoCompiler:
 			finally:
 				local_feed_file.close()
 
+			feed_for_elem, = dom.getElementsByTagNameNS(namespaces.XMLNS_IFACE, 'feed-for')
+
 			self.note("Implementation metadata written to %s" % local_feed)
 
 			# No point adding it to the system store when only the user has the feed...
@@ -179,8 +181,8 @@ class AutoCompiler:
 			self.note("Storing build in user cache %s..." % store.dir)
 			policy.solver.iface_cache.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
-			self.note("Registering feed...")
-			iface = policy.solver.iface_cache.get_interface(policy.root)
+			iface = policy.solver.iface_cache.get_interface(feed_for_elem.getAttribute('interface'))
+			self.note("Registering as feed for %s" % iface.uri)
 			feed = iface.get_feed(local_feed)
 			if feed:
 				self.note("WARNING: feed %s already registered!" % local_feed)
