@@ -56,17 +56,15 @@ class AutocompileCache(iface_cache.IfaceCache):
 
 		return feed
 
-policy.iface_cache = AutocompileCache()
-
 class AutoCompiler:
-	def __init__(self, iface_uri, options, handler):
+	def __init__(self, config, iface_uri, options):
 		self.iface_uri = iface_uri
 		self.options = options
-		self.handler = handler
+		self.config = config
 
 	def pretty_print_plan(self, solver, root, indent = '- '):
 		"""Display a tree showing the selected implementations."""
-		iface = solver.iface_cache.get_interface(root)
+		iface = self.config.iface_cache.get_interface(root)
 		impl = solver.selections[iface]
 		if impl is None:
 			msg = 'Failed to select any suitable version (source or binary)'
@@ -100,7 +98,7 @@ class AutoCompiler:
 	@tasks.async
 	def compile_and_register(self, policy):
 		def valid_autocompile_feed(binary_feed):
-			cache = policy.solver.iface_cache
+			cache = policy.config.iface_cache
 			local_feed_impls = cache.get_feed(local_feed).implementations
 			if len(local_feed_impls) != 1:
 				self.note("Invalid autocompile feed '%s'; expected exactly one implementation!" % binary_feed)
@@ -177,11 +175,11 @@ class AutoCompiler:
 			self.note("Implementation metadata written to %s" % local_feed)
 
 			# No point adding it to the system store when only the user has the feed...
-			store = policy.solver.iface_cache.stores.stores[0]
+			store = policy.config.stores.stores[0]
 			self.note("Storing build in user cache %s..." % store.dir)
-			policy.solver.iface_cache.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
+			policy.config.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
-			iface = policy.solver.iface_cache.get_interface(feed_for_elem.getAttribute('interface'))
+			iface = policy.config.iface_cache.get_interface(feed_for_elem.getAttribute('interface'))
 			self.note("Registering as feed for %s" % iface.uri)
 			feed = iface.get_feed(local_feed)
 			if feed:
@@ -191,7 +189,7 @@ class AutoCompiler:
 			writer.save_interface(iface)
 
 			# We might have cached an old version
-			new_feed = policy.solver.iface_cache.get_interface(local_feed)
+			new_feed = policy.config.iface_cache.get_interface(local_feed)
 			reader.update_from_cache(new_feed)
 		except:
 			self.note("\nBuild failed: leaving build directory %s for inspection...\n" % tmpdir)
@@ -201,8 +199,8 @@ class AutoCompiler:
 
 	@tasks.async
 	def recursive_build(self, iface_uri, version = None):
-		p = policy.Policy(iface_uri, handler = self.handler, src = True)
-		iface = p.solver.iface_cache.get_interface(iface_uri)
+		p = policy.Policy(iface_uri, config = self.config, src = True)
+		iface = p.config.iface_cache.get_interface(iface_uri)
 		p.solver.record_details = True
 		if version:
 			p.solver.extra_restrictions[iface] = [model.VersionRestriction(model.parse_version(version))]
@@ -246,7 +244,7 @@ class AutoCompiler:
 		subprocess.check_call([sys.executable, sys.argv[0], 'build'])
 
 	def build(self):
-		self.handler.wait_for_blocker(self.recursive_build(self.iface_uri))
+		self.config.handler.wait_for_blocker(self.recursive_build(self.iface_uri))
 
 	def heading(self, msg):
 		self.note((' %s ' % msg).center(76, '='))
@@ -265,11 +263,10 @@ class GUIHandler(handler.Handler):
 		return handler.Handler.confirm_import_feed(self, pending, valid_sigs)
 
 class GTKAutoCompiler(AutoCompiler):
-	def __init__(self, iface_uri, options):
-		handler = GUIHandler()
-		handler.compiler = self
+	def __init__(self, config, iface_uri, options):
+		config.handler.compiler = self
 
-		AutoCompiler.__init__(self, iface_uri, options, handler)
+		AutoCompiler.__init__(self, config, iface_uri, options)
 		self.child = None
 
 		import pygtk; pygtk.require('2.0')
@@ -343,9 +340,9 @@ class GTKAutoCompiler(AutoCompiler):
 		w.connect('response', response)
 
 	def downloads_changed(self):
-		if self.handler.monitored_downloads:
+		if self.config.handler.monitored_downloads:
 			self.note('Downloads in progress:')
-			for x in self.handler.monitored_downloads:
+			for x in self.config.handler.monitored_downloads:
 				self.note('- %s' % x)
 		else:
 			self.note('No downloads remaining.')
@@ -362,7 +359,7 @@ class GTKAutoCompiler(AutoCompiler):
 	def build(self):
 		import gtk
 		try:
-			self.handler.wait_for_blocker(self.recursive_build(self.iface_uri))
+			self.config.handler.wait_for_blocker(self.recursive_build(self.iface_uri))
 		except SafeException, ex:
 			self.note_error(str(ex))
 		else:
@@ -370,7 +367,7 @@ class GTKAutoCompiler(AutoCompiler):
 			self.dialog.set_response_sensitive(gtk.RESPONSE_CANCEL, False)
 			self.dialog.set_response_sensitive(gtk.RESPONSE_OK, True)
 
-		self.handler.wait_for_blocker(self.closed)
+		self.config.handler.wait_for_blocker(self.closed)
 
 	@tasks.async
 	def spawn_build(self, iface_name):
@@ -420,12 +417,20 @@ def do_autocompile(args):
 	if len(args2) != 1:
 		raise __main__.UsageError()
 
+	if options.gui:
+		h = GUIHandler()
+	elif os.isatty(1):
+		h = handler.ConsoleHandler()
+	else:
+		h = handler.Handler()
+	config = policy.load_config(handler = h)
+	config._iface_cache = AutocompileCache()
+
 	iface_uri = model.canonical_iface_uri(args2[0])
 	if options.gui:
-		compiler = GTKAutoCompiler(iface_uri, options)
+		compiler = GTKAutoCompiler(config, iface_uri, options)
 	else:
-		h = handler.ConsoleHandler()
-		compiler = AutoCompiler(iface_uri, options, h)
+		compiler = AutoCompiler(config, iface_uri, options)
 
 	compiler.build()
 

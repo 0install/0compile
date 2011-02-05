@@ -285,15 +285,13 @@ class BuildEnv:
 				self._selections = selections.Selections(qdom.parse(stream))
 			finally:
 				stream.close()
-			from zeroinstall.injector import fetch
-			from zeroinstall.injector import handler
+			from zeroinstall.injector import handler, policy
 			if os.isatty(1):
 				h = handler.ConsoleHandler()
 			else:
 				h = handler.Handler()
-
-			fetcher = fetch.Fetcher(h)
-			blocker = self._selections.download_missing(iface_cache, fetcher)
+			config = policy.load_config(h)
+			blocker = self._selections.download_missing(config)
 			if blocker:
 				print "Waiting for selected implementations to be downloaded..."
 				h.wait_for_blocker(blocker)
