@@ -23,7 +23,11 @@ assert os.path.exists(compile_bin)
 if 'DISPLAY' in os.environ:
 	del os.environ['DISPLAY']
 
-launch_command = os.path.join(os.environ['0COMPILE_ZEROINSTALL'], '0launch')
+zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
+if zeroinstall_dir:
+	launch_command = os.path.join(zeroinstall_dir, '0launch')
+else:
+	launch_command = '0launch'		# Package
 
 # Ensure it's cached now, to avoid extra output during the tests
 if subprocess.call([launch_command, '--source', '-vc', '--download-only', hello_uri]):
