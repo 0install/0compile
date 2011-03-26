@@ -13,7 +13,7 @@ from zeroinstall.injector import model, namespaces
 from zeroinstall.injector.iface_cache import iface_cache
 
 from support import BuildEnv, ensure_dir, XMLNS_0COMPILE, is_package_impl, parse_bool, depth
-from support import spawn_and_check, find_in_path, ENV_FILE, lookup, spawn_maybe_sandboxed
+from support import spawn_and_check, find_in_path, ENV_FILE, lookup, spawn_maybe_sandboxed, Prefixes
 
 if hasattr(os.path, 'relpath'):
 	relpath = os.path.relpath
@@ -168,7 +168,7 @@ def do_build_internal(options, args):
 
 	build_env_xml = join(buildenv.metadir, 'build-environment.xml')
 
-	buildenv_doc = buildenv.get_selections().toDOM()
+	buildenv_doc = sels.toDOM()
 
 	# Create build-environment.xml file
 	root = buildenv_doc.documentElement
@@ -279,7 +279,11 @@ def do_build_internal(options, args):
 	if options.shell:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
-		command = src_impl.attrs[XMLNS_0COMPILE + ' command']
+		compile_command = sels.commands[0]
+		if compile_command:
+			command = compile_command.qdom.attrs['shell-command']
+		else:
+			command = src_impl.attrs[XMLNS_0COMPILE + ' command']
 
 		# Remove any existing log files
 		for log in ['build.log', 'build-success.log', 'build-failure.log']:
@@ -400,6 +404,7 @@ def write_sample_interface(buildenv, iface, src_impl):
 
 	root = doc.documentElement
 	root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns', XMLNS_IFACE)
+	prefixes = Prefixes(XMLNS_IFACE)
 
 	def addSimple(parent, name, text = None):
 		elem = doc.createElementNS(XMLNS_IFACE, name)
@@ -440,8 +445,7 @@ def write_sample_interface(buildenv, iface, src_impl):
 
 	lib_mappings = src_impl.attrs.get(XMLNS_0COMPILE + ' binary-lib-mappings', None)
 	if lib_mappings:
-		root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:compile', XMLNS_0COMPILE)
-		group.setAttributeNS(XMLNS_0COMPILE, 'compile:lib-mappings', lib_mappings)
+		prefixes.setAttributeNS(group, XMLNS_0COMPILE, 'lib-mappings', lib_mappings)
 	
 	for d in src_impl.dependencies:
 		# 0launch < 0.32 messed up the namespace...
@@ -460,8 +464,23 @@ def write_sample_interface(buildenv, iface, src_impl):
 					raise Exception('Unknown binding type ' + b)
 			close(requires)
 				
-	group.setAttributeNS(None, 'arch', target_arch)
 	impl_elem = addSimple(group, 'implementation')
+	impl_template = buildenv.get_binary_template()
+	if impl_template:
+		# Copy attributes from template
+		for fullname, value in impl_template.attrs.iteritems():
+			if fullname == 'arch' and value == '*-*': continue
+			if ' ' in fullname:
+				ns, localName = fullname.split(' ', 1)
+			else:
+				ns, localName = None, fullname
+			prefixes.setAttributeNS(impl_elem, ns, localName, value)
+		# Copy child nodes
+		for child in impl_template.childNodes:
+			impl_elem.appendChild(child.toDOM(doc, prefixes))
+		if impl_template.content:
+			impl_elem.appendChild(doc.createTextNode(impl_template.content))
+
 	impl_elem.setAttributeNS(None, 'version', src_impl.version)
 
 	version_modifier = buildenv.version_modifier
@@ -472,6 +491,9 @@ def write_sample_interface(buildenv, iface, src_impl):
 	impl_elem.setAttributeNS(None, 'released', time.strftime('%Y-%m-%d'))
 	close(group)
 	close(root)
+
+	for ns, prefix in prefixes.prefixes.items():
+		root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:' + prefix, ns)
 
 	stream = codecs.open(path, 'w', encoding = 'utf-8')
 	try:

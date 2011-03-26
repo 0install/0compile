@@ -192,10 +192,26 @@ class BuildEnv:
 
 	@property
 	def distdir(self):
-		distdir_name = self.config.get('compile', 'distdir') or \
-			'%s-%s' % (self.iface_name.lower(), get_arch_name().lower())
+		distdir_name = self.config.get('compile', 'distdir')
+		if not distdir_name:
+			arch = self.target_arch.replace('*', 'any')
+			distdir_name = self.iface_name.lower()
+			distdir_name += '-' + arch.lower()
 		assert '/' not in distdir_name
 		return os.path.realpath(distdir_name)
+
+	def get_binary_template(self):
+		"""Find the <compile:implementation> element for the selected compile command, if any"""
+		sels = self.get_selections()
+		if sels.commands:
+			for elem in sels.commands[0].qdom.childNodes:
+				if elem.uri == XMLNS_0COMPILE and elem.name == 'implementation':
+					return elem
+
+				# XXX: hack for 0launch < 0.54 which messes up the namespace
+				if elem.name == 'implementation':
+					return elem
+		return None
 
 	@property
 	def metadir(self):
@@ -209,7 +225,9 @@ class BuildEnv:
 
 	@property
 	def target_arch(self):
-		return get_arch_name()
+		temp = self.get_binary_template()
+		arch = temp and temp.getAttribute('arch')
+		return arch or get_arch_name()
 
 	@property
 	def version_modifier(self):
@@ -350,3 +368,29 @@ def parse_bool(s):
 	if s == 'true': return True
 	if s == 'false': return False
 	raise SafeException('Expected "true" or "false" but got "%s"' % s)
+
+class Prefixes:
+	# Copied from 0launch 0.54 (remove once 0.54 is released)
+	def __init__(self, default_ns):
+		self.prefixes = {}
+		self.default_ns = default_ns
+
+	def get(self, ns):
+		prefix = self.prefixes.get(ns, None)
+		if prefix:
+			return prefix
+		prefix = 'ns%d' % len(self.prefixes)
+		self.prefixes[ns] = prefix
+		return prefix
+
+	def setAttributeNS(self, elem, uri, localName, value):
+		if uri is None:
+			elem.setAttributeNS(None, localName, value)
+		else:
+			elem.setAttributeNS(uri, self.get(uri) + ':' + localName, value)
+	
+	def createElementNS(self, doc, uri, localName):
+		if uri == self.default_ns:
+			return doc.createElementNS(uri, localName)
+		else:
+			return doc.createElementNS(uri, self.get(uri) + ':' + localName)

@@ -12,6 +12,9 @@
     <requires compile:include-binary='true' interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib">
       <environment insert="ROX-Lib2/python" name="ROXLIB"/>
     </requires>
-    <implementation id="." version="0.1" compile:binary-main='hello2' compile:command='ls -l "$ROXLIB" &amp;&amp; cp "$SRCDIR/hello2" "$DISTDIR"'/>
+    <implementation id="." version="0.1"/>
+    <command name='compile' shell-command='ls -l "$ROXLIB" &amp;&amp; cp "$SRCDIR/hello2" "$DISTDIR"'>
+      <compile:implementation main='hello2'/>
+    </command>
   </group>
 </interface>
