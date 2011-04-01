@@ -307,11 +307,11 @@ def do_build_internal(options, args):
 				shutil.copyfileobj(file(patch_file), log)
 				log.write('\n')
 
-			print "Executing: " + command
-			print >>log, "Executing: " + command
+			print "Executing: " + command, args
+			print >>log, "Executing: " + command, args
 
 			# Tee the output to the console and to the log
-			child = subprocess.Popen(command, shell = True, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+			child = subprocess.Popen(['/bin/sh', '-c', command + ' "$@"', '-'] + args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 			while True:
 				data = os.read(child.stdout.fileno(), 100)
 				if not data: break
