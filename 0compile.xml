@@ -24,7 +24,17 @@ For a full tutorial, see 0compile's homepage.</description>
     <release:action phase="commit-release">sed -i &quot;s/^version = '.*'$/version = '$RELEASE_VERSION'/&quot; 0compile</release:action>
   </release:management>
 
-  <group main="0compile" self-test="tests/testcompile.py">
+  <group main="0compile">
+    <command name='run' path='0compile'>
+      <runner interface='http://repo.roscidus.com/python/python'>
+	<version before='3'/>
+      </runner>
+    </command>
+    <command name='test' path='tests/testcompile.py'>
+      <runner interface='http://repo.roscidus.com/python/python'>
+	<version before='3'/>
+      </runner>
+    </command>
     <implementation id="." version="0.23-post"/>
     <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib" use="testing"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
