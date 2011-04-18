@@ -246,8 +246,9 @@ class BuildEnv:
 
 		# Don't use the feed's name, as it may contain the version number
 		name = feed.get_name().lower().replace(' ', '-')
+		arch = self.target_arch.lower().replace('*-*', 'bin').replace('*', 'any')
 
-		return '%s-%s-%s' % (name, self.target_arch.lower(), version)
+		return '%s-%s-%s' % (name, arch, version)
 
 	def load_built_feed(self):
 		path = self.local_iface_file
