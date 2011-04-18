@@ -209,6 +209,7 @@ def do_build_internal(options, args):
 	env('BUILDDIR', builddir)
 	env('DISTDIR', buildenv.distdir)
 	env('SRCDIR', buildenv.user_srcdir or buildenv.orig_srcdir)
+	env('BINARYFEED', buildenv.local_iface_file)
 	os.chdir(builddir)
 	print "cd", builddir
 
