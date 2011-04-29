@@ -13,13 +13,6 @@ zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
 	sys.path.insert(1, zeroinstall_dir)
 
-import zeroinstall
-
-if map(int, zeroinstall.version.split('.')) < [0, 24]:
-	print >>sys.stderr, "Your version of 0launch (%s) is too old. " \
-			    "I need version 0.24 or later." % zeroinstall.version
-	sys.exit(1)
-
 from zeroinstall import SafeException
 
 class UsageError(SafeException): pass
