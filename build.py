@@ -395,7 +395,6 @@ def do_build(args):
 
 def write_sample_interface(buildenv, iface, src_impl):
 	path = buildenv.local_iface_file
-	target_arch = buildenv.target_arch
 
 	impl = minidom.getDOMImplementation()
 
@@ -465,12 +464,17 @@ def write_sample_interface(buildenv, iface, src_impl):
 					raise Exception('Unknown binding type ' + b)
 			close(requires)
 				
+	set_arch = True
+
 	impl_elem = addSimple(group, 'implementation')
 	impl_template = buildenv.get_binary_template()
 	if impl_template:
 		# Copy attributes from template
 		for fullname, value in impl_template.attrs.iteritems():
-			if fullname == 'arch' and value == '*-*': continue
+			if fullname == 'arch':
+				set_arch = False
+				if value == '*-*':
+					continue
 			if ' ' in fullname:
 				ns, localName = fullname.split(' ', 1)
 			else:
@@ -481,6 +485,9 @@ def write_sample_interface(buildenv, iface, src_impl):
 			impl_elem.appendChild(child.toDOM(doc, prefixes))
 		if impl_template.content:
 			impl_elem.appendChild(doc.createTextNode(impl_template.content))
+
+	if set_arch:
+		group.setAttributeNS(None, 'arch', buildenv.target_arch)
 
 	impl_elem.setAttributeNS(None, 'version', src_impl.version)
 
