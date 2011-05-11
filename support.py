@@ -21,7 +21,10 @@ XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
-	launch_prog = [os.path.join(zeroinstall_dir, '0launch')]
+	# XXX: we're assuming that, if installed through 0install, 0launch requires
+	# the same version of Python as 0compile. This is currently needed for Arch
+	# Linux, but long-term we need to use the <runner>.
+	launch_prog = [sys.executable, os.path.join(zeroinstall_dir, '0launch')]
 else:
 	launch_prog = ['0launch']
 

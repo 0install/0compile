@@ -27,18 +27,20 @@ if 'DISPLAY' in os.environ:
 
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
-	launch_command = os.path.join(zeroinstall_dir, '0launch')
+	launch_command = [sys.executable, os.path.join(zeroinstall_dir, '0launch')]
 else:
-	launch_command = '0launch'		# Package
+	launch_command = ['0launch']		# Package
 
 # Ensure it's cached now, to avoid extra output during the tests
-if subprocess.call([launch_command, '--source', '-vc', '--download-only', hello_uri]):
+if subprocess.call(launch_command + ['--source', '-vc', '--download-only', hello_uri]):
 	raise Exception("Failed to download hello world test program")
 
 def compile(*args, **kwargs):
-	run(*([compile_bin] + list(args)), **kwargs)
+	run(*([sys.executable, compile_bin] + list(args)), **kwargs)
 
 def run(*args, **kwargs):
+	if not isinstance(args[0], basestring):
+		args = args[0] + list(args[1:])
 	child = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 	got, unused = child.communicate()
 

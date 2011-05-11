@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import os, __main__
+import os, sys, __main__
 from logging import info
 from optparse import OptionParser
 import shutil
@@ -50,8 +50,12 @@ def do_publish(args):
 	download_url = os.path.join(buildenv.download_base_url, archive_name)
 	shutil.copyfile(buildenv.local_iface_file, target_feed)
 	
-	spawn_and_check(pubish_command,
-		[target_feed,
+	# XXX: we're assuming that 0publish requires the same version of Python as
+	# 0compile. This is currently needed for Arch Linux, but long-term we need to
+	# use the <runner>.
+	spawn_and_check(sys.executable, [
+		pubish_command,
+		target_feed,
 		'--archive-url', download_url,
 		'--archive-extract', buildenv.archive_stem])
 
