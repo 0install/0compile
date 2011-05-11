@@ -117,7 +117,7 @@ class TestCompile(unittest.TestCase):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
 		compile('build', expect = 'Executing: ls -l')
-		target_dir = 'hello2-%s' % support.get_arch_name().lower()
+		target_dir = 'hello2-any-any'
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run(launch_command, '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')

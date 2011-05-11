@@ -14,7 +14,13 @@
     </requires>
     <implementation id="." version="0.1"/>
     <command name='compile' shell-command='ls -l "$ROXLIB" &amp;&amp; cp "$SRCDIR/hello2" "$DISTDIR"'>
-      <compile:implementation main='hello2'/>
+      <compile:implementation main='hello2' arch='*-*'>
+	<command name='run' path='hello2'>
+	  <runner interface='http://repo.roscidus.com/python/python'>
+	    <version before='3'/>
+	  </runner>
+	</command>
+      </compile:implementation>
     </command>
   </group>
 </interface>
