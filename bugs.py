@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import os, __main__
+import os, __main__, codecs
 from os.path import join
 
 from support import BuildEnv
@@ -11,7 +11,7 @@ def do_report_bug(args):
 	buildenv = BuildEnv()
 
 	log_name = 'build/build-failure.log'
-	build_log = file(log_name)
+	build_log = codecs.open(log_name, 'r', 'utf-8')
 	log_text = build_log.read()
 	build_log.close()
 
@@ -23,6 +23,8 @@ def do_report_bug(args):
 	else:
 		log_text += '\n\n"%s" file not found' % build_env_xml_file
 	
+	log_text = codecs.encode(log_text, 'utf-8')
+
 	import urllib
 	from urllib2 import urlopen
 
