@@ -9,7 +9,7 @@ from optparse import OptionParser
 import tempfile
 
 from zeroinstall import SafeException
-from zeroinstall.injector import model, namespaces
+from zeroinstall.injector import model, namespaces, run
 from zeroinstall.injector.iface_cache import iface_cache
 
 from support import BuildEnv, ensure_dir, XMLNS_0COMPILE, is_package_impl, parse_bool, depth
@@ -155,6 +155,14 @@ def remove_la_files():
 				if f.endswith('.a'):
 					warn("Found static archive '%s'; maybe build with --disable-static?", f)
 
+class CompileSetup(run.Setup):
+	def do_binding(self, impl, b):
+		if isinstance(b, model.EnvironmentBinding):
+			if b.name == 'PKG_CONFIG_PATH':
+				do_pkg_config_binding(b, impl)
+			else:
+				do_env_binding(b, lookup(impl))
+
 def do_build_internal(options, args):
 	"""build-internal"""
 	# If a sandbox is being used, we're in it now.
@@ -213,27 +221,8 @@ def do_build_internal(options, args):
 	os.chdir(builddir)
 	print "cd", builddir
 
-	for needed_iface in sels.selections:
-		impl = buildenv.chosen_impl(needed_iface)
-		assert impl
-
-		def process_bindings(bindings, dep_impl):
-			if dep_impl.id.startswith('package:'):
-				return
-			for b in bindings:
-				if isinstance(b, model.EnvironmentBinding):
-					if b.name == 'PKG_CONFIG_PATH':
-						do_pkg_config_binding(b, dep_impl)
-					else:
-						do_env_binding(b, lookup(dep_impl))
-
-		# Bindings that tell this component how to find itself...
-		process_bindings(impl.bindings, impl)
-
-		# Bindings that tell this component how to find its dependencies...
-		for dep in impl.dependencies:
-			dep_impl = buildenv.chosen_impl(dep.interface)
-			process_bindings(dep.bindings, dep_impl)
+	setup = CompileSetup(iface_cache.stores)
+	setup.prepare_env(sels)
 
 	# These mappings are needed when mixing Zero Install -dev packages with
 	# native package binaries.
@@ -280,11 +269,14 @@ def do_build_internal(options, args):
 	if options.shell:
 		spawn_and_check(find_in_path('sh'), [])
 	else:
-		compile_command = sels.commands[0]
-		if compile_command:
-			command = compile_command.qdom.attrs['shell-command']
+		command = sels.commands[0].qdom.attrs.get('shell-command', None)
+		if command is None:
+			# New style <command>
+			prog_args = setup.build_command_args(sels) + args
 		else:
-			command = src_impl.attrs[XMLNS_0COMPILE + ' command']
+			# Old style shell-command='...'
+			prog_args = ['/bin/sh', '-c', command + ' "$@"', '-'] + args
+			assert len(sels.commands) == 1
 
 		# Remove any existing log files
 		for log in ['build.log', 'build-success.log', 'build-failure.log']:
@@ -308,11 +300,15 @@ def do_build_internal(options, args):
 				shutil.copyfileobj(file(patch_file), log)
 				log.write('\n')
 
-			print "Executing: " + command, args
-			print >>log, "Executing: " + command, args
+			if command:
+				print "Executing: " + command, args
+				print >>log, "Executing: " + command, args
+			else:
+				print "Executing: " + str(prog_args)
+				print >>log, "Executing: " + str(prog_args)
 
 			# Tee the output to the console and to the log
-			child = subprocess.Popen(['/bin/sh', '-c', command + ' "$@"', '-'] + args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
+			child = subprocess.Popen(prog_args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 			while True:
 				data = os.read(child.stdout.fileno(), 100)
 				if not data: break
@@ -331,7 +327,7 @@ def do_build_internal(options, args):
 			if failure:
 				print >>log, failure
 				os.rename('build.log', 'build-failure.log')
-				raise SafeException("Command '%s': %s" % (command, failure))
+				raise SafeException("Command '%s': %s" % (prog_args, failure))
 			else:
 				os.rename('build.log', 'build-success.log')
 		finally:

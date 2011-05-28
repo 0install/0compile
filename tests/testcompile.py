@@ -43,6 +43,9 @@ def run(*args, **kwargs):
 		args = args[0] + list(args[1:])
 	child = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 	got, unused = child.communicate()
+	code = child.wait()
+	if code != kwargs.get('expect_status', 0):
+		raise Exception("Exit status %d:\n%s" % (code, got))
 
 	expected = kwargs.get('expect', '')
 	if expected:
@@ -85,12 +88,12 @@ class TestCompile(unittest.TestCase):
 		ro_rmtree(self.tmpdir)
 
 	def testBadCommand(self):
-		compile('foo', expect = 'usage: 0compile')
-		compile('setup', hello_uri, self.tmpdir, expect = 'already exists')
+		compile('foo', expect = 'usage: 0compile', expect_status = 1)
+		compile('setup', hello_uri, self.tmpdir, expect = 'already exists', expect_status = 1)
 		os.chdir(self.tmpdir)
-		compile('setup', expect = 'Run 0compile from a directory containing')
-		compile('build', expect = 'Run 0compile from a directory containing')
-		compile('publish', expect = 'Run 0compile from a directory containing')
+		compile('setup', expect = 'Run 0compile from a directory containing', expect_status = 1)
+		compile('build', expect = 'Run 0compile from a directory containing', expect_status = 1)
+		compile('publish', expect = 'Run 0compile from a directory containing', expect_status = 1)
 
 	def testCompileNoDir(self):
 		os.chdir(self.tmpdir)
@@ -127,7 +130,7 @@ class TestCompile(unittest.TestCase):
 	def testBadVersion(self):
 		compile('setup', local_bad_version, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
-		compile('build', expect = 'hello2-0.1 requires 0compile >= 300000')
+		compile('build', expect = 'hello2-0.1 requires 0compile >= 300000', expect_status = 1)
 
 	def testCommand(self):
 		comp_dir = os.path.join(self.tmpdir, 'cprog-command')
@@ -147,11 +150,11 @@ class TestCompile(unittest.TestCase):
 		comp_dir = os.path.join(self.tmpdir, 'cprog')
 		compile('setup', local_cprog_path, comp_dir, expect = 'Created directory')
 		os.chdir(comp_dir)
-		compile('diff', expect = "No local src directory to diff against")
-		compile('diff', 'foo', expect = 'usage')
-		compile('copy-src', 'foo', expect = 'usage')
+		compile('diff', expect = "No local src directory to diff against", expect_status = 1)
+		compile('diff', 'foo', expect = 'usage', expect_status = 1)
+		compile('copy-src', 'foo', expect = 'usage', expect_status = 1)
 		compile('copy-src', expect = 'Copied as')
-		compile('copy-src', expect = "Directory '")
+		compile('copy-src', expect = "Directory '", expect_status = 1)
 
 		# 'src' exists, but no changes
 		compile('diff')
@@ -179,7 +182,7 @@ class TestCompile(unittest.TestCase):
 		stream.write('this is not valid C!')
 		stream.close()
 		shutil.rmtree('build')
-		compile('build', expect = 'Build failed')
+		compile('build', expect = 'Build failed', expect_status = 1)
 		assert os.path.exists('build/build-failure.log')
 
 		# 'src' does not exist
@@ -209,11 +212,11 @@ class TestCompile(unittest.TestCase):
 		compile('setup', hello_selections, self.hello_dir,
 			expect = 'Created directory')
 		compile('setup', hello_selections, self.hello_dir,
-			expect = "Directory '")
+			expect = "Directory '", expect_status = 1)
 		compile('setup', hello_selections, '.', 'foo',
-			expect = "usage")
+			expect = "usage", expect_status = 1)
 		os.chdir(self.hello_dir)
-		compile('setup', expect = "Selections are fixed")
+		compile('setup', expect = "Selections are fixed", expect_status = 1)
 
 	def testReportBug(self):
 		broken_src = os.path.join(self.hello_dir, "broken.xml")
@@ -221,7 +224,7 @@ class TestCompile(unittest.TestCase):
 		shutil.copy(local_hello_path, broken_src)
 		os.chdir(self.hello_dir)
 		compile('setup', broken_src, '.')
-		compile('build', expect = 'Build failed with exit code')
+		compile('build', expect = 'Build failed with exit code', expect_status = 1)
 		compile('report-bug', expect = "http://sourceforge.net")
 
 		env = support.BuildEnv()

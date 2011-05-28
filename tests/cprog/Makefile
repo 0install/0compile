@@ -11,3 +11,4 @@ all: main
 	echo "# Please DO NOT delete this file!"  >> "${LIB_DIR}/bad.la"
 	echo "# Innocent file"  >> "${LIB_DIR}/good.la"
 	echo "# Please DO NOT delete this file!"  >> "${LIB_DIR}/nice.ok"
+	[ "${runnerVarsSet}" = "yes" ] || exit 1

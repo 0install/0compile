@@ -9,7 +9,10 @@
 
   <group arch="*-src" compile:dup-src='true'>
     <implementation id="." version="0.1">
-      <command name='compile' shell-command='make'>
+      <command name='compile'>
+	<runner interface='http://repo.roscidus.com/devel/make'>
+	  <environment name='runnerVarsSet' value='yes'/>
+	</runner>
 	<compile:implementation main='main'/>
       </command>
       <environment name='CPROG_SELF' insert='' mode='replace'/>

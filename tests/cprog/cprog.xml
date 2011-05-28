@@ -10,6 +10,7 @@
   <group arch="*-src" compile:dup-src='true'>
     <implementation compile:binary-main="main" compile:command="make" id="." version="0.1">
       <environment name='CPROG_SELF' insert='' mode='replace'/>
+      <environment name='runnerVarsSet' value='yes'/>
     </implementation>
   </group>
 </interface>
