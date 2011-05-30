@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import os, __main__
+import os, sys, __main__
 
 from zeroinstall.injector import model, namespaces, qdom
 from zeroinstall import SafeException
@@ -51,7 +51,11 @@ def do_setup(args, get_dir_callback = None):
 		buildenv.get_selections()
 
 	if create_dir:
-		os.mkdir(create_dir)
+		try:
+			os.mkdir(create_dir)
+		except:
+			print >>sys.stderr, "Failed to create new directory '%s'" % os.path.abspath(create_dir)
+			raise
 		os.chdir(create_dir)
 		print "Created directory %s" % create_dir
 
