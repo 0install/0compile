@@ -156,12 +156,14 @@ def remove_la_files():
 					warn("Found static archive '%s'; maybe build with --disable-static?", f)
 
 class CompileSetup(run.Setup):
-	def do_binding(self, impl, b):
+	def do_binding(self, impl, b, dep):
 		if isinstance(b, model.EnvironmentBinding):
 			if b.name == 'PKG_CONFIG_PATH':
 				do_pkg_config_binding(b, impl)
 			else:
 				do_env_binding(b, lookup(impl))
+		else:
+			run.Setup.do_binding(self, impl, b, dep)
 
 def do_build_internal(options, args):
 	"""build-internal"""
@@ -221,8 +223,8 @@ def do_build_internal(options, args):
 	os.chdir(builddir)
 	print "cd", builddir
 
-	setup = CompileSetup(iface_cache.stores)
-	setup.prepare_env(sels)
+	setup = CompileSetup(iface_cache.stores, sels)
+	setup.prepare_env()
 
 	# These mappings are needed when mixing Zero Install -dev packages with
 	# native package binaries.
@@ -272,7 +274,7 @@ def do_build_internal(options, args):
 		command = sels.commands[0].qdom.attrs.get('shell-command', None)
 		if command is None:
 			# New style <command>
-			prog_args = setup.build_command_args(sels) + args
+			prog_args = setup.build_command(sels.interface, sels.command) + args
 		else:
 			# Old style shell-command='...'
 			prog_args = ['/bin/sh', '-c', command + ' "$@"', '-'] + args
