@@ -112,7 +112,7 @@ class AutoCompiler:
 				return False
 
 		local_feed_dir = basedir.save_config_path('0install.net', '0compile', 'builds', model._pretty_escape(policy.root))
-		s = selections.Selections(policy)
+		s = policy.solver.selections
 
 		buildenv = BuildEnv(need_config = False)
 		buildenv.config.set('compile', 'interface', policy.root)
