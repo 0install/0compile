@@ -156,14 +156,14 @@ def remove_la_files():
 					warn("Found static archive '%s'; maybe build with --disable-static?", f)
 
 class CompileSetup(run.Setup):
-	def do_binding(self, impl, b, dep):
+	def do_binding(self, impl, b, iface):
 		if isinstance(b, model.EnvironmentBinding):
 			if b.name == 'PKG_CONFIG_PATH':
 				do_pkg_config_binding(b, impl)
 			else:
 				do_env_binding(b, lookup(impl))
 		else:
-			run.Setup.do_binding(self, impl, b, dep)
+			run.Setup.do_binding(self, impl, b, iface)
 
 def do_build_internal(options, args):
 	"""build-internal"""
