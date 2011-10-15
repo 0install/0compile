@@ -57,6 +57,9 @@ def env(name, value):
 	print "%s=%s" % (name, value)
 
 def do_env_binding(binding, path):
+	if binding.insert is not None and path is None:
+		# Skip insert bindings for package implementations
+		return
 	env(binding.name, binding.get_value(path, os.environ.get(binding.name, None)))
 
 def correct_for_64bit(base, rel_path):

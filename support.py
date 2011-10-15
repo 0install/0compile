@@ -43,6 +43,8 @@ def is_package_impl(impl):
 
 def lookup(impl_or_sel):
 	id = impl_or_sel.id
+	if id.startswith('package:'):
+		return None
 	if id.startswith('/'):
 		if os.path.isdir(id):
 			return id
