@@ -582,9 +582,19 @@ def set_up_mappings(mappings):
 
 def dup_src(fn):
 	srcdir = os.environ['SRCDIR'] + '/'
+	builddir = os.environ['BUILDDIR']
+
+	build_in_src = srcdir + 'build' == builddir
+
 	for root, dirs, files in os.walk(srcdir):
 		assert root.startswith(srcdir)
 		reldir = root[len(srcdir):]
+
+		if reldir == '.git' or (reldir == 'build' and build_in_src):
+			print "dup-src: skipping", reldir
+			dirs[:] = []
+			continue
+
 		for f in files:
 			target = os.path.join(reldir, f)
 			#print "Copy %s -> %s" % (os.path.join(root, f), target)
