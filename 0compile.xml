@@ -35,7 +35,7 @@ For a full tutorial, see 0compile's homepage.</description>
 	<version before="3"/>
       </runner>
     </command>
-    <implementation id="." released="2011-11-26" version="0.26"/>
+    <implementation id="." version="0.26-post"/>
     <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib" use="testing"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
