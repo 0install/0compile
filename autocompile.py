@@ -244,7 +244,7 @@ class AutoCompiler:
 		subprocess.check_call([sys.executable, sys.argv[0], 'build'])
 
 	def build(self):
-		self.config.handler.wait_for_blocker(self.recursive_build(self.iface_uri))
+		tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
 
 	def heading(self, msg):
 		self.note((' %s ' % msg).center(76, '='))
@@ -359,7 +359,7 @@ class GTKAutoCompiler(AutoCompiler):
 	def build(self):
 		import gtk
 		try:
-			self.config.handler.wait_for_blocker(self.recursive_build(self.iface_uri))
+			tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
 		except SafeException, ex:
 			self.note_error(str(ex))
 		else:
@@ -367,7 +367,7 @@ class GTKAutoCompiler(AutoCompiler):
 			self.dialog.set_response_sensitive(gtk.RESPONSE_CANCEL, False)
 			self.dialog.set_response_sensitive(gtk.RESPONSE_OK, True)
 
-		self.config.handler.wait_for_blocker(self.closed)
+		tasks.wait_for_blocker(self.closed)
 
 	@tasks.async
 	def spawn_build(self, iface_name):
@@ -378,9 +378,14 @@ class GTKAutoCompiler(AutoCompiler):
 		# Group all the child processes so we can kill them easily
 		def become_group_leader():
 			os.setpgid(0, 0)
-		self.child = subprocess.Popen([sys.executable, '-u', sys.argv[0], 'build'],
-						stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
-						preexec_fn = become_group_leader)
+		devnull = os.open(os.devnull, os.O_RDONLY)
+		try:
+			self.child = subprocess.Popen([sys.executable, '-u', sys.argv[0], 'build'],
+							stdin = devnull,
+							stdout = subprocess.PIPE, stderr = subprocess.STDOUT,
+							preexec_fn = become_group_leader)
+		finally:
+			os.close(devnull)
 
 		import codecs
 		decoder = codecs.getincrementaldecoder('utf-8')(errors = 'replace')
