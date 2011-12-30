@@ -374,7 +374,7 @@ class GTKAutoCompiler(AutoCompiler):
 		if self.config.handler.monitored_downloads:
 			self.note('Downloads in progress:')
 			for x in self.config.handler.monitored_downloads:
-				self.note('- %s' % x)
+				self.note('- %s' % x.url)
 		else:
 			self.note('No downloads remaining.')
 
