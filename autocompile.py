@@ -117,6 +117,12 @@ class AutoCompiler:
 		buildenv = BuildEnv(need_config = False)
 		buildenv.config.set('compile', 'interface', policy.root)
 		buildenv.config.set('compile', 'selections', 'selections.xml')
+		
+		# Download any required packages now, so we can use the GUI to request confirmation, etc
+		download_missing = s.download_missing(self.config, include_packages = True)
+		if download_missing:
+			yield download_missing
+			tasks.check(download_missing)
 
 		version = s.selections[policy.root].version
 		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, arch._uname[-1]))
@@ -261,6 +267,31 @@ class GUIHandler(handler.Handler):
 
 	def confirm_import_feed(self, pending, valid_sigs):
 		return handler.Handler.confirm_import_feed(self, pending, valid_sigs)
+
+	@tasks.async
+	def confirm_install(self, message):
+		from zeroinstall.injector.download import DownloadAborted
+		from zeroinstall.gtkui import gtkutils
+		import gtk
+		box = gtk.MessageDialog(self.compiler.dialog,
+					gtk.DIALOG_DESTROY_WITH_PARENT,
+					gtk.MESSAGE_QUESTION, gtk.BUTTONS_CANCEL,
+					message)
+		box.set_position(gtk.WIN_POS_CENTER)
+
+		install = gtkutils.MixedButton(_('Install'), gtk.STOCK_OK)
+		install.set_flags(gtk.CAN_DEFAULT)
+		box.add_action_widget(install, gtk.RESPONSE_OK)
+		install.show_all()
+		box.set_default_response(gtk.RESPONSE_OK)
+		box.show()
+
+		response = gtkutils.DialogResponse(box)
+		yield response
+		box.destroy()
+
+		if response.response != gtk.RESPONSE_OK:
+			raise DownloadAborted()
 
 class GTKAutoCompiler(AutoCompiler):
 	def __init__(self, config, iface_uri, options):
