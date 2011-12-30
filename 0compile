@@ -8,6 +8,7 @@ import locale
 from optparse import OptionParser
 import os, sys
 from logging import warn
+import gobject; gobject.threads_init()
 
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
