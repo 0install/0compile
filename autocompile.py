@@ -351,6 +351,9 @@ class GTKAutoCompiler(AutoCompiler):
 					self.buffer.move_mark(cursor, end)
 					self.tv.scroll_to_mark(cursor, 0, False, 0, 0)
 
+			def set_text(self, text):
+				self.buffer.set_text(text)
+
 		self.overall = AutoScroller()
 		self.details = AutoScroller()
 
@@ -372,11 +375,12 @@ class GTKAutoCompiler(AutoCompiler):
 
 	def downloads_changed(self):
 		if self.config.handler.monitored_downloads:
-			self.note('Downloads in progress:')
+			msg = 'Downloads in progress:\n'
 			for x in self.config.handler.monitored_downloads:
-				self.note('- %s' % x.url)
+				msg += '- {url}\n'.format(url = x.url)
 		else:
-			self.note('No downloads remaining.')
+			msg = ''
+		self.details.set_text(msg)
 
 	def heading(self, msg):
 		self.overall.insert_at_end_and_scroll(msg + '\n', 'heading')
