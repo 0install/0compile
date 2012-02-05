@@ -109,6 +109,31 @@ def do_pkg_config_binding(binding, impl):
 					break
 	do_env_binding(binding, path)
 
+def shorten_dynamic_library_install_name(dylib_file):
+	# Only need to change actual library, not links to it
+	if os.path.islink(dylib_file):
+		return
+	otool_args = ['/usr/bin/otool', '-D', dylib_file]
+	process = subprocess.Popen(otool_args, stdout=subprocess.PIPE)
+	output, error = process.communicate()
+	retcode = process.poll()
+	for line in output.split('\n'):
+		if not line.endswith(':'):
+			value = line.strip()
+			print "Absolute install name=%s in %s; fixing..." % (value, dylib_file)
+			break
+	shortname = os.path.basename(dylib_file)
+	os.system("install_name_tool -id %s %s" % (shortname, dylib_file))
+
+# After doing a build, remove the (dist) directory component from dynamic libraries
+def shorten_dynamic_library_install_names():
+	for root, dirs, files in os.walk(os.environ['DISTDIR']):
+		if os.path.basename(root) == 'lib':
+			for f in files:
+				if f.endswith('.dylib'):
+					info("Checking dynamic library '%s'", f)
+					shorten_dynamic_library_install_name(os.path.join(root, f))
+
 def fixup_generated_pkgconfig_file(pc_file):
 	stream = open(pc_file)
 	lines = stream.readlines()
@@ -323,6 +348,7 @@ def do_build_internal(options, args):
 			failure = None
 			if status == 0:
 				print >>log, "Build successful"
+				shorten_dynamic_library_install_names()
 				fixup_generated_pkgconfig_files()
 				remove_la_files()
 			elif status > 0:
