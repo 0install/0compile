@@ -24,14 +24,14 @@ if zeroinstall_dir:
 	# XXX: we're assuming that, if installed through 0install, 0launch requires
 	# the same version of Python as 0compile. This is currently needed for Arch
 	# Linux, but long-term we need to use the <runner>.
-	launch_prog = [sys.executable, os.path.join(zeroinstall_dir, '0launch')]
+	install_prog = [sys.executable, os.path.join(zeroinstall_dir, '0install')]
 else:
-	launch_prog = ['0launch']
+	install_prog = ['0install']
 
 if os.path.isdir('dependencies'):
 	dep_dir = os.path.realpath('dependencies')
 	iface_cache.stores.stores.append(Store(dep_dir))
-	launch_prog += ['--with-store', dep_dir]
+	install_prog.append('--with-store='+ dep_dir)
 
 class NoImpl:
 	id = "none"
@@ -322,14 +322,15 @@ class BuildEnv:
 				h.wait_for_blocker(blocker)
 		else:
 			options = []
-			if prompt and '--console' not in launch_prog:
+			if prompt and '--console' not in install_prog:
 				options.append('--gui')
-			child = subprocess.Popen(launch_prog + ['--source', '--get-selections'] + options + [self.interface], stdout = subprocess.PIPE)
+			command = install_prog + ['select', '--source', '--xml'] + options + [self.interface]
+			child = subprocess.Popen(command, stdout = subprocess.PIPE)
 			try:
 				self._selections = selections.Selections(qdom.parse(child.stdout))
 			finally:
 				if child.wait():
-					raise SafeException("0launch --get-selections failed (exit code %d)" % child.returncode)
+					raise SafeException(' '.join(repr(x) for x in command) + " failed (exit code %d)" % child.returncode)
 
 		self.root_impl = self._selections.selections[self.interface]
 
