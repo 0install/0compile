@@ -285,8 +285,7 @@ def do_build_internal(options, args):
 				os.unlink(log)
 
 		# Run the command, copying output to a new log
-		log = file('build.log', 'w')
-		try:
+		with open('build.log', 'w') as log:
 			print >>log, "Build log for %s-%s" % (master_feed.get_name(),
 							      src_impl.version)
 			print >>log, "\nBuilt using 0compile-%s" % __main__.version
@@ -329,12 +328,12 @@ def do_build_internal(options, args):
 				failure = "Build failure: exited due to signal %d" % (-status)
 			if failure:
 				print >>log, failure
-				os.rename('build.log', 'build-failure.log')
-				raise SafeException("Command '%s': %s" % (prog_args, failure))
-			else:
-				os.rename('build.log', 'build-success.log')
-		finally:
-			log.close()
+
+		if failure:
+			os.rename('build.log', 'build-failure.log')
+			raise SafeException("Command '%s': %s" % (prog_args, failure))
+		else:
+			os.rename('build.log', 'build-success.log')
 
 def do_build(args):
 	"""build [ --no-sandbox ] [ --shell | --force | --clean ]"""
