@@ -91,34 +91,16 @@ def spawn_and_check(prog, args):
 	elif status < 0:
 		raise SafeException("Program '%s' failed with signal %d" % (prog, -status))
 
-def wait_for_child(child):
-	"""Wait for child to exit and reap it. Throw an exception if it doesn't return success."""
-	pid, status = os.waitpid(child, 0)
-	assert pid == child
-	if os.WIFEXITED(status):
-		exit_code = os.WEXITSTATUS(status)
-		if exit_code == 0:
-			return
-		else:
-			raise SafeException('Command failed with exit status %d' % exit_code)
-	else:
-		raise SafeException('Command failed with signal %d' % os.WTERMSIG(status))
+def spawn_and_check_maybe_sandboxed(readable, writable, tmpdir, prog, args):
+	child = spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args)
+	status = child.wait()
+	if status > 0:
+		raise SafeException('Command failed with exit status %d' %  status)
+	elif status < 0:
+		raise SafeException('Command failed with signal %d' % -status)
 
 def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
-	child = os.fork()
-	if child == 0:
-		try:
-			try:
-				exec_maybe_sandboxed(readable, writable, tmpdir, prog, args)
-			except:
-				traceback.print_exc()
-		finally:
-			print >>sys.stderr, "Exec failed"
-			os._exit(1)
-	wait_for_child(child)
-
-def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
-	"""execl prog, with (only) the 'writable' directories writable if sandboxing is available.
+	"""spawn prog, with (only) the 'writable' directories writable if sandboxing is available.
 	The readable directories will be readable, as well as various standard locations.
 	If no sandbox is available, run without a sandbox."""
 
@@ -141,7 +123,7 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 			raise Exception('$%s must be "true" or "false", not "%s"' % (USE_PLASH, use_plash))
 
 	if not use_plash:
-		os.execlp(prog, prog, *args)
+		return subprocess.Popen([prog] + args)
 	
 	print "Using plash to sandbox the build..."
 	
@@ -155,7 +137,7 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 		pola_args += ['-fw', w]
 	pola_args += ['-tw', '/tmp', tmpdir]
 	os.environ['TMPDIR'] = '/tmp'
-	os.execl(_pola_run, _pola_run, *pola_args)
+	return subprocess.Popen([_pola_run] + pola_args)
 
 def get_arch_name():
 	target_os = canonicalize_os(uname[0])

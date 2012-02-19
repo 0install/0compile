@@ -13,7 +13,7 @@ from zeroinstall.injector import model, namespaces, run
 from zeroinstall.injector.iface_cache import iface_cache
 
 from support import BuildEnv, ensure_dir, XMLNS_0COMPILE, is_package_impl, parse_bool, depth, uname
-from support import spawn_and_check, find_in_path, ENV_FILE, lookup, spawn_maybe_sandboxed, Prefixes
+from support import spawn_and_check, find_in_path, ENV_FILE, lookup, spawn_and_check_maybe_sandboxed, Prefixes
 
 # If we have to modify any pkg-config files, we put the new versions in $TMPDIR/PKG_CONFIG_OVERRIDES
 PKG_CONFIG_OVERRIDES = 'pkg-config-overrides'
@@ -385,7 +385,7 @@ def do_build(args):
 
 		readable.append('/etc')	# /etc/ld.*
 
-		spawn_maybe_sandboxed(readable, writable, tmpdir, sys.executable, ['-u', sys.argv[0]] + options + ['build', '--no-sandbox'] + args)
+		spawn_and_check_maybe_sandboxed(readable, writable, tmpdir, sys.executable, ['-u', sys.argv[0]] + options + ['build', '--no-sandbox'] + args)
 	finally:
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
