@@ -321,10 +321,12 @@ class BuildEnv:
 				print "Waiting for selected implementations to be downloaded..."
 				h.wait_for_blocker(blocker)
 		else:
-			options = []
+			command = install_prog + ['select', '--source', '--xml']
 			if prompt and '--console' not in install_prog:
-				options.append('--gui')
-			command = install_prog + ['select', '--source', '--xml'] + options + [self.interface]
+				if os.name == 'nt':
+					command[0] += '-win'
+				command.append('--gui')
+			command.append(self.interface)
 			child = subprocess.Popen(command, stdout = subprocess.PIPE)
 			try:
 				self._selections = selections.Selections(qdom.parse(child.stdout))
