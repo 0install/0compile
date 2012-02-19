@@ -12,7 +12,7 @@ from zeroinstall import SafeException
 from zeroinstall.injector import model, namespaces, run
 from zeroinstall.injector.iface_cache import iface_cache
 
-from support import BuildEnv, ensure_dir, XMLNS_0COMPILE, is_package_impl, parse_bool, depth
+from support import BuildEnv, ensure_dir, XMLNS_0COMPILE, is_package_impl, parse_bool, depth, uname
 from support import spawn_and_check, find_in_path, ENV_FILE, lookup, spawn_maybe_sandboxed, Prefixes
 
 # If we have to modify any pkg-config files, we put the new versions in $TMPDIR/PKG_CONFIG_OVERRIDES
@@ -183,7 +183,6 @@ def do_build_internal(options, args):
 	info.setAttributeNS(None, 'time', time.strftime('%Y-%m-%d %H:%M').strip())
 	info.setAttributeNS(None, 'host', socket.getfqdn())
 	info.setAttributeNS(None, 'user', getpass.getuser())
-	uname = os.uname()
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
 	stream = file(build_env_xml, 'w')
 	buildenv_doc.writexml(stream, addindent="  ", newl="\n")

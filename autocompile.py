@@ -10,7 +10,7 @@ from zeroinstall.injector import arch, handler, policy, model, iface_cache, sele
 from zeroinstall.zerostore import manifest, NotStored
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
-from support import BuildEnv
+from support import BuildEnv, uname
 
 # This is a bit hacky...
 #
@@ -19,7 +19,7 @@ from support import BuildEnv
 # binaries either. This means that we always prefer an existing binary of the
 # desired version to compiling a new one, but we'll compile a new version from source
 # rather than use an older binary.
-arch.machine_groups['newbuild'] = arch.machine_groups.get(arch._uname[-1], 0)
+arch.machine_groups['newbuild'] = arch.machine_groups.get(uname[-1], 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
@@ -125,7 +125,7 @@ class AutoCompiler:
 			tasks.check(download_missing)
 
 		version = s.selections[policy.root].version
-		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, arch._uname[-1]))
+		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, uname[-1]))
 		if os.path.exists(local_feed):
 			if not valid_autocompile_feed(local_feed):
 				os.unlink(local_feed)

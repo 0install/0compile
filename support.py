@@ -7,7 +7,7 @@ from os.path import join
 from logging import info
 import ConfigParser
 
-from zeroinstall.injector import model, selections, qdom
+from zeroinstall.injector import model, selections, qdom, arch
 from zeroinstall.injector.arch import canonicalize_os, canonicalize_machine
 
 from zeroinstall.injector.iface_cache import iface_cache
@@ -15,6 +15,14 @@ from zeroinstall import SafeException
 from zeroinstall.zerostore import Store, NotStored
 
 def _(x): return x
+
+
+# This is An os.uname() substitute that uses as much of ZI's
+# arch._uname as is available and yet has all four elements one
+# normally expects from os.uname() on Posix (on Windows, arch._uname
+# has only two elements).
+import platform
+uname = arch._uname + platform.uname()[len(arch._uname):]
 
 ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
@@ -147,7 +155,6 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	os.execl(_pola_run, _pola_run, *pola_args)
 
 def get_arch_name():
-	uname = os.uname()
 	target_os = canonicalize_os(uname[0])
 	target_machine = canonicalize_machine(uname[4])
 	if target_os == 'Darwin' and target_machine == 'i386':
