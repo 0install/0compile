@@ -45,10 +45,11 @@ def lookup(impl_or_sel):
 	id = impl_or_sel.id
 	if id.startswith('package:'):
 		return None
-	if id.startswith('/'):
-		if os.path.isdir(id):
-			return id
-		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % id)
+	local_path = impl_or_sel.local_path
+	if local_path is not None:
+		if os.path.isdir(local_path):
+			return local_path
+		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % local_path)
 	try:
 		return iface_cache.stores.lookup_any(impl_or_sel.digests)
 	except NotStored, ex:
