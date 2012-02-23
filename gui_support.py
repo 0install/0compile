@@ -173,10 +173,7 @@ class CompileBox(gtk.Dialog):
 		self.killed = False
 		self.success = success
 		self.failure = failure
-		if isinstance(command, basestring):
-			self.add_msg("Running: " + command + "\n")
-		else:
-			self.add_msg("Running: " + ' '.join(command) + "\n")
+		self.add_msg("Running: " + ' '.join(command) + "\n")
 
 		r, w = os.pipe()
 		try:
