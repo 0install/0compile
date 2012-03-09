@@ -28,6 +28,8 @@ if 'DISPLAY' in os.environ:
 zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
 	launch_command = [sys.executable, os.path.join(zeroinstall_dir, '0launch')]
+	if not os.path.exists(launch_command[1]):
+		launch_command[1] = os.path.join(zeroinstall_dir, 'zeroinstall', 'scripts', 'launch.py')
 else:
 	launch_command = ['0launch']		# Package
 

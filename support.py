@@ -33,6 +33,9 @@ if zeroinstall_dir:
 	# the same version of Python as 0compile. This is currently needed for Arch
 	# Linux, but long-term we need to use the <runner>.
 	install_prog = [sys.executable, os.path.join(zeroinstall_dir, '0install')]
+	if not os.path.exists(install_prog[1]):
+		# For the Windows version...
+		install_prog[1] = os.path.join(zeroinstall_dir, 'zeroinstall', 'scripts', 'install.py')
 else:
 	install_prog = ['0install']
 
