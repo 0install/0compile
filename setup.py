@@ -26,6 +26,8 @@ def do_setup(args, get_dir_callback = None):
 			create_dir = os.path.basename(interface)
 			if create_dir.endswith('.xml'):
 				create_dir = create_dir[:-4]
+			if create_dir.startswith('alias:'):
+				create_dir = create_dir.split(':', 1)[1]
 			assert os.path.dirname(create_dir) == ''
 			assert create_dir != os.path.curdir
 			if get_dir_callback:
