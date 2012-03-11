@@ -187,16 +187,19 @@ def do_build_internal(options, args):
 	buildenv_doc.writexml(stream, addindent="  ", newl="\n")
 	stream.close()
 
-	# Create local binary interface file
-	src_iface = iface_cache.get_interface(buildenv.interface)
+	# Create local binary interface file.
+	# We use the main feed for the interface as the template for the name,
+	# summary, etc (note: this is not necessarily the feed that contained
+	# the source code).
+	master_feed = iface_cache.get_feed(buildenv.interface)
 	src_impl = buildenv.chosen_impl(buildenv.interface)
-	write_sample_interface(buildenv, src_iface, src_impl)
+	write_sample_feed(buildenv, master_feed, src_impl)
 
 	# Check 0compile is new enough
 	min_version = model.parse_version(src_impl.attrs.get(XMLNS_0COMPILE + ' min-version', None))
 	if min_version and min_version > model.parse_version(__main__.version):
 		raise SafeException("%s-%s requires 0compile >= %s, but we are only version %s" %
-				(src_iface.get_name(), src_impl.version, model.format_version(min_version), __main__.version))
+				(master_feed.get_name(), src_impl.version, model.format_version(min_version), __main__.version))
 
 	# Create the patch
 	patch_file = join(buildenv.metadir, 'from-%s.patch' % src_impl.version)
@@ -282,7 +285,7 @@ def do_build_internal(options, args):
 		# Run the command, copying output to a new log
 		log = file('build.log', 'w')
 		try:
-			print >>log, "Build log for %s-%s" % (src_iface.get_name(),
+			print >>log, "Build log for %s-%s" % (master_feed.get_name(),
 							      src_impl.version)
 			print >>log, "\nBuilt using 0compile-%s" % __main__.version
 			print >>log, "\nBuild system: " + ', '.join(uname)
@@ -386,7 +389,34 @@ def do_build(args):
 		info("Deleting temporary directory '%s'" % tmpdir)
 		shutil.rmtree(tmpdir)
 
-def write_sample_interface(buildenv, iface, src_impl):
+def find_feed_for(master_feed):
+	"""Determine the <feed-for> interface for the new binary's feed.
+	remote feed (http://...) => the binary is a feed for the interface with this URI
+	local feed (/feed.xml) => copy <feed-for> from feed.xml (e.g. for a Git clone)
+	local copy of remote feed (no feed-for) => feed's uri attribute
+	"""
+	if hasattr(master_feed, 'local_path'):
+		is_local = master_feed.local_path is not None		# 0install >= 1.7
+	else:
+		is_local = os.path.isabs(master_feed.url)
+
+	uri = master_feed.url
+
+	if is_local:
+		print "Note: source %s is a local feed" % uri
+		for feed_uri in master_feed.feed_for or []:
+			uri = feed_uri
+			print "Will use <feed-for interface='%s'> instead..." % uri
+			break
+		else:
+			master_feed = minidom.parse(uri).documentElement
+			if master_feed.hasAttribute('uri'):
+				uri = master_feed.getAttribute('uri')
+				print "Will use <feed-for interface='%s'> instead..." % uri
+
+	return uri
+
+def write_sample_feed(buildenv, master_feed, src_impl):
 	path = buildenv.local_iface_file
 
 	impl = minidom.getDOMImplementation()
@@ -411,25 +441,12 @@ def write_sample_interface(buildenv, iface, src_impl):
 	def close(element):
 		element.appendChild(doc.createTextNode('\n' + '  ' * depth(element)))
 
-	addSimple(root, 'name', iface.name)
-	addSimple(root, 'summary', iface.summary)
-	addSimple(root, 'description', iface.description)
+	addSimple(root, 'name', master_feed.name)
+	addSimple(root, 'summary', master_feed.summary)
+	addSimple(root, 'description', master_feed.description)
 	feed_for = addSimple(root, 'feed-for')
 
-	uri = iface.uri
-	if uri.startswith('/'):
-		print "Note: source %s is a local feed" % iface.uri
-		for feed_uri in iface.feed_for or []:
-			uri = feed_uri
-			print "Will use <feed-for interface='%s'> instead..." % uri
-			break
-		else:
-			master_feed = minidom.parse(uri).documentElement
-			if master_feed.hasAttribute('uri'):
-				uri = master_feed.getAttribute('uri')
-				print "Will use <feed-for interface='%s'> instead..." % uri
-
-	feed_for.setAttributeNS(None, 'interface', uri)
+	feed_for.setAttributeNS(None, 'interface', find_feed_for(master_feed))
 
 	group = addSimple(root, 'group')
 	main = src_impl.attrs.get(XMLNS_0COMPILE + ' binary-main', None)
