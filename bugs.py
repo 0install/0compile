@@ -10,7 +10,7 @@ def do_report_bug(args):
 	"""report-bug"""
 	buildenv = BuildEnv()
 
-	log_name = 'build/build-failure.log'
+	log_name = join('build', 'build-failure.log')
 	build_log = codecs.open(log_name, 'r', 'utf-8')
 	log_text = build_log.read()
 	build_log.close()

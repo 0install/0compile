@@ -68,9 +68,10 @@ def do_pkg_config_binding(binding, impl):
 			for i, line in enumerate(lines):
 				if '=' not in line: continue
 				name, value = [x.strip() for x in line.split('=', 1)]
-				if name == 'prefix' and value.startswith('/'):
+				if name == 'prefix' and os.path.isabs(value):
 					print "Absolute prefix=%s in %s; overriding..." % (value, feed_name)
-					lines[i] = 'prefix=%s/%s\n' % (path, value[1:])
+					lines[i] = 'prefix=' + os.path.join(
+						path, os.path.splitdrive(value)[1][1:]) +'\n'
 					write_pc(pc, lines)
 					break
 	do_env_binding(binding, path)
@@ -107,10 +108,11 @@ def fixup_generated_pkgconfig_file(pc_file):
 	for i, line in enumerate(lines):
 		if '=' not in line: continue
 		name, value = [x.strip() for x in line.split('=', 1)]
-		if name == 'prefix' and value.startswith('/'):
+		if name == 'prefix' and os.path.isabs(value):
 			print "Absolute prefix=%s in %s; fixing..." % (value, pc_file)
 			rel_path = os.path.relpath(value, os.path.dirname(pc_file))
-			lines[i] = 'prefix=${pcfiledir}/%s\n' % rel_path
+			lines[i] = 'prefix=' + os.path.join(
+				'${pcfiledir}', rel_path) + '\n'
 			write_pc(pc_file, lines)
 			break
 
@@ -290,7 +292,8 @@ def do_build_internal(options, args):
 			print >>log, "\nBuilt using 0compile-%s" % __main__.version
 			print >>log, "\nBuild system: " + ', '.join(uname)
 			print >>log, "\n%s:\n" % ENV_FILE
-			shutil.copyfileobj(file("../" + ENV_FILE), log)
+			with open(os.path.join(os.pardir, ENV_FILE)) as properties_file:
+				shutil.copyfileobj(properties_file, log)
 
 			log.write('\n')
 
@@ -590,7 +593,7 @@ def set_up_mappings(mappings):
 			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + soext))
 
 def dup_src(fn):
-	srcdir = os.environ['SRCDIR'] + '/'
+	srcdir = os.path.join(os.environ['SRCDIR'], '')
 	builddir = os.environ['BUILDDIR']
 
 	build_in_src = srcdir + 'build' == builddir

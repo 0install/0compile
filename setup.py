@@ -26,8 +26,8 @@ def do_setup(args, get_dir_callback = None):
 			create_dir = os.path.basename(interface)
 			if create_dir.endswith('.xml'):
 				create_dir = create_dir[:-4]
-			assert '/' not in create_dir
-			assert create_dir is not '.'
+			assert os.path.dirname(create_dir) == ''
+			assert create_dir != os.path.curdir
 			if get_dir_callback:
 				create_dir = get_dir_callback(create_dir)
 		elif len(args) == 2:
@@ -38,7 +38,7 @@ def do_setup(args, get_dir_callback = None):
 			raise __main__.UsageError()
 
 		iface_uri = model.canonical_iface_uri(args[0])
-		if iface_uri.startswith('/'):
+		if os.path.isabs(iface_uri):
 			root = qdom.parse(file(iface_uri))
 			if root.uri == namespaces.XMLNS_IFACE and root.name == 'selections':
 				# Looks like this is a selections file, not an interface.

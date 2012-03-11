@@ -113,7 +113,7 @@ def exec_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 
 	USE_PLASH = 'USE_PLASH_0COMPILE'
 
-	assert prog.startswith('/')
+	assert os.path.isabs(prog)
 	_pola_run = find_in_path('pola-run')
 
 	if _pola_run is None:
@@ -203,7 +203,7 @@ class BuildEnv:
 			arch = self.target_arch.replace('*', 'any')
 			distdir_name = self.iface_name.lower()
 			distdir_name += '-' + arch.lower()
-		assert '/' not in distdir_name
+		assert os.path.dirname(distdir_name) == ''
 		return os.path.realpath(distdir_name)
 
 	def get_binary_template(self):
@@ -222,7 +222,7 @@ class BuildEnv:
 	@property
 	def metadir(self):
 		metadir = self.config.get('compile', 'metadir')
-		assert not metadir.startswith('/')
+		assert not os.path.isabs(metadir)
 		return join(self.distdir, metadir)
 
 	@property
@@ -339,8 +339,8 @@ class BuildEnv:
 		if os.path.isdir('src'):
 			self.user_srcdir = os.path.realpath('src')
 			if self.user_srcdir == self.orig_srcdir or \
-			   self.user_srcdir.startswith(self.orig_srcdir + '/') or \
-			   self.orig_srcdir.startswith(self.user_srcdir + '/'):
+			   self.user_srcdir.startswith(os.path.join(self.orig_srcdir, '')) or \
+			   self.orig_srcdir.startswith(os.path.join(self.user_srcdir, '')):
 				info("Ignoring 'src' directory because it coincides with %s",
 					self.orig_srcdir)
 				self.user_srcdir = None

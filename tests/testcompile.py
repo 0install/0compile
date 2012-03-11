@@ -104,14 +104,14 @@ class TestCompile(unittest.TestCase):
 		compile('setup', hello_uri, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
 
-		compile('build', expect = 'Executing: "$SRCDIR/configure"')
+		compile('build', expect = 'Executing: "%s"' % os.path.join('$SRCDIR','configure'))
 
 		target_dir = 'gnu-hello-%s' % support.get_arch_name().lower()
 		archive_stem = 'gnu-hello-%s-1.3' % support.get_arch_name().lower()
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
-		run('%s/bin/hello' % target_dir, expect = 'Hello, world!')
-		run(launch_command, '%s/0install/GNU-Hello.xml' % target_dir, expect = 'Hello, world!')
+		run(os.path.join(target_dir,'bin','hello'), expect = 'Hello, world!')
+		run(launch_command, os.path.join(target_dir,'0install','GNU-Hello.xml'), expect = 'Hello, world!')
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testAutocompile(self):
@@ -125,7 +125,7 @@ class TestCompile(unittest.TestCase):
 		target_dir = 'hello2-any-any'
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
-		run(launch_command, '%s/0install/hello2.xml' % target_dir, expect = 'ROX-Lib')
+		run(launch_command, os.path.join(target_dir, '0install', 'hello2.xml'), expect = 'ROX-Lib')
 	
 	def testBadVersion(self):
 		compile('setup', local_bad_version, self.hello_dir, expect = 'Created directory')
@@ -160,13 +160,13 @@ class TestCompile(unittest.TestCase):
 		compile('diff')
 		compile('--verbose', 'build', expect = 'Hello from C')
 		target_dir = 'cprog-%s' % support.get_arch_name().lower()
-		patch_file = os.path.join(target_dir, '0install/from-0.1.patch')
+		patch_file = os.path.join(target_dir, '0install', 'from-0.1.patch')
 		assert not os.path.exists(patch_file)
 
 		# 'src' contains a change
-		prog = file('src/main.c').read()
+		prog = file(os.path.join('src','main.c')).read()
 		prog = prog.replace('Hello', 'Goodbye')
-		stream = file('src/main.c', 'w')
+		stream = file(os.path.join('src','main.c'), 'w')
 		stream.write(prog)
 		stream.close()
 		compile('diff', expect = 'diff')
@@ -178,12 +178,12 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Goodbye from C')
 
 		# 'src' contains an error
-		stream = file('src/main.c', 'w')
+		stream = file(os.path.join('src','main.c'), 'w')
 		stream.write('this is not valid C!')
 		stream.close()
 		shutil.rmtree('build')
 		compile('build', expect = 'Build failed', expect_status = 1)
-		assert os.path.exists('build/build-failure.log')
+		assert os.path.exists(os.path.join('build', 'build-failure.log'))
 
 		# 'src' does not exist
 		shutil.rmtree('src')
@@ -193,7 +193,7 @@ class TestCompile(unittest.TestCase):
 
 		# Check we fixed the .pc files...
 		pc_data = open(os.path.join(target_dir, 'pkgconfig', 'cprog.pc')).read()
-		assert pc_data == "prefix=${pcfiledir}/..\n", `pc_data`
+		assert pc_data == "prefix=" + os.path.join("${pcfiledir}",os.path.pardir) + "\n", `pc_data`
 
 		# Check we removed the bad .la files...
 		assert not os.path.exists(os.path.join(target_dir, 'lib', 'bad.la'))	# libtool - bad

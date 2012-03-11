@@ -115,7 +115,7 @@ class CompileBox(gtk.Dialog):
 					self.add_msg("Registering as a feed for %s" % real_iface.uri)
 					break
 				else:
-					if iface.uri.startswith('/'):
+					if os.path.isabs(iface.uri):
 						self.add_msg("Warning: no <feed-for> in local feed %s!" % iface.uri)
 
 				feed = buildenv.local_iface_file
