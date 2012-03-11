@@ -22,7 +22,7 @@ def do_include_deps(args):
 	for needed_iface in sels.selections:
 		impl = buildenv.chosen_impl(needed_iface)
 		assert impl
-		if impl.id.startswith('/'):
+		if impl.local_path is not None:
 			raise SafeException("Can't export '%s' as it's a local implementation (not supported yet; sorry)" % impl)
 		if not impl.id.startswith('package:'):
 			dirs_to_copy.append(lookup(impl))
