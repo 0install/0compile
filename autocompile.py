@@ -6,7 +6,7 @@ from xml.dom import minidom
 from optparse import OptionParser
 
 from zeroinstall import SafeException
-from zeroinstall.injector import arch, handler, policy, model, iface_cache, selections, namespaces, writer, reader
+from zeroinstall.injector import arch, handler, policy, model, iface_cache, namespaces, writer, reader
 from zeroinstall.zerostore import manifest, NotStored
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
@@ -279,7 +279,7 @@ class GUIHandler(handler.Handler):
 					message)
 		box.set_position(gtk.WIN_POS_CENTER)
 
-		install = gtkutils.MixedButton(_('Install'), gtk.STOCK_OK)
+		install = gtkutils.MixedButton('Install', gtk.STOCK_OK)
 		install.set_flags(gtk.CAN_DEFAULT)
 		box.add_action_widget(install, gtk.RESPONSE_OK)
 		install.show_all()

@@ -1,7 +1,7 @@
 # Copyright (C) 2006, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import os, sys, shutil, traceback
+import os, sys, shutil
 import subprocess
 from os.path import join
 from logging import info
