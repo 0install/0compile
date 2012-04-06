@@ -50,7 +50,6 @@ class AutocompileCache(iface_cache.IfaceCache):
 					new = model.ZeroInstallImplementation(feed, new_id, None)
 					new.download_sources.append(DummyDownloadSource())
 					feed.implementations[new_id] = new
-					new.digests.append(new_id)
 					new.set_arch(host_arch)
 					new.version = x.version
 
