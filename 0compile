@@ -60,7 +60,7 @@ if options.verbose:
 		logger.setLevel(logging.DEBUG)
 
 if options.console:
-	support.launch_prog.append('--console')
+	support.install_prog.append('--console')
 
 if len(args) < 1:
 	parser.print_help()
