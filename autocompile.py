@@ -23,9 +23,11 @@ arch.machine_groups['newbuild'] = arch.machine_groups.get(uname[-1], 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
-class DummyDownloadSource(model.RetrievalMethod):
-	"""0launch >= 0.46 won't select implementations without a download source."""
-	pass
+class NewBuildImplementation(model.ZeroInstallImplementation):
+	# Assume that this (potential) binary is available so that we can select it as a
+	# dependency.
+	def is_available(self, stores):
+		return True
 
 class AutocompileCache(iface_cache.IfaceCache):
 	def __init__(self):
@@ -47,8 +49,7 @@ class AutocompileCache(iface_cache.IfaceCache):
 			for x in srcs:
 				new_id = '0compile=' + x.id
 				if not new_id in feed.implementations:
-					new = model.ZeroInstallImplementation(feed, new_id, None)
-					new.download_sources.append(DummyDownloadSource())
+					new = NewBuildImplementation(feed, new_id, None)
 					feed.implementations[new_id] = new
 					new.set_arch(host_arch)
 					new.version = x.version
