@@ -313,7 +313,7 @@ class BuildEnv:
 				print "Waiting for selected implementations to be downloaded..."
 				h.wait_for_blocker(blocker)
 		else:
-			command = install_prog + ['select', '--source', '--xml']
+			command = install_prog + ['download', '--source', '--xml']
 			if prompt and '--console' not in install_prog:
 				if os.name == 'nt':
 					command[0] += '-win'
