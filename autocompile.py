@@ -20,7 +20,7 @@ from support import BuildEnv, uname
 # binaries either. This means that we always prefer an existing binary of the
 # desired version to compiling a new one, but we'll compile a new version from source
 # rather than use an older binary.
-arch.machine_groups['newbuild'] = arch.machine_groups.get(uname[-1], 0)
+arch.machine_groups['newbuild'] = arch.machine_groups.get(uname[4], 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
