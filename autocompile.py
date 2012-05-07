@@ -98,7 +98,7 @@ class AutoCompiler:
 	@tasks.async
 	def compile_and_register(self, policy):
 		def valid_autocompile_feed(binary_feed):
-			cache = policy.config.iface_cache
+			cache = self.config.iface_cache
 			local_feed_impls = cache.get_feed(local_feed).implementations
 			if len(local_feed_impls) != 1:
 				self.note("Invalid autocompile feed '%s'; expected exactly one implementation!" % binary_feed)
@@ -181,11 +181,11 @@ class AutoCompiler:
 			self.note("Implementation metadata written to %s" % local_feed)
 
 			# No point adding it to the system store when only the user has the feed...
-			store = policy.config.stores.stores[0]
+			store = self.config.stores.stores[0]
 			self.note("Storing build in user cache %s..." % store.dir)
-			policy.config.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
+			self.config.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
-			iface = policy.config.iface_cache.get_interface(feed_for_elem.getAttribute('interface'))
+			iface = self.config.iface_cache.get_interface(feed_for_elem.getAttribute('interface'))
 			self.note("Registering as feed for %s" % iface.uri)
 			feed = iface.get_feed(local_feed)
 			if feed:
@@ -195,7 +195,7 @@ class AutoCompiler:
 			writer.save_interface(iface)
 
 			# We might have cached an old version
-			new_feed = policy.config.iface_cache.get_interface(local_feed)
+			new_feed = self.config.iface_cache.get_interface(local_feed)
 			reader.update_from_cache(new_feed)
 		except:
 			self.note("\nBuild failed: leaving build directory %s for inspection...\n" % tmpdir)
@@ -205,6 +205,10 @@ class AutoCompiler:
 
 	@tasks.async
 	def recursive_build(self, iface_uri, version = None):
+		"""Build an implementation of iface_uri and register it as a feed.
+		@param version: the version to build, or None to build any version
+		@type version: str
+		"""
 		p = policy.Policy(iface_uri, config = self.config, src = True)
 		iface = p.config.iface_cache.get_interface(iface_uri)
 		p.solver.record_details = True
