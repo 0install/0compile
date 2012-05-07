@@ -125,7 +125,7 @@ class AutoCompiler:
 			tasks.check(download_missing)
 
 		version = sels.selections[sels.interface].version
-		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, uname[-1]))
+		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, uname[4]))
 		if os.path.exists(local_feed):
 			if not valid_autocompile_feed(local_feed):
 				os.unlink(local_feed)
