@@ -239,18 +239,34 @@ class AutoCompiler:
 			self.pretty_print_plan(d.solver, r.interface_uri)
 			self.note('')
 
+			needed = []
 			for dep_iface, dep_impl in d.solver.selections.iteritems():
 				if dep_impl.id.startswith('0compile='):
-					build = self.recursive_build(dep_iface.uri, dep_impl.get_version())
-					yield build
-					tasks.check(build)
-					break	# Try again with that dependency built...
-			else:
+					if not needed:
+						self.note("Build dependencies that need to be compiled first:\n")
+					self.note("- {iface} {version}".format(iface = dep_iface.uri, version = model.format_version(dep_impl.version)))
+					needed.append((dep_iface, dep_impl))
+
+			if not needed:
 				self.note("No dependencies need compiling... compile %s itself..." % iface.get_name())
 				build = self.compile_and_register(d.solver.selections)
 				yield build
 				tasks.check(build)
 				return
+
+			# Compile the first missing build dependency...
+			dep_iface, dep_impl = needed[0]
+
+			self.note("")
+
+			details = d.solver.details[self.config.iface_cache.get_interface(dep_iface.uri)]
+			for de in details:
+				print de
+
+			build = self.recursive_build(dep_iface.uri, dep_impl.get_version())
+			yield build
+			tasks.check(build)
+			# Try again with that dependency built...
 
 	def spawn_build(self, iface_name):
 		subprocess.check_call([sys.executable, sys.argv[0], 'build'])
