@@ -96,7 +96,7 @@ class AutoCompiler:
 		self.note("\nEnd details\n")
 
 	@tasks.async
-	def compile_and_register(self, policy):
+	def compile_and_register(self, sels):
 		def valid_autocompile_feed(binary_feed):
 			cache = self.config.iface_cache
 			local_feed_impls = cache.get_feed(local_feed).implementations
@@ -111,20 +111,19 @@ class AutoCompiler:
 				self.note("Build metadata file '%s' exists but implementation is missing: %s" % (local_feed, ex))
 				return False
 
-		local_feed_dir = basedir.save_config_path('0install.net', '0compile', 'builds', model._pretty_escape(policy.root))
-		s = policy.solver.selections
+		local_feed_dir = basedir.save_config_path('0install.net', '0compile', 'builds', model._pretty_escape(sels.interface))
 
 		buildenv = BuildEnv(need_config = False)
-		buildenv.config.set('compile', 'interface', policy.root)
+		buildenv.config.set('compile', 'interface', sels.interface)
 		buildenv.config.set('compile', 'selections', 'selections.xml')
 		
 		# Download any required packages now, so we can use the GUI to request confirmation, etc
-		download_missing = s.download_missing(self.config, include_packages = True)
+		download_missing = sels.download_missing(self.config, include_packages = True)
 		if download_missing:
 			yield download_missing
 			tasks.check(download_missing)
 
-		version = s.selections[policy.root].version
+		version = sels.selections[sels.interface].version
 		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, uname[-1]))
 		if os.path.exists(local_feed):
 			if not valid_autocompile_feed(local_feed):
@@ -142,7 +141,7 @@ class AutoCompiler:
 
 			sel_file = open('selections.xml', 'w')
 			try:
-				doc = s.toDOM()
+				doc = sels.toDOM()
 				doc.writexml(sel_file)
 				sel_file.write('\n')
 			finally:
@@ -245,7 +244,7 @@ class AutoCompiler:
 					break	# Try again with that dependency built...
 			else:
 				self.note("No dependencies need compiling... compile %s itself..." % iface.get_name())
-				build = self.compile_and_register(p)
+				build = self.compile_and_register(p.solver.selections)
 				yield build
 				tasks.check(build)
 				return
