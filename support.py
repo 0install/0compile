@@ -302,12 +302,13 @@ class BuildEnv:
 				self._selections = selections.Selections(qdom.parse(stream))
 			finally:
 				stream.close()
-			from zeroinstall.injector import handler, policy
+			from zeroinstall.injector import handler
+			from zeroinstall.injector.config import load_config
 			if os.isatty(1):
 				h = handler.ConsoleHandler()
 			else:
 				h = handler.Handler()
-			config = policy.load_config(h)
+			config = load_config(h)
 			blocker = self._selections.download_missing(config)
 			if blocker:
 				print "Waiting for selected implementations to be downloaded..."

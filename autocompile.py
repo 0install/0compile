@@ -6,7 +6,8 @@ from xml.dom import minidom
 from optparse import OptionParser
 
 from zeroinstall import SafeException
-from zeroinstall.injector import arch, handler, policy, model, iface_cache, namespaces, writer, reader
+from zeroinstall.injector import arch, handler, driver, requirements, model, iface_cache, namespaces, writer, reader
+from zeroinstall.injector.config import load_config
 from zeroinstall.zerostore import manifest, NotStored
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
@@ -208,11 +209,15 @@ class AutoCompiler:
 		@param version: the version to build, or None to build any version
 		@type version: str
 		"""
-		p = policy.Policy(iface_uri, config = self.config, src = True)
-		iface = p.config.iface_cache.get_interface(iface_uri)
-		p.solver.record_details = True
+		r = requirements.Requirements(iface_uri)
+		r.source = True
+		r.command = 'compile'
+
+		d = driver.Driver(self.config, r)
+		iface = self.config.iface_cache.get_interface(iface_uri)
+		d.solver.record_details = True
 		if version:
-			p.solver.extra_restrictions[iface] = [model.VersionRestriction(model.parse_version(version))]
+			d.solver.extra_restrictions[iface] = [model.VersionRestriction(model.parse_version(version))]
 
 		# For testing...
 		#p.target_arch = arch.Architecture(os_ranks = {'FreeBSD': 0, None: 1}, machine_ranks = {'i386': 0, None: 1, 'newbuild': 2})
@@ -220,23 +225,23 @@ class AutoCompiler:
 		while True:
 			self.heading(iface_uri)
 			self.note("\nSelecting versions for %s..." % iface.get_name())
-			solved = p.solve_with_downloads()
+			solved = d.solve_with_downloads()
 			if solved:
 				yield solved
 				tasks.check(solved)
 
-			if not p.solver.ready:
-				self.print_details(p.solver)
+			if not d.solver.ready:
+				self.print_details(d.solver)
 				raise SafeException("Can't find all required implementations (source or binary):\n" +
-					'\n'.join(["- %s -> %s" % (iface, p.solver.selections[iface])
-						   for iface in p.solver.selections]))
+					'\n'.join(["- %s -> %s" % (iface, d.solver.selections[iface])
+						   for iface in d.solver.selections]))
 			self.note("Selection done.")
 
 			self.note("\nPlan:\n")
-			self.pretty_print_plan(p.solver, p.root)
+			self.pretty_print_plan(d.solver, r.interface_uri)
 			self.note('')
 
-			for dep_iface, dep_impl in p.solver.selections.iteritems():
+			for dep_iface, dep_impl in d.solver.selections.iteritems():
 				if dep_impl.id.startswith('0compile='):
 					build = self.recursive_build(dep_iface.uri, dep_impl.get_version())
 					yield build
@@ -244,7 +249,7 @@ class AutoCompiler:
 					break	# Try again with that dependency built...
 			else:
 				self.note("No dependencies need compiling... compile %s itself..." % iface.get_name())
-				build = self.compile_and_register(p.solver.selections)
+				build = self.compile_and_register(d.solver.selections)
 				yield build
 				tasks.check(build)
 				return
@@ -466,7 +471,7 @@ def do_autocompile(args):
 		h = handler.ConsoleHandler()
 	else:
 		h = handler.Handler()
-	config = policy.load_config(handler = h)
+	config = load_config(handler = h)
 	config._iface_cache = AutocompileCache()
 
 	iface_uri = model.canonical_iface_uri(args2[0])
