@@ -176,8 +176,6 @@ class AutoCompiler:
 			finally:
 				local_feed_file.close()
 
-			feed_for_elem, = dom.getElementsByTagNameNS(namespaces.XMLNS_IFACE, 'feed-for')
-
 			self.note("Implementation metadata written to %s" % local_feed)
 
 			# No point adding it to the system store when only the user has the feed...
@@ -185,7 +183,7 @@ class AutoCompiler:
 			self.note("Storing build in user cache %s..." % store.dir)
 			self.config.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
-			iface = self.config.iface_cache.get_interface(feed_for_elem.getAttribute('interface'))
+			iface = self.config.iface_cache.get_interface(sels.interface)
 			self.note("Registering as feed for %s" % iface.uri)
 			feed = iface.get_feed(local_feed)
 			if feed:
