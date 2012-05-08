@@ -90,7 +90,7 @@ def shorten_dynamic_library_install_name(dylib_file):
 			print "Absolute install name=%s in %s; fixing..." % (value, dylib_file)
 			break
 	shortname = os.path.basename(dylib_file)
-	os.system("install_name_tool -id %s %s" % (shortname, dylib_file))
+	subprocess.check_call(['install_name_tool', '-id', shortname, dylib_file])
 
 # After doing a build, remove the (dist) directory component from dynamic libraries
 def shorten_dynamic_library_install_names():
