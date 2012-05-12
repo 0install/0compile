@@ -4,14 +4,15 @@
 import sys, os, __main__, tempfile, subprocess, signal
 from xml.dom import minidom
 from optparse import OptionParser
+from logging import warn
 
 from zeroinstall import SafeException
-from zeroinstall.injector import arch, handler, driver, requirements, model, iface_cache, namespaces, writer, reader
+from zeroinstall.injector import arch, handler, driver, requirements, model, iface_cache, namespaces, writer, reader, qdom
 from zeroinstall.injector.config import load_config
 from zeroinstall.zerostore import manifest, NotStored
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
-from support import BuildEnv, uname
+from support import BuildEnv, uname, XMLNS_0COMPILE
 
 # This is a bit hacky...
 #
@@ -29,6 +30,24 @@ class NewBuildImplementation(model.ZeroInstallImplementation):
 	# dependency.
 	def is_available(self, stores):
 		return True
+
+def get_commands(src_impl):
+	"""Estimate the commands that the generated binary would have."""
+	cmd = src_impl.commands.get('compile', None)
+	if cmd is None:
+		warn("Source has no compile command! %s", src_impl)
+		return []
+
+	for elem in cmd.qdom.childNodes:
+		if elem.uri == XMLNS_0COMPILE and elem.name == 'implementation':
+			# Assume there's always a run command. Doesn't do any harm to have extra ones,
+			# and there are various ways this might get created.
+			commands = ['run']
+			for e in elem.childNodes:
+				if e.uri == namespaces.XMLNS_IFACE and e.name == 'command':
+					commands.append(e.getAttribute('name'))
+			return commands
+	return []
 
 class AutocompileCache(iface_cache.IfaceCache):
 	def __init__(self):
@@ -54,6 +73,11 @@ class AutocompileCache(iface_cache.IfaceCache):
 					feed.implementations[new_id] = new
 					new.set_arch(host_arch)
 					new.version = x.version
+
+					# Give it some dummy commands in case we're using it as a <runner>, etc (otherwise it can't be selected)
+					for cmd_name in get_commands(x):
+						cmd = qdom.Element(namespaces.XMLNS_IFACE, 'command', {'path': 'new-build', 'name': cmd_name})
+						new.commands[cmd_name] = model.Command(cmd, None)
 
 		return feed
 

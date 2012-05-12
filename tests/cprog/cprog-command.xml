@@ -13,7 +13,9 @@
 	<runner interface='http://repo.roscidus.com/devel/make'>
 	  <environment name='runnerVarsSet' value='yes'/>
 	</runner>
-	<compile:implementation main='main'/>
+	<compile:implementation main='main'>
+	  <command name='my-run' path='main'/>
+	</compile:implementation>
       </command>
       <environment name='CPROG_SELF' insert='' mode='replace'/>
     </implementation>

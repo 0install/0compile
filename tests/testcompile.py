@@ -120,6 +120,11 @@ class TestCompile(unittest.TestCase):
 		compile('autocompile', hello_uri, expect = "Registering as feed for http://0install.net/tests/GNU-Hello.xml")
 		run(launch_command, hello_uri, expect = 'Hello, world!')
 
+	def testRecursive(self):
+		top = os.path.join(my_dir, 'top.xml')
+		compile('autocompile', top, expect = "No dependencies need compiling... compile cprog itself...")
+		run(launch_command, os.path.join(my_dir, 'cprog/cprog-command.xml'), expect = 'Hello from C')
+
 	def testLocal(self):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
 		os.chdir(self.hello_dir)
