@@ -205,10 +205,6 @@ class BuildEnv:
 			for elem in sels.commands[0].qdom.childNodes:
 				if elem.uri == XMLNS_0COMPILE and elem.name == 'implementation':
 					return elem
-
-				# XXX: hack for 0launch < 0.54 which messes up the namespace
-				if elem.name == 'implementation':
-					return elem
 		return None
 
 	@property
