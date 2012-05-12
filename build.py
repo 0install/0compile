@@ -207,7 +207,10 @@ def do_build_internal(options, args):
 	if buildenv.user_srcdir:
 		with open(patch_file, 'w') as stream:
 			# (ignore errors; will already be shown on stderr)
-			subprocess.call(["diff", "-urN", buildenv.orig_srcdir, 'src'], stdout = stream)
+			try:
+				subprocess.call(["diff", "-urN", buildenv.orig_srcdir, 'src'], stdout = stream)
+			except OSError as ex:
+				print >>sys.stderr, "WARNING: Failed to run 'diff': ", ex
 		if os.path.getsize(patch_file) == 0:
 			os.unlink(patch_file)
 	elif os.path.exists(patch_file):
