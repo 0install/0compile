@@ -259,9 +259,9 @@ class AutoCompiler:
 
 			self.note("")
 
-			details = d.solver.details[self.config.iface_cache.get_interface(dep_iface.uri)]
-			for de in details:
-				print de
+			#details = d.solver.details[self.config.iface_cache.get_interface(dep_iface.uri)]
+			#for de in details:
+			#	print de
 
 			build = self.recursive_build(dep_iface.uri, dep_impl.get_version())
 			yield build
