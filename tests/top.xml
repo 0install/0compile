@@ -3,11 +3,12 @@
   <name>top</name>
   <summary>top-level target for an autocompile</summary>
 
-  <!-- <feed-for interface='http://example.com/top.xml'/> -->
+  <feed-for interface='http://example.com/top.xml'/>
 
   <implementation arch='*-src' id="." version="0.1">
     <command name='compile'>
       <runner interface='./cprog/cprog-command.xml' command='my-run'/>
+      <compile:implementation main='foo'/>
     </command>
   </implementation>
 </interface>

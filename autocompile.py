@@ -121,7 +121,9 @@ class AutoCompiler:
 		self.note("\nEnd details\n")
 
 	@tasks.async
-	def compile_and_register(self, sels):
+	def compile_and_register(self, sels, forced_iface_uri = None):
+		"""If forced_iface_uri, register as an implementation of this interface,
+		ignoring the any <feed-for>, etc."""
 		def valid_autocompile_feed(binary_feed):
 			cache = self.config.iface_cache
 			local_feed_impls = cache.get_feed(local_feed).implementations
@@ -200,6 +202,9 @@ class AutoCompiler:
 			finally:
 				local_feed_file.close()
 
+			feed_for_elem, = dom.getElementsByTagNameNS(namespaces.XMLNS_IFACE, 'feed-for')
+			claimed_iface = feed_for_elem.getAttribute('interface')
+
 			self.note("Implementation metadata written to %s" % local_feed)
 
 			# No point adding it to the system store when only the user has the feed...
@@ -207,7 +212,15 @@ class AutoCompiler:
 			self.note("Storing build in user cache %s..." % store.dir)
 			self.config.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
-			iface = self.config.iface_cache.get_interface(sels.interface)
+			if forced_iface_uri is not None:
+				if forced_iface_uri != claimed_iface:
+					self.note("WARNING: registering as feed for {forced}, though feed claims to be for {claimed}".format(
+						forced = forced_iface_uri,
+						claimed = claimed_iface))
+			else:
+				forced_iface_uri = claimed_iface		# (the top-level interface being built)
+
+			iface = self.config.iface_cache.get_interface(forced_iface_uri)
 			self.note("Registering as feed for %s" % iface.uri)
 			feed = iface.get_feed(local_feed)
 			if feed:
@@ -273,7 +286,9 @@ class AutoCompiler:
 
 			if not needed:
 				self.note("No dependencies need compiling... compile %s itself..." % iface.get_name())
-				build = self.compile_and_register(d.solver.selections)
+				build = self.compile_and_register(d.solver.selections,
+						# force the interface in the recursive case
+						iface_uri if iface_uri != self.iface_uri else None)
 				yield build
 				tasks.check(build)
 				return

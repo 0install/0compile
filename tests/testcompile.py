@@ -2,7 +2,7 @@
 import sys, tempfile, os, shutil, tempfile, subprocess
 from StringIO import StringIO
 import unittest
-from zeroinstall.injector import model, qdom
+from zeroinstall.injector import model, qdom, config
 from zeroinstall.support import ro_rmtree, basedir
 from zeroinstall.zerostore import Stores
 
@@ -123,7 +123,14 @@ class TestCompile(unittest.TestCase):
 	def testRecursive(self):
 		top = os.path.join(my_dir, 'top.xml')
 		compile('autocompile', top, expect = "No dependencies need compiling... compile cprog itself...")
+
+		# Dependency was registered against its local path, since that was how we depended on it:
 		run(launch_command, os.path.join(my_dir, 'cprog/cprog-command.xml'), expect = 'Hello from C')
+
+		# But the top-level feed was registered against its <feed-for>:
+		c = config.load_config()
+		i = c.iface_cache.get_interface('http://example.com/top.xml')
+		self.assertEquals(1, len(i.extra_feeds))
 
 	def testLocal(self):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
