@@ -205,10 +205,9 @@ def do_build_internal(options, args):
 	# Create the patch
 	patch_file = join(buildenv.metadir, 'from-%s.patch' % src_impl.version)
 	if buildenv.user_srcdir:
-		# (ignore errors; will already be shown on stderr)
-		os.system("diff -urN '%s' src > %s" %
-			(buildenv.orig_srcdir.replace('\\', '\\\\').replace("'", "\\'"),
-			 patch_file))
+		with open(patch_file, 'w') as stream:
+			# (ignore errors; will already be shown on stderr)
+			subprocess.call(["diff", "-urN", buildenv.orig_srcdir, 'src'], stdout = stream)
 		if os.path.getsize(patch_file) == 0:
 			os.unlink(patch_file)
 	elif os.path.exists(patch_file):
