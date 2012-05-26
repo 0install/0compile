@@ -49,6 +49,8 @@ def write_pc(name, lines):
 	stream.close()
 
 def do_pkg_config_binding(binding, impl):
+	if impl.id.startswith('package:'):
+		return		# No bindings needed for native packages
 	feed_name = impl.feed.split('/')[-1]
 	path = lookup(impl)
 	new_insert = correct_for_64bit(path, binding.insert)
