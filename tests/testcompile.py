@@ -34,7 +34,7 @@ else:
 	launch_command = ['0launch']		# Package
 
 # Ensure it's cached now, to avoid extra output during the tests
-if subprocess.call(launch_command + ['--source', '-vc', '--download-only', hello_uri]):
+if subprocess.call(launch_command + ['--source', '-c', '--download-only', hello_uri]):
 	raise Exception("Failed to download hello world test program")
 
 def compile(*args, **kwargs):
