@@ -215,7 +215,7 @@ class BuildEnv:
 
 	@property
 	def local_iface_file(self):
-		return join(self.metadir, self.iface_name + '.xml')
+		return join(self.metadir, 'feed.xml')
 
 	@property
 	def target_arch(self):

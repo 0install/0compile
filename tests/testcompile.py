@@ -113,7 +113,7 @@ class TestCompile(unittest.TestCase):
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run(os.path.join(target_dir,'bin','hello'), expect = 'Hello, world!')
-		run(launch_command, os.path.join(target_dir,'0install','GNU-Hello.xml'), expect = 'Hello, world!')
+		run(launch_command, os.path.join(target_dir,'0install', 'feed.xml'), expect = 'Hello, world!')
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testAutocompile(self):
@@ -139,7 +139,7 @@ class TestCompile(unittest.TestCase):
 		target_dir = 'hello2-any-any'
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
-		run(launch_command, os.path.join(target_dir, '0install', 'hello2.xml'), expect = 'ROX-Lib')
+		run(launch_command, os.path.join(target_dir, '0install', 'feed.xml'), expect = 'ROX-Lib')
 	
 	def testBadVersion(self):
 		compile('setup', local_bad_version, self.hello_dir, expect = 'Created directory')
@@ -152,7 +152,7 @@ class TestCompile(unittest.TestCase):
 		os.chdir(comp_dir)
 		compile('build', expect = 'Hello from C!')
 		target_dir = 'cprog-command-%s' % support.get_arch_name().lower()
-		binary_feed = os.path.join(target_dir, '0install', 'cprog-command.xml')
+		binary_feed = os.path.join(target_dir, '0install', 'feed.xml')
 		run(launch_command, binary_feed, expect = 'Hello from C!')
 		s = open(binary_feed, 'r')
 		feed = model.ZeroInstallFeed(qdom.parse(s), binary_feed)

@@ -424,6 +424,11 @@ def find_feed_for(master_feed):
 def write_sample_feed(buildenv, master_feed, src_impl):
 	path = buildenv.local_iface_file
 
+	old_path = os.path.join(buildenv.metadir, buildenv.iface_name + '.xml')
+	if os.path.exists(old_path):
+		warn("Removing old %s file: use %s instead now", old_path, path)
+		os.unlink(old_path)
+
 	impl = minidom.getDOMImplementation()
 
 	XMLNS_IFACE = namespaces.XMLNS_IFACE
