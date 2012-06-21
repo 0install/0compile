@@ -1,7 +1,7 @@
 # Copyright (C) 2009, Thomas Leonard
 # See http://0install.net/0compile.html
 
-import sys, os, __main__, tempfile, subprocess, signal
+import sys, os, __main__, tempfile, subprocess, signal, shutil
 from xml.dom import minidom
 from optparse import OptionParser
 from logging import warn
@@ -124,21 +124,6 @@ class AutoCompiler:
 	def compile_and_register(self, sels, forced_iface_uri = None):
 		"""If forced_iface_uri, register as an implementation of this interface,
 		ignoring the any <feed-for>, etc."""
-		def valid_autocompile_feed(binary_feed):
-			cache = self.config.iface_cache
-			local_feed_impls = cache.get_feed(local_feed).implementations
-			if len(local_feed_impls) != 1:
-				self.note("Invalid autocompile feed '%s'; expected exactly one implementation!" % binary_feed)
-				return False
-			impl, = local_feed_impls.values()
-			try:
-				cache.stores.lookup_any(impl.digests)
-				return True
-			except NotStored, ex:
-				self.note("Build metadata file '%s' exists but implementation is missing: %s" % (local_feed, ex))
-				return False
-
-		local_feed_dir = basedir.save_config_path('0install.net', '0compile', 'builds', model._pretty_escape(sels.interface))
 
 		buildenv = BuildEnv(need_config = False)
 		buildenv.config.set('compile', 'interface', sels.interface)
@@ -149,14 +134,6 @@ class AutoCompiler:
 		if download_missing:
 			yield download_missing
 			tasks.check(download_missing)
-
-		version = sels.selections[sels.interface].version
-		local_feed = os.path.join(local_feed_dir, '%s-%s-%s.xml' % (buildenv.iface_name, version, uname[4]))
-		if os.path.exists(local_feed):
-			if not valid_autocompile_feed(local_feed):
-				os.unlink(local_feed)
-			else:
-				raise SafeException("Build metadata file '%s' already exists!" % local_feed)
 
 		tmpdir = tempfile.mkdtemp(prefix = '0compile-')
 		try:
@@ -182,35 +159,10 @@ class AutoCompiler:
 				tasks.check(build)
 
 			# Register the result...
-
-			alg = manifest.get_algorithm('sha1new')
-			digest = alg.new_digest()
-			lines = []
-			for line in alg.generate_manifest(buildenv.distdir):
-				line += '\n'
-				digest.update(line)
-				lines.append(line)
-			actual_digest = alg.getID(digest)
-
-			local_feed_file = file(local_feed, 'w')
-			try:
-				dom = minidom.parse(buildenv.local_iface_file)
-				impl, = dom.getElementsByTagNameNS(namespaces.XMLNS_IFACE, 'implementation')
-				impl.setAttribute('id', actual_digest)
-				dom.writexml(local_feed_file)
-				local_feed_file.write('\n')
-			finally:
-				local_feed_file.close()
+			dom = minidom.parse(buildenv.local_iface_file)
 
 			feed_for_elem, = dom.getElementsByTagNameNS(namespaces.XMLNS_IFACE, 'feed-for')
 			claimed_iface = feed_for_elem.getAttribute('interface')
-
-			self.note("Implementation metadata written to %s" % local_feed)
-
-			# No point adding it to the system store when only the user has the feed...
-			store = self.config.stores.stores[0]
-			self.note("Storing build in user cache %s..." % store.dir)
-			self.config.stores.add_dir_to_cache(actual_digest, buildenv.distdir)
 
 			if forced_iface_uri is not None:
 				if forced_iface_uri != claimed_iface:
@@ -220,18 +172,29 @@ class AutoCompiler:
 			else:
 				forced_iface_uri = claimed_iface		# (the top-level interface being built)
 
-			iface = self.config.iface_cache.get_interface(forced_iface_uri)
-			self.note("Registering as feed for %s" % iface.uri)
-			feed = iface.get_feed(local_feed)
-			if feed:
-				self.note("WARNING: feed %s already registered!" % local_feed)
-			else:
-				iface.extra_feeds.append(model.Feed(local_feed, impl.getAttribute('arch'), user_override = True))
-			writer.save_interface(iface)
+			version = sels.selections[sels.interface].version
 
-			# We might have cached an old version
-			new_feed = self.config.iface_cache.get_interface(local_feed)
-			reader.update_from_cache(new_feed)
+			site_package_versions_dir = basedir.save_data_path('0install.net', 'site-packages',
+						model._pretty_escape(forced_iface_uri))
+			site_package_dir = os.path.join(site_package_versions_dir, '%s-%s' % (version, uname[4]))
+			self.note("Storing build in %s" % site_package_dir)
+
+			if os.path.exists(site_package_dir):
+				self.note("(deleting previous build first)")
+				shutil.rmtree(site_package_dir)
+
+			shutil.copytree(buildenv.distdir, site_package_dir, symlinks = True)
+
+			local_feed = os.path.join(site_package_dir, '0install', 'feed.xml')
+			assert os.path.exists(local_feed), "Feed %s not found!" % local_feed
+
+			# Reload - our 0install will detect the new feed automatically
+			iface = self.config.iface_cache.get_interface(forced_iface_uri)
+			reader.update_from_cache(iface)
+			self.config.iface_cache.get_feed(local_feed, force = True)
+
+			# Write it out - 0install will add the feed so that older 0install versions can find it
+			writer.save_interface(iface)
 		except:
 			self.note("\nBuild failed: leaving build directory %s for inspection...\n" % tmpdir)
 			raise

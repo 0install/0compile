@@ -41,7 +41,7 @@ For a full tutorial, see 0compile's homepage.</description>
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
     </requires>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
-      <version not-before="1.7"/>
+      <version not-before="1.9"/>
       <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
     </requires>
   </group>

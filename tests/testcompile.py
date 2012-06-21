@@ -117,7 +117,7 @@ class TestCompile(unittest.TestCase):
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testAutocompile(self):
-		compile('autocompile', hello_uri, expect = "Registering as feed for http://0install.net/tests/GNU-Hello.xml")
+		compile('autocompile', hello_uri, expect = "site-packages/http:##0install.net#tests#GNU-Hello.xml")
 		run(launch_command, hello_uri, expect = 'Hello, world!')
 
 	def testRecursive(self):
