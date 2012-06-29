@@ -176,14 +176,32 @@ class AutoCompiler:
 
 			site_package_versions_dir = basedir.save_data_path('0install.net', 'site-packages',
 						model._pretty_escape(forced_iface_uri))
-			site_package_dir = os.path.join(site_package_versions_dir, '%s-%s' % (version, uname[4]))
+			leaf =  '%s-%s' % (version, uname[4])
+			site_package_dir = os.path.join(site_package_versions_dir, leaf)
 			self.note("Storing build in %s" % site_package_dir)
 
-			if os.path.exists(site_package_dir):
-				self.note("(deleting previous build first)")
-				shutil.rmtree(site_package_dir)
+			# 1. Copy new version in under a temporary name. Names starting with '.' are ignored by 0install.
+			tmp_distdir = os.path.join(site_package_versions_dir, '.new-' + leaf)
+			shutil.copytree(buildenv.distdir, tmp_distdir, symlinks = True)
 
-			shutil.copytree(buildenv.distdir, site_package_dir, symlinks = True)
+			# 2. Rename the previous build to .old-VERSION (deleting that if it already existed)
+			if os.path.exists(site_package_dir):
+				self.note("(moving previous build out of the way)")
+				previous_build_dir = os.path.join(site_package_versions_dir, '.old-' + leaf)
+				if os.path.exists(previous_build_dir):
+					shutil.rmtree(previous_build_dir)
+				os.rename(site_package_dir, previous_build_dir)
+			else:
+				previous_build_dir = None
+
+			# 3. Rename the new version immediately after renaming away the old one to minimise time when there's
+			# no version.
+			os.rename(tmp_distdir, site_package_dir)
+
+			# 4. Delete the old version.
+			if previous_build_dir:
+				self.note("(deleting previous build)")
+				shutil.rmtree(previous_build_dir)
 
 			local_feed = os.path.join(site_package_dir, '0install', 'feed.xml')
 			assert os.path.exists(local_feed), "Feed %s not found!" % local_feed
