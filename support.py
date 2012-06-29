@@ -110,7 +110,7 @@ def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	_pola_run = find_in_path('pola-run')
 
 	if _pola_run is None:
-		print "Not using sandbox (plash not installed)"
+		#print "Not using sandbox (plash not installed)"
 		use_plash = False
 	else:
 		use_plash = os.environ.get(USE_PLASH, '').lower() or 'not set'
