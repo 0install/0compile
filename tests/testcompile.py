@@ -87,6 +87,7 @@ class TestCompile(unittest.TestCase):
 		stream.close()
 	
 	def tearDown(self):
+		os.chdir(os.path.join(self.tmpdir, os.path.pardir))
 		ro_rmtree(self.tmpdir)
 
 	def testBadCommand(self):

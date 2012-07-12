@@ -217,6 +217,9 @@ class AutoCompiler:
 			self.note("\nBuild failed: leaving build directory %s for inspection...\n" % tmpdir)
 			raise
 		else:
+			# Can't delete current directory on Windows, so move to parent first
+			os.chdir(os.path.join(tmpdir, os.path.pardir))
+
 			ro_rmtree(tmpdir)
 
 	@tasks.async
