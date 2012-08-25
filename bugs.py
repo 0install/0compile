@@ -28,17 +28,13 @@ def do_report_bug(args):
 	import urllib
 	from urllib2 import urlopen
 
-	print "Sending contents of %s file to default bug tracker..." % log_name
+	print "Sending contents of %s file to default bug reporting site..." % log_name
 
-	stream = urlopen('http://sourceforge.net/tracker/index.php',
+	stream = urlopen('http://0install.net/api/report-bug/',
 		urllib.urlencode({
-		'group_id': '76468',
-		'atid': '905152',
-		'func': 'postadd',
-		'is_private': '0',
-		'summary': log_text.split('\n', 1)[0],	# First line of log
-		'details': log_text}))
-	stream.read()
+		'uri': buildenv.interface,
+		'body': log_text}))
+	print stream.read()
 	stream.close()
 
 __main__.commands.append(do_report_bug)
