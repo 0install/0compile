@@ -251,9 +251,7 @@ class AutoCompiler:
 
 			if not d.solver.ready:
 				self.print_details(d.solver)
-				raise SafeException("Can't find all required implementations (source or binary):\n" +
-					'\n'.join(["- %s -> %s" % (iface, d.solver.selections[iface])
-						   for iface in d.solver.selections]))
+				raise d.solver.get_failure_reason()
 			self.note("Selection done.")
 
 			self.note("\nPlan:\n")
