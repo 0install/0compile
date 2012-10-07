@@ -13,6 +13,7 @@ from zeroinstall.injector.arch import canonicalize_os, canonicalize_machine
 from zeroinstall.injector.iface_cache import iface_cache
 from zeroinstall import SafeException
 from zeroinstall.zerostore import Store, NotStored
+from zeroinstall.support import find_in_path
 
 def _(x): return x
 
@@ -76,13 +77,6 @@ def ensure_dir(d, clean = False):
 	if os.path.exists(d):
 		raise SafeException("'%s' exists, but is not a directory!" % d)
 	os.mkdir(d)
-
-def find_in_path(prog):
-	for d in os.environ['PATH'].split(':'):
-		path = os.path.join(d, prog)
-		if os.path.isfile(path):
-			return path
-	return None
 
 def spawn_and_check(prog, args):
 	status = os.spawnv(os.P_WAIT, prog, [prog] + args)

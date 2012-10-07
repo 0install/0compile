@@ -271,7 +271,7 @@ def do_build_internal(options, args):
 		raise Exception("Unknown dup-src value '%s'" % dup_src_type)
 
 	if options.shell:
-		spawn_and_check(find_in_path('sh'), [])
+		spawn_and_check(find_in_path('cmd' if os.name == 'nt' else 'sh'), [])
 	else:
 		command = sels.commands[0].qdom.attrs.get('shell-command', None)
 		if command is None:
@@ -279,7 +279,10 @@ def do_build_internal(options, args):
 			prog_args = setup.build_command(sels.interface, sels.command) + args
 		else:
 			# Old style shell-command='...'
-			prog_args = ['/bin/sh', '-c', command + ' "$@"', '-'] + args
+			if os.name == 'nt':
+				prog_args = ['cmd', '/c', command] + args
+			else:
+				prog_args = ['/bin/sh', '-c', command + ' "$@"', '-'] + args
 			assert len(sels.commands) == 1
 
 		# Remove any existing log files
