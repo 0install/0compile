@@ -290,7 +290,10 @@ class AutoCompiler:
 			# Try again with that dependency built...
 
 	def spawn_build(self, iface_name):
-		subprocess.check_call([sys.executable, sys.argv[0], 'build'])
+		try:
+			subprocess.check_call([sys.executable, sys.argv[0], 'build'])
+		except subprocess.CalledProcessError as ex:
+			raise SafeException(str(ex))
 
 	def build(self):
 		tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
