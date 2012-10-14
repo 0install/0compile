@@ -175,7 +175,7 @@ class AutoCompiler:
 			version = sels.selections[sels.interface].version
 
 			site_package_versions_dir = basedir.save_data_path('0install.net', 'site-packages',
-						model._pretty_escape(forced_iface_uri))
+						*model.escape_interface_uri(forced_iface_uri))
 			leaf =  '%s-%s' % (version, uname[4])
 			site_package_dir = os.path.join(site_package_versions_dir, leaf)
 			self.note("Storing build in %s" % site_package_dir)
@@ -208,7 +208,7 @@ class AutoCompiler:
 
 			# Reload - our 0install will detect the new feed automatically
 			iface = self.config.iface_cache.get_interface(forced_iface_uri)
-			reader.update_from_cache(iface)
+			reader.update_from_cache(iface, iface_cache = self.config.iface_cache)
 			self.config.iface_cache.get_feed(local_feed, force = True)
 
 			# Write it out - 0install will add the feed so that older 0install versions can find it
