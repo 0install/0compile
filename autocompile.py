@@ -318,7 +318,7 @@ class AutoCompiler:
 		print msg
 
 	def note_error(self, msg):
-		self.overall.insert_at_cursor(msg + '\n')
+		print msg
 
 class GUIHandler(handler.Handler):
 	def downloads_changed(self):
