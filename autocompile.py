@@ -94,6 +94,9 @@ class AutocompileCache(iface_cache.IfaceCache):
 		return feed
 
 class AutoCompiler:
+	# If (due to a bug) we get stuck in a loop, we use this to abort with a sensible error.
+	seen = None		# ((iface, source_id) -> new_binary_id)
+
 	def __init__(self, config, iface_uri, options):
 		self.iface_uri = iface_uri
 		self.options = options
@@ -225,6 +228,10 @@ class AutoCompiler:
 
 			# Write it out - 0install will add the feed so that older 0install versions can find it
 			writer.save_interface(iface)
+
+			seen_key = (forced_iface_uri, sels.selections[sels.interface].id)
+			assert seen_key not in self.seen, seen_key
+			self.seen[seen_key] = site_package_dir
 		except:
 			self.note("\nBuild failed: leaving build directory %s for inspection...\n" % tmpdir)
 			raise
@@ -271,12 +278,12 @@ class AutoCompiler:
 			self.note('')
 
 			needed = []
-			for dep_iface, dep_impl in d.solver.selections.iteritems():
-				if dep_impl.id.startswith('0compile='):
+			for dep_iface_uri, dep_sel in d.solver.selections.selections.iteritems():
+				if dep_sel.id.startswith('0compile='):
 					if not needed:
 						self.note("Build dependencies that need to be compiled first:\n")
-					self.note("- {iface} {version}".format(iface = dep_iface.uri, version = model.format_version(dep_impl.version)))
-					needed.append((dep_iface, dep_impl))
+					self.note("- {iface} {version}".format(iface = dep_iface_uri, version = dep_sel.version))
+					needed.append((dep_iface_uri, dep_sel))
 
 			if not needed:
 				self.note("No dependencies need compiling... compile %s itself..." % iface.get_name())
@@ -288,7 +295,7 @@ class AutoCompiler:
 				return
 
 			# Compile the first missing build dependency...
-			dep_iface, dep_impl = needed[0]
+			dep_iface_uri, dep_sel = needed[0]
 
 			self.note("")
 
@@ -296,10 +303,26 @@ class AutoCompiler:
 			#for de in details:
 			#	print de
 
-			dep_source_id = dep_impl.id.split('=', 1)[1]
-			build = self.recursive_build(dep_iface.uri, dep_source_id)
+			dep_source_id = dep_sel.id.split('=', 1)[1]
+			seen_key = (dep_iface_uri, dep_source_id)
+			if seen_key in self.seen:
+				self.note_error("BUG: Stuck in an auto-compile loop: already built {key}!".format(key = seen_key))
+				# Try to find out why the previous build couldn't be used...
+				dep_iface = self.config.iface_cache.get_interface(dep_iface_uri)
+				previous_build = self.seen[seen_key]
+				previous_build_feed = os.path.join(previous_build, '0install', 'feed.xml')
+				previous_feed = self.config.iface_cache.get_feed(previous_build_feed)
+				previous_binary_impl = previous_feed.implementations.values()[0]
+				raise SafeException("BUG: auto-compile loop: expected to select previously-build binary {binary}:\n\n{reason}".format(
+						binary = previous_binary_impl,
+						reason = d.solver.justify_decision(r, dep_iface, previous_binary_impl)))
+
+			build = self.recursive_build(dep_iface_uri, dep_source_id)
 			yield build
 			tasks.check(build)
+
+			assert seen_key in self.seen, (seen_key, self.seen)	# Must have been built by now
+
 			# Try again with that dependency built...
 
 	def spawn_build(self, iface_name):
@@ -309,6 +332,7 @@ class AutoCompiler:
 			raise SafeException(str(ex))
 
 	def build(self):
+		self.seen = {}
 		tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
 
 	def heading(self, msg):
