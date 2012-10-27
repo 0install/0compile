@@ -25,6 +25,18 @@ arch.machine_groups['newbuild'] = arch.machine_groups.get(uname[4], 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
+class ImplRestriction(model.Restriction):
+	reason = "Not the source we're trying to build"
+
+	def __init__(self, impl_id):
+		self.impl_id = impl_id
+
+	def meets_restriction(self, impl):
+		return impl.id == self.impl_id
+
+	def __str__(self):
+		return _("implementation {impl}").format(impl = self.impl_id)
+
 class NewBuildImplementation(model.ZeroInstallImplementation):
 	# Assume that this (potential) binary is available so that we can select it as a
 	# dependency.
@@ -223,10 +235,10 @@ class AutoCompiler:
 			ro_rmtree(tmpdir)
 
 	@tasks.async
-	def recursive_build(self, iface_uri, version = None):
+	def recursive_build(self, iface_uri, source_impl_id = None):
 		"""Build an implementation of iface_uri and register it as a feed.
-		@param version: the version to build, or None to build any version
-		@type version: str
+		@param source_impl_id: the version to build, or None to build any version
+		@type source_impl_id: str
 		"""
 		r = requirements.Requirements(iface_uri)
 		r.source = True
@@ -235,8 +247,8 @@ class AutoCompiler:
 		d = driver.Driver(self.config, r)
 		iface = self.config.iface_cache.get_interface(iface_uri)
 		d.solver.record_details = True
-		if version:
-			d.solver.extra_restrictions[iface] = [model.VersionRestriction(model.parse_version(version))]
+		if source_impl_id is not None:
+			d.solver.extra_restrictions[iface] = [ImplRestriction(source_impl_id)]
 
 		# For testing...
 		#p.target_arch = arch.Architecture(os_ranks = {'FreeBSD': 0, None: 1}, machine_ranks = {'i386': 0, None: 1, 'newbuild': 2})
@@ -284,7 +296,8 @@ class AutoCompiler:
 			#for de in details:
 			#	print de
 
-			build = self.recursive_build(dep_iface.uri, dep_impl.get_version())
+			dep_source_id = dep_impl.id.split('=', 1)[1]
+			build = self.recursive_build(dep_iface.uri, dep_source_id)
 			yield build
 			tasks.check(build)
 			# Try again with that dependency built...
