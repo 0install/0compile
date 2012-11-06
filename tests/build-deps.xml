@@ -1,0 +1,17 @@
+<?xml version="1.0" ?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" xmlns:compile="http://zero-install.sourceforge.net/2006/namespaces/0compile">
+  <name>build-deps</name>
+  <summary>must take into account binary dependencies</summary>
+
+  <group arch="*-src">
+    <implementation id="." version="0.1">
+      <command name='compile' shell-command='echo hi'>
+	<compile:implementation>
+	  <requires interface='http://repo.roscidus.com/python/python'>
+	    <version not-before='3' before='3'/>	<!-- conflict -->
+	  </requires>
+	</compile:implementation>
+      </command>
+    </implementation>
+  </group>
+</interface>

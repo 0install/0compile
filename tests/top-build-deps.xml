@@ -1,0 +1,11 @@
+<?xml version="1.0" ?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" xmlns:compile="http://zero-install.sourceforge.net/2006/namespaces/0compile">
+  <name>top-build-dep</name>
+  <summary>top-level target for an autocompile</summary>
+
+  <implementation arch='*-src' id="." version="0.1">
+    <command name='compile' shell-command='echo top-build-dep'>
+      <requires interface='./build-deps.xml'/>
+    </command>
+  </implementation>
+</interface>

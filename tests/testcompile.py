@@ -13,11 +13,15 @@ sys.path.insert(0, os.path.dirname(my_dir))
 import support
 
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
-hello_selections = os.path.realpath(os.path.join(os.path.dirname(__file__), 'selections.xml'))
-local_bad_version = os.path.realpath(os.path.join(os.path.dirname(__file__), 'bad-version.xml'))
-local_hello_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml'))
-local_cprog_command_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog-command.xml'))
-local_cprog_path = os.path.realpath(os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml'))
+
+mydir = os.path.realpath(os.path.dirname(__file__))
+
+hello_selections = os.path.join(mydir, 'selections.xml')
+local_bad_version = os.path.join(os.path.dirname(__file__), 'bad-version.xml')
+local_hello_path = os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml')
+local_cprog_command_path = os.path.join(os.path.dirname(__file__), 'cprog', 'cprog-command.xml')
+local_cprog_path = os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml')
+top_build_deps = os.path.join(os.path.dirname(__file__), 'top-build-deps.xml')
 
 compile_bin = os.path.join(my_dir, '0compile-coverage')
 assert os.path.exists(compile_bin)
@@ -245,6 +249,9 @@ class TestCompile(unittest.TestCase):
 		env = support.BuildEnv()
 		os.unlink(os.path.join(env.metadir, "build-environment.xml"))
 		compile('report-bug', expect = "file+not+found")
+	
+	def testBuildDeps(self):
+		compile('autocompile', top_build_deps, expect = "build-deps.xml 0.1 requires 3 <= version < 3", expect_status = 1)
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':

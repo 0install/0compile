@@ -61,6 +61,24 @@ def get_commands(src_impl):
 			return commands
 	return []
 
+def add_binary_deps(src_impl, binary_impl):
+	# If src_impl contains a template, add those dependencies to the potential binary.
+	# Note: probably we should add "include-binary" dependencies here too...
+
+	compile_command = src_impl.commands['compile']
+
+	for elem in compile_command.qdom.childNodes:
+		if elem.uri == XMLNS_0COMPILE and elem.name == 'implementation':
+			template = elem
+			break
+	else:
+		return	# No template
+
+	for elem in template.childNodes:
+		if elem.uri == namespaces.XMLNS_IFACE and elem.name in ('requires', 'restricts', 'runner'):
+			dep = model.process_depends(elem, local_feed_dir = None)
+			binary_impl.requires.append(dep)
+
 class AutocompileCache(iface_cache.IfaceCache):
 	def __init__(self):
 		iface_cache.IfaceCache.__init__(self)
@@ -90,6 +108,9 @@ class AutocompileCache(iface_cache.IfaceCache):
 					for cmd_name in get_commands(x):
 						cmd = qdom.Element(namespaces.XMLNS_IFACE, 'command', {'path': 'new-build', 'name': cmd_name})
 						new.commands[cmd_name] = model.Command(cmd, None)
+
+					# Find the <command name='compile'/>
+					add_binary_deps(x, new)
 
 		return feed
 
