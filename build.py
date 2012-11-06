@@ -471,22 +471,10 @@ def write_sample_feed(buildenv, master_feed, src_impl):
 		prefixes.setAttributeNS(group, XMLNS_0COMPILE, 'lib-mappings', lib_mappings)
 	
 	for d in src_impl.dependencies:
-		# 0launch < 0.32 messed up the namespace...
-		if parse_bool(d.metadata.get('include-binary', 'false')) or \
-		   parse_bool(d.metadata.get(XMLNS_0COMPILE + ' include-binary', 'false')):
-			requires = addSimple(group, 'requires')
-			requires.setAttributeNS(None, 'interface', d.interface)
-			for b in d.bindings:
-				if isinstance(b, model.EnvironmentBinding):
-					env_elem = addSimple(requires, 'environment')
-					env_elem.setAttributeNS(None, 'name', b.name)
-					env_elem.setAttributeNS(None, 'insert', b.insert)
-					if b.default:
-						env_elem.setAttributeNS(None, 'default', b.default)
-				else:
-					raise Exception('Unknown binding type ' + b)
-			close(requires)
-				
+		if parse_bool(d.metadata.get(XMLNS_0COMPILE + ' include-binary', 'false')):
+			requires = d.qdom.toDOM(doc, prefixes)
+			requires.removeAttributeNS(XMLNS_0COMPILE, 'include-binary')
+			group.appendChild(requires)
 	set_arch = True
 
 	impl_elem = addSimple(group, 'implementation')
