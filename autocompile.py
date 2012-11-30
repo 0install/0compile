@@ -14,6 +14,11 @@ from zeroinstall.support import tasks, basedir, ro_rmtree
 
 from support import BuildEnv, uname, XMLNS_0COMPILE
 
+build_target_machine_type = uname[4]
+assert build_target_machine_type in arch.machine_ranks, "Build target machine type '{build_target_machine_type}' is not supported on this platform; expected one of {types}".format(
+		build_target_machine_type = build_target_machine_type,
+		types = list(arch.machine_ranks.keys()))
+
 # This is a bit hacky...
 #
 # We invent a new CPU type which is compatible with the host but worse than
@@ -21,7 +26,7 @@ from support import BuildEnv, uname, XMLNS_0COMPILE
 # binaries either. This means that we always prefer an existing binary of the
 # desired version to compiling a new one, but we'll compile a new version from source
 # rather than use an older binary.
-arch.machine_groups['newbuild'] = arch.machine_groups.get(uname[4], 0)
+arch.machine_groups['newbuild'] = arch.machine_groups.get(build_target_machine_type, 0)
 arch.machine_ranks['newbuild'] = max(arch.machine_ranks.values()) + 1
 host_arch = '*-newbuild'
 
