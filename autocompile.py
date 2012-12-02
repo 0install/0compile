@@ -12,9 +12,10 @@ from zeroinstall.injector.config import load_config
 from zeroinstall.zerostore import manifest, NotStored
 from zeroinstall.support import tasks, basedir, ro_rmtree
 
-from support import BuildEnv, uname, XMLNS_0COMPILE
+from support import BuildEnv, canonicalize_machine, XMLNS_0COMPILE
+import support
 
-build_target_machine_type = uname[4]
+build_target_machine_type = canonicalize_machine(support.uname[4])
 assert build_target_machine_type in arch.machine_ranks, "Build target machine type '{build_target_machine_type}' is not supported on this platform; expected one of {types}".format(
 		build_target_machine_type = build_target_machine_type,
 		types = list(arch.machine_ranks.keys()))
@@ -217,7 +218,7 @@ class AutoCompiler:
 
 			site_package_versions_dir = basedir.save_data_path('0install.net', 'site-packages',
 						*model.escape_interface_uri(forced_iface_uri))
-			leaf =  '%s-%s' % (version, uname[4])
+			leaf =  '%s-%s' % (version, build_target_machine_type)
 			site_package_dir = os.path.join(site_package_versions_dir, leaf)
 			self.note("Storing build in %s" % site_package_dir)
 
