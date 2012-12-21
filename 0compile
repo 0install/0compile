@@ -23,7 +23,7 @@ commands = []
 import autocompile, setup, clean, copysrc, build, publish, gui, bugs, include_deps
 import support
 
-version = '0.32'
+version = '0.32.1'
 
 try:
 	locale.setlocale(locale.LC_ALL, '')
