@@ -502,6 +502,7 @@ class GTKAutoCompiler(AutoCompiler):
 		self.overall.insert_at_end_and_scroll(msg + '\n', 'error')
 
 	def build(self):
+		self.seen = {}
 		import gtk
 		try:
 			tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
