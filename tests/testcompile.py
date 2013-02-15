@@ -63,7 +63,7 @@ def run(*args, **kwargs):
 # Detect accidental network access
 os.environ['http_proxy'] = 'localhost:1111'
 
-for x in ['GNUPGHOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME']:
+for x in ['GNUPGHOME', 'XDG_CONFIG_HOME', 'XDG_CACHE_HOME', 'XDG_DATA_HOME']:
 	if x in os.environ:
 		del os.environ[x]
 user_cache_dir = os.environ['XDG_CACHE_DIRS'] = basedir.xdg_cache_home
