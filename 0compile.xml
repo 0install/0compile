@@ -34,6 +34,9 @@ For a full tutorial, see 0compile's homepage.</description>
       <runner interface="http://repo.roscidus.com/python/python">
 	<version before="3"/>
       </runner>
+      <requires interface="http://repo.roscidus.com/devel/make">
+	<executable-in-path name="make"/>
+      </requires>
     </command>
     <implementation id="." version="0.32.1-post"/>
     <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib" use="testing"/>
