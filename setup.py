@@ -41,6 +41,12 @@ def do_setup(args, get_dir_callback = None):
 
 		iface_uri = model.canonical_iface_uri(args[0])
 		if os.path.isabs(iface_uri):
+			# Use a relative path if the feed is inside the current directory.
+			# This is useful if the properties file is shared with other users.
+			rel_iface_uri = os.path.relpath(iface_uri, create_dir or ".")
+			if not rel_iface_uri.startswith("."):
+				iface_uri = rel_iface_uri
+
 			root = qdom.parse(file(iface_uri))
 			if root.uri == namespaces.XMLNS_IFACE and root.name == 'selections':
 				# Looks like this is a selections file, not an interface.
