@@ -47,5 +47,8 @@ For a full tutorial, see 0compile's homepage.</description>
       <version not-before="1.13"/>
       <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
     </requires>
+    <requires interface='http://repo.roscidus.com/utils/bash' os='Windows'>
+      <executable-in-var name='0COMPILE_BASH'/>
+    </requires>
   </group>
 </interface>

@@ -280,7 +280,7 @@ def do_build_internal(options, args):
 		else:
 			# Old style shell-command='...'
 			if os.name == 'nt':
-				prog_args = ['cmd', '/c', command] + args
+				prog_args = [os.environ['0COMPILE_BASH'], '-eux', '-c', command] + args
 			else:
 				prog_args = ['/bin/sh', '-c', command + ' "$@"', '-'] + args
 			assert len(sels.commands) == 1
