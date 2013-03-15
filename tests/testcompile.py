@@ -8,8 +8,8 @@ from zeroinstall.zerostore import Stores
 
 stores = Stores()
 
-my_dir = os.path.abspath(os.path.dirname(__file__))
-sys.path.insert(0, os.path.dirname(my_dir))
+mydir = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(mydir))
 import support
 
 hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
@@ -17,13 +17,13 @@ hello_uri = 'http://0install.net/tests/GNU-Hello.xml'
 mydir = os.path.realpath(os.path.dirname(__file__))
 
 hello_selections = os.path.join(mydir, 'selections.xml')
-local_bad_version = os.path.join(os.path.dirname(__file__), 'bad-version.xml')
-local_hello_path = os.path.join(os.path.dirname(__file__), 'hello2', 'hello2.xml')
-local_cprog_command_path = os.path.join(os.path.dirname(__file__), 'cprog', 'cprog-command.xml')
-local_cprog_path = os.path.join(os.path.dirname(__file__), 'cprog', 'cprog.xml')
-top_build_deps = os.path.join(os.path.dirname(__file__), 'top-build-deps.xml')
+local_bad_version = os.path.join(mydir, 'bad-version.xml')
+local_hello_path = os.path.join(mydir, 'hello2', 'hello2.xml')
+local_cprog_command_path = os.path.join(mydir, 'cprog', 'cprog-command.xml')
+local_cprog_path = os.path.join(mydir, 'cprog', 'cprog.xml')
+top_build_deps = os.path.join(mydir, 'top-build-deps.xml')
 
-compile_bin = os.path.join(my_dir, '0compile-coverage')
+compile_bin = os.path.join(mydir, '0compile-coverage')
 assert os.path.exists(compile_bin)
 
 if 'DISPLAY' in os.environ:
@@ -126,11 +126,11 @@ class TestCompile(unittest.TestCase):
 		run(launch_command, hello_uri, expect = 'Hello, world!')
 
 	def testRecursive(self):
-		top = os.path.join(my_dir, 'top.xml')
+		top = os.path.join(mydir, 'top.xml')
 		compile('autocompile', top, expect = "No dependencies need compiling... compile cprog itself...")
 
 		# Dependency was registered against its local path, since that was how we depended on it:
-		run(launch_command, os.path.join(my_dir, 'cprog/cprog-command.xml'), expect = 'Hello from C')
+		run(launch_command, os.path.join(mydir, 'cprog/cprog-command.xml'), expect = 'Hello from C')
 
 		# But the top-level feed was registered against its <feed-for>:
 		c = config.load_config()
