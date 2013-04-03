@@ -39,7 +39,7 @@ For a full tutorial, see 0compile's homepage.</description>
       </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
-    <implementation id="." version="1.0-post"/>
+    <implementation id="." released="2013-04-03" version="1.1"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
     </requires>
@@ -47,8 +47,8 @@ For a full tutorial, see 0compile's homepage.</description>
       <version not-before="2.1"/>
       <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
     </requires>
-    <requires interface='http://repo.roscidus.com/utils/bash' os='Windows'>
-      <executable-in-var name='0COMPILE_BASH'/>
+    <requires interface="http://repo.roscidus.com/utils/bash" os="Windows">
+      <executable-in-var name="0COMPILE_BASH"/>
     </requires>
   </group>
 </interface>
