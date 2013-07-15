@@ -37,6 +37,9 @@ For a full tutorial, see 0compile's homepage.</description>
       <requires interface="http://repo.roscidus.com/devel/make">
 	<executable-in-path name="make"/>
       </requires>
+      <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
+	<executable-in-var name='0COMPILE_0LAUNCH' command='run'/>
+      </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
     <implementation id="." version="1.1-post"/>
@@ -45,6 +48,7 @@ For a full tutorial, see 0compile's homepage.</description>
     </requires>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="2.1"/>
+      <executable-in-var name='0COMPILE_0INSTALL' command='0install'/>
       <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
     </requires>
     <requires interface="http://repo.roscidus.com/utils/bash" os="Windows">

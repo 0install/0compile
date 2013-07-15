@@ -30,17 +30,21 @@ uname = arch._uname + platform.uname()[len(arch._uname):]
 ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
-zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
-if zeroinstall_dir:
-	# XXX: we're assuming that, if installed through 0install, 0launch requires
-	# the same version of Python as 0compile. This is currently needed for Arch
-	# Linux, but long-term we need to use the <runner>.
-	install_prog = [sys.executable, os.path.join(zeroinstall_dir, '0install')]
-	if not os.path.exists(install_prog[1]):
-		# For the Windows version...
-		install_prog[1] = os.path.join(zeroinstall_dir, 'zeroinstall', 'scripts', 'install.py')
+install_path = os.environ.get("0COMPILE_0INSTALL", None)
+if install_path is None:
+	zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
+	if zeroinstall_dir:
+			# We've been run by an old version of 0install.
+			# We assuming that, if installed through 0install, 0launch requires
+			# the same version of Python as 0compile.
+			install_prog = [sys.executable, os.path.join(zeroinstall_dir, '0install')]
+			if not os.path.exists(install_prog[1]):
+				# For the Windows version...
+				install_prog[1] = os.path.join(zeroinstall_dir, 'zeroinstall', 'scripts', 'install.py')
+	else:
+		install_prog = ['0install']
 else:
-	install_prog = ['0install']
+	install_prog = [install_path]
 
 if os.path.isdir('dependencies'):
 	dep_dir = os.path.realpath('dependencies')
