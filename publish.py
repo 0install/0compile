@@ -21,14 +21,17 @@ def do_publish(args):
 	(options, args2) = parser.parse_args(args)
 
 	buildenv = BuildEnv()
-	if len(args2) == 0:
-		if not buildenv.download_base_url:
-			raise SafeException("No download base set. Give the URL for a remote directory.")
-	elif len(args2) == 1:
+	if len(args2) == 1:
 		buildenv.config.set('compile', 'download-base-url', args2[0])
 		buildenv.save()
+	elif len(args2) > 1:
+		parser.print_help()
+		sys.exit(1)
 
-	info("Using download base URL: %s", buildenv.download_base_url)
+	download_base_url = buildenv.download_base_url or None
+
+	if download_base_url:
+		info("Using download base URL: %s", download_base_url)
 
 	if not os.path.isdir(buildenv.distdir):
 		raise SafeException("Directory '%s' does not exist. Try 'compile build'." % buildenv.distdir)
@@ -47,7 +50,10 @@ def do_publish(args):
 
 	target_feed = options.target_feed or buildenv.local_download_iface
 
-	download_url = os.path.join(buildenv.download_base_url, archive_name)
+	if download_base_url:
+		download_url = os.path.join(download_base_url, archive_name)
+	else:
+		download_url = archive_name
 	shutil.copyfile(buildenv.local_iface_file, target_feed)
 	
 	# XXX: we're assuming that 0publish requires the same version of Python as
