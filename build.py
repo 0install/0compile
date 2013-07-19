@@ -265,7 +265,7 @@ def do_build_internal(options, args):
 	# Make a copy of the source if needed.
 	dup_src_type = src_impl.attrs.get(XMLNS_0COMPILE + ' dup-src', None)
 	if dup_src_type == 'true':
-		dup_src(shutil.copy2)
+		dup_src(copy_file)
 		env('SRCDIR', builddir)
 	elif dup_src_type:
 		raise Exception("Unknown dup-src value '%s'" % dup_src_type)
@@ -589,6 +589,12 @@ def set_up_mappings(mappings):
 		if target:
 			print "Adding mapping lib%s%s -> %s" % (name, soext, target)
 			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + soext))
+
+def copy_file(src, target):
+	if os.path.islink(src):
+		os.symlink(os.readlink(src), target)
+	else:
+		shutil.copy2(src, target)
 
 def dup_src(fn):
 	srcdir = os.path.join(os.environ['SRCDIR'], '')
