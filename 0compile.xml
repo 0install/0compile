@@ -38,17 +38,17 @@ For a full tutorial, see 0compile's homepage.</description>
 	<executable-in-path name="make"/>
       </requires>
       <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
-	<executable-in-var name='0COMPILE_0LAUNCH' command='run'/>
+	<executable-in-var command="run" name="0COMPILE_0LAUNCH"/>
       </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
-    <implementation id="." version="1.1-post"/>
+    <implementation id="." released="2013-07-19" version="1.2"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
     </requires>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="2.1"/>
-      <executable-in-var name='0COMPILE_0INSTALL' command='0install'/>
+      <executable-in-var command="0install" name="0COMPILE_0INSTALL"/>
       <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
     </requires>
     <requires interface="http://repo.roscidus.com/utils/bash" os="Windows">
