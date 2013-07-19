@@ -24,7 +24,7 @@ For a full tutorial, see 0compile's homepage.</description>
     <release:action phase="commit-release">sed -i &quot;s/^version = '.*'$/version = '$RELEASE_VERSION'/&quot; 0compile</release:action>
   </release:management>
 
-  <group main="0compile">
+  <group main="0compile" license="OSI Approved :: GNU Lesser General Public License (LGPL)">
     <command name="run" path="0compile">
       <runner interface="http://repo.roscidus.com/python/python">
 	<version before="3"/>
