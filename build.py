@@ -596,14 +596,12 @@ def dup_src(fn):
 
 	build_in_src = srcdir + 'build' == builddir
 
-	build_prefix = builddir + os.sep
-
 	for root, dirs, files in os.walk(srcdir):
 		assert root.startswith(srcdir)
 		reldir = root[len(srcdir):]
 
 		if reldir == '.git' or (reldir == 'build' and build_in_src) or \
-		   (root + os.sep).startswith(build_prefix):
+				('0compile.properties' in files and not build_in_src):
 			print "dup-src: skipping", reldir
 			dirs[:] = []
 			continue
