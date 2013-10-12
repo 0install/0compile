@@ -8,7 +8,7 @@
 
   <feed-for interface='http://example.com/cprog.xml'/>
 
-  <group arch="*-src" compile:dup-src='true'>
+  <group arch="*-src" compile:dup-src='true' license='Public Domain'>
     <implementation id="." version="0.1">
       <command name='compile'>
 	<runner interface='http://repo.roscidus.com/devel/make'>

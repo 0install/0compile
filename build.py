@@ -502,6 +502,11 @@ def write_sample_feed(buildenv, master_feed, src_impl):
 
 	impl_elem.setAttributeNS(None, 'version', src_impl.version)
 
+	if not impl_elem.hasAttribute('license'):
+		license = src_impl.attrs.get('license')
+		if license:
+			impl_elem.setAttributeNS(None, 'license', license)
+
 	version_modifier = buildenv.version_modifier
 	if version_modifier:
 		impl_elem.setAttributeNS(None, 'version-modifier', version_modifier)

@@ -158,6 +158,7 @@ class TestCompile(unittest.TestCase):
 		s.close()
 		impl, = feed.implementations.values()
 		assert impl.arch, "Missing arch on %s" % impl
+		self.assertEqual("Public Domain", str(impl.metadata['license']))
 
 	def testCopySrc(self):
 		comp_dir = os.path.join(self.tmpdir, 'cprog')
