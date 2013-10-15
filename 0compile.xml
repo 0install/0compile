@@ -42,7 +42,7 @@ For a full tutorial, see 0compile's homepage.</description>
       </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
-    <implementation id="." released="2013-10-15" version="1.3"/>
+    <implementation id="." version="1.3-post"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
     </requires>
