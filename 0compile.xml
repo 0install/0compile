@@ -24,7 +24,7 @@ For a full tutorial, see 0compile's homepage.</description>
     <release:action phase="commit-release">sed -i &quot;s/^version = '.*'$/version = '$RELEASE_VERSION'/&quot; 0compile</release:action>
   </release:management>
 
-  <group main="0compile" license="OSI Approved :: GNU Lesser General Public License (LGPL)">
+  <group license="OSI Approved :: GNU Lesser General Public License (LGPL)" main="0compile">
     <command name="run" path="0compile">
       <runner interface="http://repo.roscidus.com/python/python">
 	<version before="3"/>
@@ -42,7 +42,7 @@ For a full tutorial, see 0compile's homepage.</description>
       </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
-    <implementation id="." version="1.2-post"/>
+    <implementation id="." released="2013-10-15" version="1.3"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
     </requires>
