@@ -1,0 +1,25 @@
+<?xml version="1.0" ?>
+<?xml-stylesheet type='text/xsl' href='interface.xsl'?>
+<interface xmlns="http://zero-install.sourceforge.net/2004/injector/interface" xmlns:compile="http://zero-install.sourceforge.net/2006/namespaces/0compile">
+  <name>pinned-version</name>
+  <summary>testing</summary>
+  <description>
+    Test compiling a program with a pinned dependency.
+  </description>
+  <feed-for interface='http://localhost/pinned-version.xml'/>
+
+  <group arch="*-src">
+    <requires interface="http://repo.roscidus.com/python/python"/>
+    <implementation id="." version="0.1"/>
+    <command name='compile' shell-command='cp "$SRCDIR/main.py" "$DISTDIR"'>
+      <compile:implementation main='main.py'>
+        <command name='run' path='main.py'>
+          <runner interface='http://repo.roscidus.com/python/python'/>
+          <requires interface='http://repo.roscidus.com/python/python'>
+            <version compile:pin-components="2"/>
+          </requires>
+        </command>
+      </compile:implementation>
+    </command>
+  </group>
+</interface>

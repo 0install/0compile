@@ -21,6 +21,7 @@ local_bad_version = os.path.join(mydir, 'bad-version.xml')
 local_hello_path = os.path.join(mydir, 'hello2', 'hello2.xml')
 local_cprog_command_path = os.path.join(mydir, 'cprog', 'cprog-command.xml')
 local_cprog_path = os.path.join(mydir, 'cprog', 'cprog.xml')
+local_pinned_path = os.path.join(mydir, 'pinned-version', 'pinned-version.xml')
 top_build_deps = os.path.join(mydir, 'top-build-deps.xml')
 
 compile_bin = os.path.join(mydir, '0compile-coverage')
@@ -48,11 +49,12 @@ def run(*args, **kwargs):
 		raise Exception("Exit status %d:\n%s" % (code, got))
 
 	expected = kwargs.get('expect', '')
-	if expected:
-		if expected.lower() not in got.lower():
-			raise Exception("Expected '%s', got '%s'" % (expected, got))
-	elif got:
-		raise Exception("Expected nothing, got '%s'" % got)
+	if expected is not None: # pass None to explicily suppress check
+		if expected:
+			if expected.lower() not in got.lower():
+				raise Exception("Expected '%s', got '%s'" % (expected, got))
+		elif got:
+			raise Exception("Expected nothing, got '%s'" % got)
 
 # Detect accidental network access
 os.environ['http_proxy'] = 'localhost:1111'
@@ -247,6 +249,36 @@ class TestCompile(unittest.TestCase):
 	
 	def testBuildDeps(self):
 		compile('autocompile', top_build_deps, expect = "build-deps.xml 0.1 requires 3 <= version < 3", expect_status = 1)
+
+	def testPinVersions(self):
+		dest = os.path.join(self.tmpdir, 'pinned_version')
+		compile('setup', local_pinned_path, dest, expect = 'Created directory')
+		os.chdir(dest)
+		compile('build', expect=None)
+		env = support.BuildEnv()
+		python_version = subprocess.check_output(launch_command + [env.local_iface_file]).strip()
+		major, minor = map(int, python_version.split("."))
+		version_limit = "%d.%d" % (major, minor+1)
+
+		def check_feed(path):
+			'''
+			Check that the feed has the restriction:
+			<version not-before="maj.minor" before="maj.minor+1"/>
+			'''
+			from xml.dom import minidom
+			with open(path) as f:
+				dom = minidom.parse(f)
+			version_tags = dom.documentElement.getElementsByTagName('version')
+			assert len(version_tags) == 1, version_tags
+			version_tag = version_tags[0]
+
+			self.assertEquals(version_tag.getAttribute("not-before"), python_version)
+			self.assertEquals(version_tag.getAttribute("before"), version_limit)
+
+		check_feed(env.local_iface_file)
+
+		compile('publish', 'http://localhost/downloads', expect=None)
+		check_feed('pinned-version-0.1.xml')
 
 suite = unittest.makeSuite(TestCompile)
 if __name__ == '__main__':

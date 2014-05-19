@@ -7,6 +7,7 @@ from logging import info, warn
 from xml.dom import minidom, XMLNS_NAMESPACE
 from optparse import OptionParser
 import tempfile
+import itertools
 
 from zeroinstall import SafeException
 from zeroinstall.injector import model, namespaces, run
@@ -496,6 +497,28 @@ def write_sample_feed(buildenv, master_feed, src_impl):
 			impl_elem.appendChild(child.toDOM(doc, prefixes))
 		if impl_template.content:
 			impl_elem.appendChild(doc.createTextNode(impl_template.content))
+
+		for version_elem in itertools.chain(
+			impl_elem.getElementsByTagName('version'),
+		):
+			pin_components = version_elem.getAttributeNS(XMLNS_0COMPILE, "pin-components")
+			if pin_components:
+				pin_components = int(pin_components)
+				iface = version_elem.parentNode.getAttribute("interface")
+				assert iface
+				dep_impl = buildenv.chosen_impl(iface)
+				impl_version = model.parse_version(dep_impl.attrs.get('version'))
+
+				pinned_components = [impl_version[0][:pin_components]]
+                                # (for -pre versions)
+				min_version = min(pinned_components, impl_version)
+
+				# clone and increment
+				max_version = [pinned_components[0][:]]
+				max_version[0][-1] += 1
+
+				version_elem.setAttribute("not-before", model.format_version(min_version))
+				version_elem.setAttribute("before", model.format_version(max_version))
 
 	if set_arch:
 		group.setAttributeNS(None, 'arch', buildenv.target_arch)
