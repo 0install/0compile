@@ -425,6 +425,16 @@ def find_feed_for(master_feed):
 
 	return uri
 
+# Convert compile:if-0install-version attributes to plain if-0install-version
+def arm_if_0install_attrs(elem):
+	key = XMLNS_0COMPILE + ' if-0install-version'
+	old = elem.attrs.get(key, None)
+	if old:
+		del elem.attrs[key]
+		elem.attrs['if-0install-version'] = old
+	for child in elem.childNodes:
+		arm_if_0install_attrs(child)
+
 def write_sample_feed(buildenv, master_feed, src_impl):
 	path = buildenv.local_iface_file
 
@@ -481,6 +491,8 @@ def write_sample_feed(buildenv, master_feed, src_impl):
 	impl_elem = addSimple(group, 'implementation')
 	impl_template = buildenv.get_binary_template()
 	if impl_template:
+		arm_if_0install_attrs(impl_template)
+
 		# Copy attributes from template
 		for fullname, value in impl_template.attrs.iteritems():
 			if fullname == 'arch':
