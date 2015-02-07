@@ -646,7 +646,11 @@ def dup_src(fn):
 		assert root.startswith(srcdir)
 		reldir = root[len(srcdir):]
 
-		if reldir == '.git' or (reldir == 'build' and build_in_src) or \
+		if '.git' in dirs:
+			print "dup-src: skipping", reldir
+			dirs.remove('.git')
+
+		if (reldir == 'build' and build_in_src) or \
 				('0compile.properties' in files and not build_in_src):
 			print "dup-src: skipping", reldir
 			dirs[:] = []
