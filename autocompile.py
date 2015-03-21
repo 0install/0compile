@@ -150,7 +150,7 @@ class AutoCompiler:
 
 		if impl:
 			indent = '  ' + indent
-			for x in impl.requires:
+			for x in solver.requires[iface]:
 				self.pretty_print_plan(solver, x.interface, indent)
 
 	def print_details(self, solver):

@@ -6,6 +6,7 @@
   <feed-for interface='http://example.com/top.xml'/>
 
   <implementation arch='*-src' id="." version="0.1">
+    <requires interface='http://example.com/idontexist' os='nosuchos'/>
     <command name='compile'>
       <runner interface='./cprog/cprog-command.xml' command='my-run'/>
       <compile:implementation main='foo'/>
