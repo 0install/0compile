@@ -30,10 +30,10 @@ assert os.path.exists(compile_bin)
 if 'DISPLAY' in os.environ:
 	del os.environ['DISPLAY']
 
-launch_command = [os.environ['0COMPILE_0LAUNCH']]
+zi_command = [os.environ['0COMPILE_0INSTALL']]
 
 # Ensure it's cached now, to avoid extra output during the tests
-if subprocess.call(launch_command + ['--source', '-c', '--download-only', hello_uri]):
+if subprocess.call(zi_command + ['--source', '-c', 'download', hello_uri]):
 	raise Exception("Failed to download hello world test program")
 
 def compile(*args, **kwargs):
@@ -114,19 +114,19 @@ class TestCompile(unittest.TestCase):
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
 		run(os.path.join(target_dir,'bin','hello'), expect = 'Hello, world!')
-		run(launch_command, os.path.join(target_dir,'0install', 'feed.xml'), expect = 'Hello, world!')
+		run(zi_command, "run", os.path.join(target_dir,'0install', 'feed.xml'), expect = 'Hello, world!')
 		compile('publish', 'http://localhost/downloads', expect = "Now upload '%s.tar.bz2'" % archive_stem)
 	
 	def testAutocompile(self):
 		compile('autocompile', hello_uri, expect = "site-packages/http/0install.net/tests__GNU-Hello.xml")
-		run(launch_command, hello_uri, expect = 'Hello, world!')
+		run(zi_command, "run", hello_uri, expect = 'Hello, world!')
 
 	def testRecursive(self):
 		top = os.path.join(mydir, 'top.xml')
 		compile('autocompile', top, expect = "No dependencies need compiling... compile cprog itself...")
 
 		# Dependency was registered against its local path, since that was how we depended on it:
-		run(launch_command, os.path.join(mydir, 'cprog/cprog-command.xml'), expect = 'Hello from C')
+		run(zi_command, "run", os.path.join(mydir, 'cprog/cprog-command.xml'), expect = 'Hello from C')
 
 		# But the top-level feed was registered against its <feed-for>:
 		c = config.load_config()
@@ -140,7 +140,7 @@ class TestCompile(unittest.TestCase):
 		target_dir = 'hello2-any-any'
 		assert os.path.isdir(target_dir), '%s not a directory' % target_dir
 
-		run(launch_command, os.path.join(target_dir, '0install', 'feed.xml'), expect = 'ROX-Lib')
+		run(zi_command, "run", os.path.join(target_dir, '0install', 'feed.xml'), expect = 'ROX-Lib')
 	
 	def testBadVersion(self):
 		compile('setup', local_bad_version, self.hello_dir, expect = 'Created directory')
@@ -154,7 +154,7 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Hello from C!')
 		target_dir = 'cprog-command-%s' % support.get_arch_name().lower()
 		binary_feed = os.path.join(target_dir, '0install', 'feed.xml')
-		run(launch_command, binary_feed, expect = 'Hello from C!')
+		run(zi_command, "run", binary_feed, expect = 'Hello from C!')
 		s = open(binary_feed, 'r')
 		feed = model.ZeroInstallFeed(qdom.parse(s), binary_feed)
 		s.close()
@@ -256,7 +256,7 @@ class TestCompile(unittest.TestCase):
 		os.chdir(dest)
 		compile('build', expect=None)
 		env = support.BuildEnv()
-		python_version = subprocess.check_output(launch_command + [env.local_iface_file]).strip()
+		python_version = subprocess.check_output(zi_command + ["run", env.local_iface_file]).strip()
 		major, minor = map(int, python_version.split("."))
 		version_limit = "%d.%d" % (major, minor+1)
 

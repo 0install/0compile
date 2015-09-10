@@ -37,9 +37,6 @@ For a full tutorial, see 0compile's homepage.</description>
       <requires interface="http://repo.roscidus.com/devel/make">
 	<executable-in-path name="make"/>
       </requires>
-      <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
-	<executable-in-var command="run" name="0COMPILE_0LAUNCH"/>
-      </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
     <implementation id="." version="1.4-post"/>
