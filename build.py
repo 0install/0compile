@@ -647,11 +647,11 @@ def dup_src(fn):
 		reldir = root[len(srcdir):]
 
 		if '.git' in dirs:
-			print "dup-src: skipping", reldir
+			print "dup-src: skipping %s" % (os.path.join(reldir, '.git'))
 			dirs.remove('.git')
 
 		if (reldir == 'build' and build_in_src) or \
-				('0compile.properties' in files and not build_in_src):
+				('0compile.properties' in files and not build_in_src and reldir != ""):
 			print "dup-src: skipping", reldir
 			dirs[:] = []
 			continue
