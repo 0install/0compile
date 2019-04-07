@@ -35,6 +35,8 @@ zi_command = [os.environ['0COMPILE_0INSTALL']]
 # Ensure it's cached now, to avoid extra output during the tests
 if subprocess.call(zi_command + ['--source', '-c', 'download', hello_uri]):
 	raise Exception("Failed to download hello world test program")
+if subprocess.call(zi_command + ['-c', 'download', '--version=2.0.6', 'http://rox.sourceforge.net/2005/interfaces/ROX-Lib']):
+	raise Exception("Failed to download ROX-Lib test program")
 
 def compile(*args, **kwargs):
 	run(*([sys.executable, compile_bin] + list(args)), **kwargs)
