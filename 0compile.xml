@@ -39,7 +39,7 @@ For a full tutorial, see 0compile's homepage.</description>
       </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
-    <implementation id="." version="1.4-post"/>
+    <implementation id="." released="2019-04-13" version="1.5"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
     </requires>
