@@ -10,7 +10,7 @@ import os, sys
 from logging import warn
 import gobject; gobject.threads_init()
 
-zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
+zeroinstall_dir = os.environ.get('ZI_COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
 	sys.path.insert(1, zeroinstall_dir)
 

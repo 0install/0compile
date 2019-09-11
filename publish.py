@@ -10,7 +10,7 @@ from zeroinstall import SafeException
 
 from support import BuildEnv, spawn_and_check
 
-pubish_command = os.environ["0COMPILE_0PUBLISH"]
+pubish_command = os.environ["ZI_COMPILE_0PUBLISH"]
 
 def do_publish(args):
 	"""publish [ DOWNLOAD-BASE-URL ]"""

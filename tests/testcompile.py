@@ -30,7 +30,7 @@ assert os.path.exists(compile_bin)
 if 'DISPLAY' in os.environ:
 	del os.environ['DISPLAY']
 
-zi_command = [os.environ['0COMPILE_0INSTALL']]
+zi_command = [os.environ['ZI_COMPILE_0INSTALL']]
 
 # Ensure it's cached now, to avoid extra output during the tests
 if subprocess.call(zi_command + ['--source', '-c', 'download', hello_uri]):

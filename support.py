@@ -30,9 +30,9 @@ uname = arch._uname + platform.uname()[len(arch._uname):]
 ENV_FILE = '0compile.properties'
 XMLNS_0COMPILE = 'http://zero-install.sourceforge.net/2006/namespaces/0compile'
 
-install_path = os.environ.get("0COMPILE_0INSTALL", None)
+install_path = os.environ.get("ZI_COMPILE_0INSTALL", None)
 if install_path is None:
-	zeroinstall_dir = os.environ.get('0COMPILE_ZEROINSTALL', None)
+	zeroinstall_dir = os.environ.get('ZI_COMPILE_ZEROINSTALL', None)
 	if zeroinstall_dir:
 			# We've been run by an old version of 0install.
 			# We assuming that, if installed through 0install, 0launch requires

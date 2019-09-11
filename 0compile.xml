@@ -41,15 +41,15 @@ For a full tutorial, see 0compile's homepage.</description>
     </command>
     <implementation id="." version="1.5-post"/>
     <requires interface="http://0install.net/2006/interfaces/0publish">
-      <environment insert="0publish" mode="replace" name="0COMPILE_0PUBLISH"/>
+      <environment insert="0publish" mode="replace" name="ZI_COMPILE_0PUBLISH"/>
     </requires>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml">
       <version not-before="2.1"/>
-      <executable-in-var command="0install" name="0COMPILE_0INSTALL"/>
-      <environment insert="" mode="replace" name="0COMPILE_ZEROINSTALL"/>
+      <executable-in-var command="0install" name="ZI_COMPILE_0INSTALL"/>
+      <environment insert="" mode="replace" name="ZI_COMPILE_ZEROINSTALL"/>
     </requires>
     <requires interface="http://repo.roscidus.com/utils/bash" os="Windows">
-      <executable-in-var name="0COMPILE_BASH"/>
+      <executable-in-var name="ZI_COMPILE_BASH"/>
     </requires>
   </group>
 </interface>
