@@ -68,9 +68,13 @@ def do_publish(args):
 	if options.target_feed is None:
 		# If --target-feed is used this is probably a script, so don't print
 		# out hints.
-		print "Now upload '%s' as:\n%s\n" % (archive_name, download_url)
-
-		print "Once uploaded, you can download and run with:"
-		print "$ 0launch %s" % target_feed
+		if download_base_url:
+			print "Now upload '%s' as:\n%s\n" % (archive_name, download_url)
+			print "Once uploaded, you can download and run with:"
+			print "0launch %s" % target_feed
+		else:
+			print "Generated archive '%s' and feed '%s'." % (archive_name, target_feed)
+			print "Upload it to a repository with:"
+			print "0repo add %s" % target_feed
 
 __main__.commands.append(do_publish)
