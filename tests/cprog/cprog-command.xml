@@ -11,7 +11,7 @@
   <group arch="*-src" compile:dup-src='true' license='Public Domain'>
     <implementation id="." version="0.1">
       <command name='compile'>
-	<runner interface='http://repo.roscidus.com/devel/make'>
+	<runner interface='https://apps.0install.net/devel/make.xml'>
 	  <environment name='runnerVarsSet' value='yes'/>
 	</runner>
 	<compile:implementation main='main'>

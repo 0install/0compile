@@ -9,13 +9,13 @@
   <feed-for interface='http://localhost/pinned-version.xml'/>
 
   <group arch="*-src">
-    <requires interface="http://repo.roscidus.com/python/python"/>
+    <requires interface="https://apps.0install.net/python/python.xml"/>
     <implementation id="." version="0.1"/>
     <command name='compile' shell-command='cp "$SRCDIR/main.py" "$DISTDIR"'>
       <compile:implementation main='main.py'>
         <command name='run' path='main.py'>
-          <runner interface='http://repo.roscidus.com/python/python'/>
-          <requires interface='http://repo.roscidus.com/python/python'>
+          <runner interface='https://apps.0install.net/python/python.xml'/>
+          <requires interface='https://apps.0install.net/python/python.xml'>
             <version compile:pin-components="2"/>
           </requires>
         </command>
