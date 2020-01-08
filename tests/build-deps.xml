@@ -7,7 +7,7 @@
     <implementation id="." version="0.1">
       <command name='compile' shell-command='echo hi'>
 	<compile:implementation>
-	  <requires interface='http://repo.roscidus.com/python/python'>
+	  <requires interface='https://apps.0install.net/python/python.xml'>
 	    <version not-before='3' before='3'/>	<!-- conflict -->
 	  </requires>
 	</compile:implementation>

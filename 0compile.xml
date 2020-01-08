@@ -15,7 +15,7 @@ If plash is installed, it can be used to sandbox the build so that it can't
 accidentally modify any files outside of the build directory.
 
 For a full tutorial, see 0compile's homepage.</description>
-  <homepage>http://0install.net/0compile.html</homepage>
+  <homepage>https://docs.0install.net/tools/0compile/</homepage>
 
   <feed-for interface="http://0install.net/2006/interfaces/0compile.xml"/>
 
@@ -26,15 +26,15 @@ For a full tutorial, see 0compile's homepage.</description>
 
   <group license="OSI Approved :: GNU Lesser General Public License (LGPL)" main="0compile">
     <command name="run" path="0compile">
-      <runner interface="http://repo.roscidus.com/python/python">
+      <runner interface="https://apps.0install.net/python/python.xml">
 	<version before="3"/>
       </runner>
     </command>
     <command name="test" path="tests/testcompile.py">
-      <runner interface="http://repo.roscidus.com/python/python">
+      <runner interface="https://apps.0install.net/python/python.xml">
 	<version before="3"/>
       </runner>
-      <requires interface="http://repo.roscidus.com/devel/make">
+      <requires interface="https://apps.0install.net/devel/make.xml">
 	<executable-in-path name="make"/>
       </requires>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
@@ -48,7 +48,7 @@ For a full tutorial, see 0compile's homepage.</description>
       <executable-in-var command="0install" name="ZI_COMPILE_0INSTALL"/>
       <environment insert="" mode="replace" name="ZI_COMPILE_ZEROINSTALL"/>
     </requires>
-    <requires interface="http://repo.roscidus.com/utils/bash" os="Windows">
+    <requires interface="https://apps.0install.net/utils/bash.xml" os="Windows">
       <executable-in-var name="ZI_COMPILE_BASH"/>
     </requires>
   </group>
