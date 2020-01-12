@@ -43,8 +43,11 @@ For a full tutorial, see 0compile's homepage.</description>
     <requires interface="http://0install.net/2006/interfaces/0publish">
       <environment insert="0publish" mode="replace" name="ZI_COMPILE_0PUBLISH"/>
     </requires>
+    <requires interface="http://0install.net/tools/0install.xml">
+      <version not-before="2.9.1-post"/>
+      <executable-in-var name="ZI_COMPILE_0INSTALL"/>
+    </requires>
     <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml" version='2.3.7..'>
-      <executable-in-var command="0install" name="ZI_COMPILE_0INSTALL"/>
       <environment insert="" mode="replace" name="ZI_COMPILE_ZEROINSTALL"/>
     </requires>
     <requires interface="https://apps.0install.net/utils/bash.xml" os="Windows">
