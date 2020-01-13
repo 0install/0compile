@@ -35,7 +35,8 @@ def do_include_deps(args):
 			if required_digest.startswith('sha1='):
 				shutil.copytree(cached, target_impl_dir)
 			else:
-				manifest_data = file(os.path.join(cached, '.manifest')).read()
+				with open(os.path.join(cached, '.manifest'), 'rb') as stream:
+					manifest_data = stream.read()
 				manifest.copy_tree_with_verify(cached, depdir, manifest_data, required_digest)
 			copied += 1
 

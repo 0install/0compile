@@ -6,6 +6,11 @@ from zeroinstall.injector import model, qdom, config
 from zeroinstall.support import ro_rmtree, basedir
 from zeroinstall.zerostore import Stores
 
+if sys.version_info >= (3, 4):
+	from importlib import reload
+else:
+	from imp import reload
+
 stores = Stores()
 
 mydir = os.path.abspath(os.path.dirname(__file__))
@@ -46,6 +51,7 @@ def run(*args, **kwargs):
 		args = args[0] + list(args[1:])
 	child = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 	got, unused = child.communicate()
+	got = got.decode('utf-8')
 	code = child.wait()
 	if code != kwargs.get('expect_status', 0):
 		raise Exception("Exit status %d:\n%s" % (code, got))
@@ -157,9 +163,8 @@ class TestCompile(unittest.TestCase):
 		target_dir = 'cprog-command-%s' % support.get_arch_name().lower()
 		binary_feed = os.path.join(target_dir, '0install', 'feed.xml')
 		run(zi_command, "run", binary_feed, expect = 'Hello from C!')
-		s = open(binary_feed, 'r')
-		feed = model.ZeroInstallFeed(qdom.parse(s), binary_feed)
-		s.close()
+		with open(binary_feed, 'rb') as s:
+			feed = model.ZeroInstallFeed(qdom.parse(s), binary_feed)
 		impl, = list(feed.implementations.values())
 		assert impl.arch, "Missing arch on %s" % impl
 		self.assertEqual("Public Domain", str(impl.metadata['license']))
@@ -182,11 +187,11 @@ class TestCompile(unittest.TestCase):
 		assert not os.path.exists(patch_file)
 
 		# 'src' contains a change
-		prog = file(os.path.join('src','main.c')).read()
+		with open(os.path.join('src','main.c'), 'r') as stream:
+			prog = stream.read()
 		prog = prog.replace('Hello', 'Goodbye')
-		stream = file(os.path.join('src','main.c'), 'w')
-		stream.write(prog)
-		stream.close()
+		with open(os.path.join('src','main.c'), 'w') as stream:
+			stream.write(prog)
 		compile('diff', expect = 'diff')
 		shutil.rmtree('build')
 		compile('build', expect = 'Goodbye from C')
@@ -196,9 +201,8 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect = 'Goodbye from C')
 
 		# 'src' contains an error
-		stream = file(os.path.join('src','main.c'), 'w')
-		stream.write('this is not valid C!')
-		stream.close()
+		with open(os.path.join('src','main.c'), 'w') as stream:
+			stream.write('this is not valid C!')
 		shutil.rmtree('build')
 		compile('build', expect = 'Build failed', expect_status = 1)
 		assert os.path.exists(os.path.join('build', 'build-failure.log'))
@@ -210,7 +214,8 @@ class TestCompile(unittest.TestCase):
 		assert not os.path.exists(patch_file)
 
 		# Check we fixed the .pc files...
-		pc_data = open(os.path.join(target_dir, 'pkgconfig', 'cprog.pc')).read()
+		with open(os.path.join(target_dir, 'pkgconfig', 'cprog.pc'), 'r') as stream:
+			pc_data = stream.read()
 		assert pc_data == "prefix=" + os.path.join("${pcfiledir}",os.path.pardir) + "\n", repr(pc_data)
 
 		# Check we removed the bad .la files...
@@ -258,7 +263,7 @@ class TestCompile(unittest.TestCase):
 		os.chdir(dest)
 		compile('build', expect=None)
 		env = support.BuildEnv()
-		python_version = subprocess.check_output(zi_command + ["run", env.local_iface_file]).strip()
+		python_version = subprocess.check_output(zi_command + ["run", env.local_iface_file]).decode().strip()
 		major, minor = list(map(int, python_version.split(".")))
 		version_limit = "%d.%d" % (major, minor+1)
 

@@ -246,21 +246,14 @@ class BuildEnv:
 
 	def load_built_feed(self):
 		path = self.local_iface_file
-		stream = file(path)
-		try:
-			feed = model.ZeroInstallFeed(qdom.parse(stream), local_path = path)
-		finally:
-			stream.close()
-		return feed
+		with open(path, 'rb') as stream:
+			return model.ZeroInstallFeed(qdom.parse(stream), local_path = path)
 
 	def load_built_selections(self):
 		path = join(self.metadir, 'build-environment.xml')
 		if os.path.exists(path):
-			stream = file(path)
-			try:
+			with open(path, 'rb') as stream:
 				return selections.Selections(qdom.parse(stream))
-			finally:
-				stream.close()
 		return None
 
 	@property
@@ -278,11 +271,8 @@ class BuildEnv:
 		return '%s-%s.xml' % (self.iface_name, impl.get_version())
 
 	def save(self):
-		stream = file(ENV_FILE, 'w')
-		try:
+		with open(ENV_FILE, 'w') as stream:
 			self.config.write(stream)
-		finally:
-			stream.close()
 
 	def get_selections(self, prompt = False):
 		if self._selections:
@@ -293,11 +283,8 @@ class BuildEnv:
 		if selections_file:
 			if prompt:
 				raise SafeException("Selections are fixed by %s" % selections_file)
-			stream = file(selections_file)
-			try:
+			with open(selections_file, 'rb') as stream:
 				self._selections = selections.Selections(qdom.parse(stream))
-			finally:
-				stream.close()
 			from zeroinstall.injector import handler
 			from zeroinstall.injector.config import load_config
 			if os.isatty(1):
@@ -322,6 +309,7 @@ class BuildEnv:
 			finally:
 				if child.wait():
 					raise SafeException(' '.join(repr(x) for x in command) + " failed (exit code %d)" % child.returncode)
+				child.stdout.close()
 
 		self.root_impl = self._selections.selections[self.interface]
 

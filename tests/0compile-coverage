@@ -1,5 +1,8 @@
 #!/usr/bin/env python
-import sys, imp, os
+import sys, os, warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore",category=DeprecationWarning)
+    import imp
 tests_dir = os.path.dirname(os.path.abspath(__file__))
 compile_dir = os.path.dirname(tests_dir)
 sys.path.insert(0, compile_dir)
@@ -18,13 +21,14 @@ try:
 			pass
 		def close(self):
 			pass
-	import urllib2
+	from urllib import request
 	def cb(*args):
-		print >>sys.stderr, "urlopen called with arguments %s" % (args,)
+		print("urlopen called with arguments %s" % (args,), file=sys.stderr)
 		return DummyStream()
-	urllib2.urlopen = cb
-	imp.load_module('__main__', file(compile_code), compile_code,
-			('.py', 'r', imp.PY_SOURCE))
+	request.urlopen = cb
+	with open(compile_code) as stream:
+		imp.load_module('__main__', stream, compile_code,
+				('.py', 'r', imp.PY_SOURCE))
 finally:
 	if coverage:
 		coverage.stop()

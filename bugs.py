@@ -17,9 +17,8 @@ def do_report_bug(args):
 
 	build_env_xml_file = join(buildenv.metadir, 'build-environment.xml')
 	if os.path.exists(build_env_xml_file):
-		build_env_xml = file(build_env_xml_file)
-		log_text += '\n\nSelected versions:\n' + build_env_xml.read()
-		build_env_xml.close()
+		with open(build_env_xml_file, 'r') as build_env_xml:
+			log_text += '\n\nSelected versions:\n' + build_env_xml.read()
 	else:
 		log_text += '\n\n"%s" file not found' % build_env_xml_file
 	

@@ -47,7 +47,8 @@ def do_setup(args, get_dir_callback = None):
 			if not rel_iface_uri.startswith("."):
 				iface_uri = rel_iface_uri
 
-			root = qdom.parse(file(iface_uri))
+			with open(iface_uri, 'rb') as stream:
+				root = qdom.parse(stream)
 			if root.uri == namespaces.XMLNS_IFACE and root.name == 'selections':
 				# Looks like this is a selections file, not an interface.
 				buildenv.config.set('compile', 'selections', iface_uri)

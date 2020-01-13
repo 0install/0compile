@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import unittest, os, sys, tempfile, shutil, atexit
 
 my_dir = os.path.abspath(os.path.dirname(sys.argv[0]))

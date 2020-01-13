@@ -187,9 +187,8 @@ def do_build_internal(options, args):
 	info.setAttributeNS(None, 'host', socket.getfqdn())
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
-	stream = file(build_env_xml, 'w')
-	buildenv_doc.writexml(stream, addindent="  ", newl="\n")
-	stream.close()
+	with open (build_env_xml, 'w') as stream:
+		buildenv_doc.writexml(stream, addindent="  ", newl="\n")
 
 	# Create local binary interface file.
 	# We use the main feed for the interface as the template for the name,
@@ -305,7 +304,8 @@ def do_build_internal(options, args):
 
 			if os.path.exists(patch_file):
 				print("\nPatched with:\n", file=log)
-				shutil.copyfileobj(file(patch_file), log)
+				with open(patch_file, 'r') as src:
+					shutil.copyfileobj(src, log)
 				log.write('\n')
 
 			if command:
@@ -320,6 +320,7 @@ def do_build_internal(options, args):
 			while True:
 				data = os.read(child.stdout.fileno(), 100)
 				if not data: break
+				data = data.decode()
 				sys.stdout.write(data)
 				log.write(data)
 			status = child.wait()
@@ -593,14 +594,15 @@ def set_up_mappings(mappings):
 	def add_ldconf(config_file):
 		if not os.path.isfile(config_file):
 			return
-		for line in file(config_file):
-			d = line.strip()
-			if d.startswith('include '):
-				glob_pattern = d.split(' ', 1)[1]
-				for conf in glob.glob(glob_pattern):
-					add_ldconf(conf)
-			elif d and not d.startswith('#'):
-				libdirs.append(d)
+		with open(config_file) as stream:
+			for line in stream:
+				d = line.strip()
+				if d.startswith('include '):
+					glob_pattern = d.split(' ', 1)[1]
+					for conf in glob.glob(glob_pattern):
+						add_ldconf(conf)
+				elif d and not d.startswith('#'):
+					libdirs.append(d)
 	add_ldconf('/etc/ld.so.conf')
 
 	def find_library(name, wanted):
