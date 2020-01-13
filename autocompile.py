@@ -162,7 +162,7 @@ class AutoCompiler:
 				self.note('%s (%s) : %s' % (impl.get_version(), impl.arch or '*-*', note or 'OK'))
 		self.note("\nEnd details\n")
 
-	@tasks.async
+	@tasks.aasync
 	def compile_and_register(self, sels, forced_iface_uri = None):
 		"""If forced_iface_uri, register as an implementation of this interface,
 		ignoring the any <feed-for>, etc."""
@@ -268,7 +268,7 @@ class AutoCompiler:
 
 			ro_rmtree(tmpdir)
 
-	@tasks.async
+	@tasks.aasync
 	def recursive_build(self, iface_uri, source_impl_id = None):
 		"""Build an implementation of iface_uri and register it as a feed.
 		@param source_impl_id: the version to build, or None to build any version
@@ -378,7 +378,7 @@ class GUIHandler(handler.Handler):
 	def confirm_import_feed(self, pending, valid_sigs):
 		return handler.Handler.confirm_import_feed(self, pending, valid_sigs)
 
-	@tasks.async
+	@tasks.aasync
 	def confirm_install(self, message):
 		from zeroinstall.injector.download import DownloadAborted
 		from zeroinstall.gtkui import gtkutils
@@ -515,7 +515,7 @@ class GTKAutoCompiler(AutoCompiler):
 
 		tasks.wait_for_blocker(self.closed)
 
-	@tasks.async
+	@tasks.aasync
 	def spawn_build(self, iface_name):
 		assert self.child is None
 
@@ -551,7 +551,7 @@ class GTKAutoCompiler(AutoCompiler):
 			raise SafeException('Build process exited with error status %d' % code)
 		self.details.insert_at_end_and_scroll('Build completed successfully\n', 'heading')
 
-	@tasks.async
+	@tasks.aasync
 	def confirm_import_feed(self, pending, valid_sigs):
 		from zeroinstall.gtkui import trust_box
 		box = trust_box.TrustBox(pending, valid_sigs, parent = self.dialog)
