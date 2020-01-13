@@ -41,10 +41,10 @@ def do_gui(args):
 		gtk.main()
 	except KeyboardInterrupt:
 		pass
-	except SafeException, ex:
+	except SafeException as ex:
 		gui_support.alert(None, '%s' % ex)
 		sys.exit(1)
-	except Exception, ex:
+	except Exception as ex:
 		import traceback
 		traceback.print_exc()
 		gui_support.alert(None, '%s: %s' % (ex.__class__, ex))

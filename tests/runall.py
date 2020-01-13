@@ -13,7 +13,7 @@ try:
 	coverage.erase()
 except ImportError:
 	coverage = None
-	print "Coverage module not found. Skipping coverage report."
+	print("Coverage module not found. Skipping coverage report.")
 
 sys.argv.append('-v')
 
@@ -29,7 +29,7 @@ for name in suite_names:
 
 a = unittest.TextTestRunner(verbosity=2).run(alltests)
 
-print "\nResult", a
+print("\nResult", a)
 if not a.wasSuccessful():
 	sys.exit(1)
 

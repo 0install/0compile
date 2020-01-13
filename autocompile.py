@@ -101,7 +101,7 @@ class AutocompileCache(iface_cache.IfaceCache):
 			# (the binary has no dependencies as we can't predict them here,
 			# but they're not the same as the source's dependencies)
 
-			srcs = [x for x in feed.implementations.itervalues() if x.arch and x.arch.endswith('-src')]
+			srcs = [x for x in feed.implementations.values() if x.arch and x.arch.endswith('-src')]
 			for x in srcs:
 				new_id = '0compile=' + x.id
 				if not new_id in feed.implementations:
@@ -305,7 +305,7 @@ class AutoCompiler:
 			self.note('')
 
 			needed = []
-			for dep_iface_uri, dep_sel in d.solver.selections.selections.iteritems():
+			for dep_iface_uri, dep_sel in d.solver.selections.selections.items():
 				if dep_sel.id.startswith('0compile='):
 					if not needed:
 						self.note("Build dependencies that need to be compiled first:\n")
@@ -339,7 +339,7 @@ class AutoCompiler:
 				previous_build = self.seen[seen_key]
 				previous_build_feed = os.path.join(previous_build, '0install', 'feed.xml')
 				previous_feed = self.config.iface_cache.get_feed(previous_build_feed)
-				previous_binary_impl = previous_feed.implementations.values()[0]
+				previous_binary_impl = list(previous_feed.implementations.values())[0]
 				raise SafeException("BUG: auto-compile loop: expected to select previously-build binary {binary}:\n\n{reason}".format(
 						binary = previous_binary_impl,
 						reason = d.solver.justify_decision(r, dep_iface, previous_binary_impl)))
@@ -366,10 +366,10 @@ class AutoCompiler:
 		self.note((' %s ' % msg).center(76, '='))
 
 	def note(self, msg):
-		print msg
+		print(msg)
 
 	def note_error(self, msg):
-		print msg
+		print(msg)
 
 class GUIHandler(handler.Handler):
 	def downloads_changed(self):
@@ -451,7 +451,7 @@ class GTKAutoCompiler(AutoCompiler):
 				vscroll = self.widget.get_vadjustment()
 				if not vscroll:
 					# Widget has been destroyed
-					print data,
+					print(data, end='')
 					return
 				near_end = vscroll.upper - vscroll.page_size * 1.5 < vscroll.value
 				end = self.buffer.get_end_iter()
@@ -506,7 +506,7 @@ class GTKAutoCompiler(AutoCompiler):
 		import gtk
 		try:
 			tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
-		except SafeException, ex:
+		except SafeException as ex:
 			self.note_error(str(ex))
 		else:
 			self.heading('All builds completed successfully!')

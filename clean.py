@@ -14,7 +14,7 @@ def do_clean(args):
 
 	for x in ['build', buildenv.distdir]:
 		if os.path.exists(x):
-			print "Removing '%s'" % os.path.basename(x)
+			print("Removing '%s'" % os.path.basename(x))
 			shutil.rmtree(x)
 
 __main__.commands.append(do_clean)

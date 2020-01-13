@@ -39,6 +39,6 @@ def do_include_deps(args):
 				manifest.copy_tree_with_verify(cached, depdir, manifest_data, required_digest)
 			copied += 1
 
-	print "Copied %d dependencies to %s (%d already there)" % (copied, depdir, len(dirs_to_copy) - copied)
+	print("Copied %d dependencies to %s (%d already there)" % (copied, depdir, len(dirs_to_copy) - copied))
 
 __main__.commands.append(do_include_deps)

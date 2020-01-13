@@ -27,12 +27,12 @@ For a full tutorial, see 0compile's homepage.</description>
   <group license="OSI Approved :: GNU Lesser General Public License (LGPL)" main="0compile">
     <command name="run" path="0compile">
       <runner interface="https://apps.0install.net/python/python.xml">
-	<version before="3"/>
+	<version not-before="3"/>
       </runner>
     </command>
     <command name="test" path="tests/testcompile.py">
       <runner interface="https://apps.0install.net/python/python.xml">
-	<version before="3"/>
+	<version not-before="3"/>
       </runner>
       <requires interface="https://apps.0install.net/devel/make.xml">
 	<executable-in-path name="make"/>

@@ -26,13 +26,13 @@ def do_copy_src(args):
 	shutil.copytree(path, 'src', symlinks = True)
 	# Make all files writable by the owner
 	for root, dirs, files in os.walk('src'):
-		os.chmod(root, os.stat(root).st_mode | 0200)
+		os.chmod(root, os.stat(root).st_mode | 0o200)
 		for f in files:
 			path = os.path.join(root, f)
 			if not os.path.islink(path):
-				os.chmod(path, os.stat(path).st_mode | 0200)
+				os.chmod(path, os.stat(path).st_mode | 0o200)
 
-	print "Copied as '%s'" % new_src
+	print("Copied as '%s'" % new_src)
 
 def do_diff(args):
 	"""diff"""

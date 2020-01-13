@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import sys, tempfile, os, shutil, tempfile, subprocess
-from StringIO import StringIO
+from io import StringIO
 import unittest
 from zeroinstall.injector import model, qdom, config
 from zeroinstall.support import ro_rmtree, basedir
@@ -42,7 +42,7 @@ def compile(*args, **kwargs):
 	run(*([sys.executable, compile_bin] + list(args)), **kwargs)
 
 def run(*args, **kwargs):
-	if not isinstance(args[0], basestring):
+	if not isinstance(args[0], str):
 		args = args[0] + list(args[1:])
 	child = subprocess.Popen(args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 	got, unused = child.communicate()
@@ -133,7 +133,7 @@ class TestCompile(unittest.TestCase):
 		# But the top-level feed was registered against its <feed-for>:
 		c = config.load_config()
 		i = c.iface_cache.get_interface('http://example.com/top.xml')
-		self.assertEquals(1, len(i.extra_feeds))
+		self.assertEqual(1, len(i.extra_feeds))
 
 	def testLocal(self):
 		compile('setup', local_hello_path, self.hello_dir, expect = 'Created directory')
@@ -160,7 +160,7 @@ class TestCompile(unittest.TestCase):
 		s = open(binary_feed, 'r')
 		feed = model.ZeroInstallFeed(qdom.parse(s), binary_feed)
 		s.close()
-		impl, = feed.implementations.values()
+		impl, = list(feed.implementations.values())
 		assert impl.arch, "Missing arch on %s" % impl
 		self.assertEqual("Public Domain", str(impl.metadata['license']))
 
@@ -211,7 +211,7 @@ class TestCompile(unittest.TestCase):
 
 		# Check we fixed the .pc files...
 		pc_data = open(os.path.join(target_dir, 'pkgconfig', 'cprog.pc')).read()
-		assert pc_data == "prefix=" + os.path.join("${pcfiledir}",os.path.pardir) + "\n", `pc_data`
+		assert pc_data == "prefix=" + os.path.join("${pcfiledir}",os.path.pardir) + "\n", repr(pc_data)
 
 		# Check we removed the bad .la files...
 		assert not os.path.exists(os.path.join(target_dir, 'lib', 'bad.la'))	# libtool - bad
@@ -259,7 +259,7 @@ class TestCompile(unittest.TestCase):
 		compile('build', expect=None)
 		env = support.BuildEnv()
 		python_version = subprocess.check_output(zi_command + ["run", env.local_iface_file]).strip()
-		major, minor = map(int, python_version.split("."))
+		major, minor = list(map(int, python_version.split(".")))
 		version_limit = "%d.%d" % (major, minor+1)
 
 		def check_feed(path):
@@ -274,8 +274,8 @@ class TestCompile(unittest.TestCase):
 			assert len(version_tags) == 1, version_tags
 			version_tag = version_tags[0]
 
-			self.assertEquals(version_tag.getAttribute("not-before"), python_version)
-			self.assertEquals(version_tag.getAttribute("before"), version_limit)
+			self.assertEqual(version_tag.getAttribute("not-before"), python_version)
+			self.assertEqual(version_tag.getAttribute("before"), version_limit)
 
 		check_feed(env.local_iface_file)
 

@@ -41,7 +41,7 @@ def do_publish(args):
 
 	# Make all directories in the archive user writable
 	for main, dirs, files in os.walk(distdir):
-		os.chmod(main, os.stat(main).st_mode | 0200)
+		os.chmod(main, os.stat(main).st_mode | 0o200)
 
 	import tarfile
 	archive = tarfile.open(archive_name, mode = 'w:bz2')
@@ -69,12 +69,12 @@ def do_publish(args):
 		# If --target-feed is used this is probably a script, so don't print
 		# out hints.
 		if download_base_url:
-			print "Now upload '%s' as:\n%s\n" % (archive_name, download_url)
-			print "Once uploaded, you can download and run with:"
-			print "0launch %s" % target_feed
+			print("Now upload '%s' as:\n%s\n" % (archive_name, download_url))
+			print("Once uploaded, you can download and run with:")
+			print("0launch %s" % target_feed)
 		else:
-			print "Generated archive '%s' and feed '%s'." % (archive_name, target_feed)
-			print "Upload it to a repository with:"
-			print "0repo add %s" % target_feed
+			print("Generated archive '%s' and feed '%s'." % (archive_name, target_feed))
+			print("Upload it to a repository with:")
+			print("0repo add %s" % target_feed)
 
 __main__.commands.append(do_publish)

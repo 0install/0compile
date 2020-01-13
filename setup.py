@@ -62,10 +62,10 @@ def do_setup(args, get_dir_callback = None):
 		try:
 			os.mkdir(create_dir)
 		except:
-			print >>sys.stderr, "Failed to create new directory '%s'" % os.path.abspath(create_dir)
+			print("Failed to create new directory '%s'" % os.path.abspath(create_dir), file=sys.stderr)
 			raise
 		os.chdir(create_dir)
-		print "Created directory %s" % create_dir
+		print("Created directory %s" % create_dir)
 
 	buildenv.save()
 

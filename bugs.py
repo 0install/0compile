@@ -25,16 +25,16 @@ def do_report_bug(args):
 	
 	log_text = codecs.encode(log_text, 'utf-8')
 
-	import urllib
-	from urllib2 import urlopen
+	import urllib.request, urllib.parse, urllib.error
+	from urllib.request import urlopen
 
-	print "Sending contents of %s file to default bug reporting site..." % log_name
+	print("Sending contents of %s file to default bug reporting site..." % log_name)
 
 	stream = urlopen('http://0install.net/api/report-bug/',
-		urllib.urlencode({
+		urllib.parse.urlencode({
 		'uri': buildenv.interface,
 		'body': log_text}))
-	print stream.read()
+	print(stream.read())
 	stream.close()
 
 __main__.commands.append(do_report_bug)
