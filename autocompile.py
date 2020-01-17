@@ -390,7 +390,7 @@ class GUIHandler(handler.Handler):
 		box.set_position(gtk.WIN_POS_CENTER)
 
 		install = gtkutils.MixedButton('Install', gtk.STOCK_OK)
-		install.set_flags(gtk.CAN_DEFAULT)
+		install.set_can_default(True)
 		box.add_action_widget(install, gtk.RESPONSE_OK)
 		install.show_all()
 		box.set_default_response(gtk.RESPONSE_OK)
@@ -403,6 +403,16 @@ class GUIHandler(handler.Handler):
 		if response.response != gtk.RESPONSE_OK:
 			raise DownloadAborted()
 
+	@tasks.aasync
+	def confirm_import_feed(self, pending, valid_sigs):
+		from zeroinstall.gtkui import trust_box
+		box = trust_box.TrustBox(pending, valid_sigs, parent = self.compiler.dialog)
+		box.show()
+		yield box.closed
+
+	def report_error(self, exception, tb = None):
+		self.compiler.note_error(str(exception))
+
 class GTKAutoCompiler(AutoCompiler):
 	def __init__(self, config, iface_uri, options):
 		config.handler.compiler = self
@@ -410,7 +420,10 @@ class GTKAutoCompiler(AutoCompiler):
 		AutoCompiler.__init__(self, config, iface_uri, options)
 		self.child = None
 
-		import pygtk; pygtk.require('2.0')
+		from zeroinstall.gtkui import pygtkcompat
+		pygtkcompat.enable()
+		pygtkcompat.enable_gtk(version = '3.0')
+
 		import gtk
 
 		w = gtk.Dialog('Autocompile %s' % iface_uri, None, 0,
@@ -422,7 +435,7 @@ class GTKAutoCompiler(AutoCompiler):
 				   int(gtk.gdk.screen_height() * 0.8))
 
 		vpaned = gtk.VPaned()
-		w.vbox.add(vpaned)
+		w.vbox.pack_start(vpaned, True, True, 0)
 		w.set_response_sensitive(gtk.RESPONSE_OK, False)
 
 		class AutoScroller:
@@ -453,7 +466,7 @@ class GTKAutoCompiler(AutoCompiler):
 					# Widget has been destroyed
 					print(data, end='')
 					return
-				near_end = vscroll.upper - vscroll.page_size * 1.5 < vscroll.value
+				near_end = vscroll.get_upper() - vscroll.get_page_size() * 1.5 < vscroll.get_value()
 				end = self.buffer.get_end_iter()
 				self.buffer.insert_with_tags_by_name(end, data, *tags)
 				if near_end:
@@ -551,13 +564,6 @@ class GTKAutoCompiler(AutoCompiler):
 			raise SafeException('Build process exited with error status %d' % code)
 		self.details.insert_at_end_and_scroll('Build completed successfully\n', 'heading')
 
-	@tasks.aasync
-	def confirm_import_feed(self, pending, valid_sigs):
-		from zeroinstall.gtkui import trust_box
-		box = trust_box.TrustBox(pending, valid_sigs, parent = self.dialog)
-		box.show()
-		yield box.closed
-
 def do_autocompile(args):
 	"""autocompile [--gui] URI"""
 
@@ -580,6 +586,7 @@ def do_autocompile(args):
 	iface_uri = model.canonical_iface_uri(args2[0])
 	if options.gui:
 		compiler = GTKAutoCompiler(config, iface_uri, options)
+		h.compiler = compiler
 	else:
 		compiler = AutoCompiler(config, iface_uri, options)
 

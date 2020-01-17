@@ -16,6 +16,10 @@ def do_gui(args):
 		# This option no longer has any effect, since it is the default.
 		# However, old versions of 0launch's GUI pass it (< 0.52)
 
+	from zeroinstall.gtkui import pygtkcompat
+	pygtkcompat.enable()
+	pygtkcompat.enable_gtk(version = '3.0')
+
 	import gui_support
 	import gtk
 
