@@ -5,7 +5,7 @@ import os, sys, shutil
 import subprocess
 from os.path import join
 from logging import info
-import ConfigParser
+import configparser
 
 from zeroinstall.injector import model, selections, qdom, arch
 from zeroinstall.injector.arch import canonicalize_os, canonicalize_machine
@@ -70,13 +70,13 @@ def lookup(impl_or_sel):
 		raise SafeException("Directory '%s' no longer exists. Try '0compile setup'" % local_path)
 	try:
 		return iface_cache.stores.lookup_any(impl_or_sel.digests)
-	except NotStored, ex:
+	except NotStored as ex:
 		raise NotStored(str(ex) + "\nHint: try '0compile setup'")
 
 def ensure_dir(d, clean = False):
 	if os.path.isdir(d):
 		if clean:
-			print "Removing", d
+			print("Removing", d)
 			shutil.rmtree(d)
 		else:
 			return
@@ -115,7 +115,7 @@ def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	else:
 		use_plash = os.environ.get(USE_PLASH, '').lower() or 'not set'
 		if use_plash in ('not set', 'false'):
-			print "Not using plash: $%s is %s" % (USE_PLASH, use_plash)
+			print("Not using plash: $%s is %s" % (USE_PLASH, use_plash))
 			use_plash = False
 		elif use_plash == 'true':
 			use_plash = True
@@ -125,7 +125,7 @@ def spawn_maybe_sandboxed(readable, writable, tmpdir, prog, args):
 	if not use_plash:
 		return subprocess.Popen([prog] + args)
 	
-	print "Using plash to sandbox the build..."
+	print("Using plash to sandbox the build...")
 	
 	# We have pola-shell :-)
 	pola_args = ['--prog', prog, '-B']
@@ -161,7 +161,7 @@ class BuildEnv:
 		if need_config and not os.path.isfile(ENV_FILE):
 			raise SafeException("Run 0compile from a directory containing a '%s' file" % ENV_FILE)
 
-		self.config = ConfigParser.RawConfigParser()
+		self.config = configparser.RawConfigParser()
 		self.config.add_section('compile')
 		self.config.set('compile', 'download-base-url', '')
 		self.config.set('compile', 'version-modifier', '')
@@ -236,7 +236,7 @@ class BuildEnv:
 		# Use the version that we actually built, not the version we would build now
 		feed = self.load_built_feed()
 		assert len(feed.implementations) == 1
-		version = feed.implementations.values()[0].get_version()
+		version = list(feed.implementations.values())[0].get_version()
 
 		# Don't use the feed's name, as it may contain the version number
 		name = feed.get_name().lower().replace(' ', '-')
@@ -246,21 +246,14 @@ class BuildEnv:
 
 	def load_built_feed(self):
 		path = self.local_iface_file
-		stream = file(path)
-		try:
-			feed = model.ZeroInstallFeed(qdom.parse(stream), local_path = path)
-		finally:
-			stream.close()
-		return feed
+		with open(path, 'rb') as stream:
+			return model.ZeroInstallFeed(qdom.parse(stream), local_path = path)
 
 	def load_built_selections(self):
 		path = join(self.metadir, 'build-environment.xml')
 		if os.path.exists(path):
-			stream = file(path)
-			try:
+			with open(path, 'rb') as stream:
 				return selections.Selections(qdom.parse(stream))
-			finally:
-				stream.close()
 		return None
 
 	@property
@@ -274,15 +267,12 @@ class BuildEnv:
 
 	@property
 	def local_download_iface(self):
-		impl, = self.load_built_feed().implementations.values()
+		impl, = list(self.load_built_feed().implementations.values())
 		return '%s-%s.xml' % (self.iface_name, impl.get_version())
 
 	def save(self):
-		stream = file(ENV_FILE, 'w')
-		try:
+		with open(ENV_FILE, 'w') as stream:
 			self.config.write(stream)
-		finally:
-			stream.close()
 
 	def get_selections(self, prompt = False):
 		if self._selections:
@@ -293,11 +283,8 @@ class BuildEnv:
 		if selections_file:
 			if prompt:
 				raise SafeException("Selections are fixed by %s" % selections_file)
-			stream = file(selections_file)
-			try:
+			with open(selections_file, 'rb') as stream:
 				self._selections = selections.Selections(qdom.parse(stream))
-			finally:
-				stream.close()
 			from zeroinstall.injector import handler
 			from zeroinstall.injector.config import load_config
 			if os.isatty(1):
@@ -307,7 +294,7 @@ class BuildEnv:
 			config = load_config(h)
 			blocker = self._selections.download_missing(config)
 			if blocker:
-				print "Waiting for selected implementations to be downloaded..."
+				print("Waiting for selected implementations to be downloaded...")
 				h.wait_for_blocker(blocker)
 		else:
 			command = install_prog + ['download', '--source', '--xml']
@@ -322,6 +309,7 @@ class BuildEnv:
 			finally:
 				if child.wait():
 					raise SafeException(' '.join(repr(x) for x in command) + " failed (exit code %d)" % child.returncode)
+				child.stdout.close()
 
 		self.root_impl = self._selections.selections[self.interface]
 

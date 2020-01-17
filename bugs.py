@@ -17,24 +17,23 @@ def do_report_bug(args):
 
 	build_env_xml_file = join(buildenv.metadir, 'build-environment.xml')
 	if os.path.exists(build_env_xml_file):
-		build_env_xml = file(build_env_xml_file)
-		log_text += '\n\nSelected versions:\n' + build_env_xml.read()
-		build_env_xml.close()
+		with open(build_env_xml_file, 'r') as build_env_xml:
+			log_text += '\n\nSelected versions:\n' + build_env_xml.read()
 	else:
 		log_text += '\n\n"%s" file not found' % build_env_xml_file
 	
 	log_text = codecs.encode(log_text, 'utf-8')
 
-	import urllib
-	from urllib2 import urlopen
+	import urllib.request, urllib.parse, urllib.error
+	from urllib.request import urlopen
 
-	print "Sending contents of %s file to default bug reporting site..." % log_name
+	print("Sending contents of %s file to default bug reporting site..." % log_name)
 
 	stream = urlopen('http://0install.net/api/report-bug/',
-		urllib.urlencode({
+		urllib.parse.urlencode({
 		'uri': buildenv.interface,
 		'body': log_text}))
-	print stream.read()
+	print(stream.read())
 	stream.close()
 
 __main__.commands.append(do_report_bug)

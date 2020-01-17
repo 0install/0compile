@@ -101,7 +101,7 @@ class AutocompileCache(iface_cache.IfaceCache):
 			# (the binary has no dependencies as we can't predict them here,
 			# but they're not the same as the source's dependencies)
 
-			srcs = [x for x in feed.implementations.itervalues() if x.arch and x.arch.endswith('-src')]
+			srcs = [x for x in feed.implementations.values() if x.arch and x.arch.endswith('-src')]
 			for x in srcs:
 				new_id = '0compile=' + x.id
 				if not new_id in feed.implementations:
@@ -305,7 +305,7 @@ class AutoCompiler:
 			self.note('')
 
 			needed = []
-			for dep_iface_uri, dep_sel in d.solver.selections.selections.iteritems():
+			for dep_iface_uri, dep_sel in d.solver.selections.selections.items():
 				if dep_sel.id.startswith('0compile='):
 					if not needed:
 						self.note("Build dependencies that need to be compiled first:\n")
@@ -339,7 +339,7 @@ class AutoCompiler:
 				previous_build = self.seen[seen_key]
 				previous_build_feed = os.path.join(previous_build, '0install', 'feed.xml')
 				previous_feed = self.config.iface_cache.get_feed(previous_build_feed)
-				previous_binary_impl = previous_feed.implementations.values()[0]
+				previous_binary_impl = list(previous_feed.implementations.values())[0]
 				raise SafeException("BUG: auto-compile loop: expected to select previously-build binary {binary}:\n\n{reason}".format(
 						binary = previous_binary_impl,
 						reason = d.solver.justify_decision(r, dep_iface, previous_binary_impl)))
@@ -366,10 +366,10 @@ class AutoCompiler:
 		self.note((' %s ' % msg).center(76, '='))
 
 	def note(self, msg):
-		print msg
+		print(msg)
 
 	def note_error(self, msg):
-		print msg
+		print(msg)
 
 class GUIHandler(handler.Handler):
 	def downloads_changed(self):
@@ -390,7 +390,7 @@ class GUIHandler(handler.Handler):
 		box.set_position(gtk.WIN_POS_CENTER)
 
 		install = gtkutils.MixedButton('Install', gtk.STOCK_OK)
-		install.set_flags(gtk.CAN_DEFAULT)
+		install.set_can_default(True)
 		box.add_action_widget(install, gtk.RESPONSE_OK)
 		install.show_all()
 		box.set_default_response(gtk.RESPONSE_OK)
@@ -403,6 +403,16 @@ class GUIHandler(handler.Handler):
 		if response.response != gtk.RESPONSE_OK:
 			raise DownloadAborted()
 
+	@tasks.aasync
+	def confirm_import_feed(self, pending, valid_sigs):
+		from zeroinstall.gtkui import trust_box
+		box = trust_box.TrustBox(pending, valid_sigs, parent = self.compiler.dialog)
+		box.show()
+		yield box.closed
+
+	def report_error(self, exception, tb = None):
+		self.compiler.note_error(str(exception))
+
 class GTKAutoCompiler(AutoCompiler):
 	def __init__(self, config, iface_uri, options):
 		config.handler.compiler = self
@@ -410,7 +420,10 @@ class GTKAutoCompiler(AutoCompiler):
 		AutoCompiler.__init__(self, config, iface_uri, options)
 		self.child = None
 
-		import pygtk; pygtk.require('2.0')
+		from zeroinstall.gtkui import pygtkcompat
+		pygtkcompat.enable()
+		pygtkcompat.enable_gtk(version = '3.0')
+
 		import gtk
 
 		w = gtk.Dialog('Autocompile %s' % iface_uri, None, 0,
@@ -422,7 +435,7 @@ class GTKAutoCompiler(AutoCompiler):
 				   int(gtk.gdk.screen_height() * 0.8))
 
 		vpaned = gtk.VPaned()
-		w.vbox.add(vpaned)
+		w.vbox.pack_start(vpaned, True, True, 0)
 		w.set_response_sensitive(gtk.RESPONSE_OK, False)
 
 		class AutoScroller:
@@ -451,9 +464,9 @@ class GTKAutoCompiler(AutoCompiler):
 				vscroll = self.widget.get_vadjustment()
 				if not vscroll:
 					# Widget has been destroyed
-					print data,
+					print(data, end='')
 					return
-				near_end = vscroll.upper - vscroll.page_size * 1.5 < vscroll.value
+				near_end = vscroll.get_upper() - vscroll.get_page_size() * 1.5 < vscroll.get_value()
 				end = self.buffer.get_end_iter()
 				self.buffer.insert_with_tags_by_name(end, data, *tags)
 				if near_end:
@@ -506,7 +519,7 @@ class GTKAutoCompiler(AutoCompiler):
 		import gtk
 		try:
 			tasks.wait_for_blocker(self.recursive_build(self.iface_uri))
-		except SafeException, ex:
+		except SafeException as ex:
 			self.note_error(str(ex))
 		else:
 			self.heading('All builds completed successfully!')
@@ -551,13 +564,6 @@ class GTKAutoCompiler(AutoCompiler):
 			raise SafeException('Build process exited with error status %d' % code)
 		self.details.insert_at_end_and_scroll('Build completed successfully\n', 'heading')
 
-	@tasks.aasync
-	def confirm_import_feed(self, pending, valid_sigs):
-		from zeroinstall.gtkui import trust_box
-		box = trust_box.TrustBox(pending, valid_sigs, parent = self.dialog)
-		box.show()
-		yield box.closed
-
 def do_autocompile(args):
 	"""autocompile [--gui] URI"""
 
@@ -580,6 +586,7 @@ def do_autocompile(args):
 	iface_uri = model.canonical_iface_uri(args2[0])
 	if options.gui:
 		compiler = GTKAutoCompiler(config, iface_uri, options)
+		h.compiler = compiler
 	else:
 		compiler = AutoCompiler(config, iface_uri, options)
 

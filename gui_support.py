@@ -2,8 +2,8 @@
 # See http://0install.net/0compile.html
 
 import sys, os, __main__
-import pygtk; pygtk.require('2.0')
 import gtk, gobject
+import codecs
 
 from zeroinstall.injector import reader, writer, model
 from zeroinstall.injector.iface_cache import iface_cache
@@ -25,14 +25,13 @@ class CompileBox(gtk.Dialog):
 	def __init__(self, interface):
 		assert interface
 		gtk.Dialog.__init__(self, _("Compile '%s'") % interface.split('/')[-1])	# No rsplit on Python 2.3
-		self.set_has_separator(False)
 		self.set_default_size(gtk.gdk.screen_width() / 2, gtk.gdk.screen_height() / 2)
 
 		def add_action(stock, name, resp):
 			if not hasattr(gtk, stock):
 				stock = 'STOCK_YES'
 			button = ButtonMixed(getattr(gtk, stock), name)
-			button.set_flags(gtk.CAN_DEFAULT)
+			button.set_can_default(True)
 			self.add_action_widget(button, resp)
 			return button
 
@@ -46,7 +45,7 @@ class CompileBox(gtk.Dialog):
 		self.set_default_response(RESPONSE_BUILD)
 
 		self.buffer = gtk.TextBuffer()
-		self.tv = gtk.TextView(self.buffer)
+		self.tv = gtk.TextView(buffer = self.buffer)
 		self.tv.set_left_margin(4)
 		self.tv.set_right_margin(4)
 		self.tv.set_wrap_mode(gtk.WRAP_WORD)
@@ -204,7 +203,8 @@ class CompileBox(gtk.Dialog):
 			self.set_response_sensitive(resp, False)
 
 		# We are the parent
-		gobject.io_add_watch(r, gobject.IO_IN | gobject.IO_HUP, self.got_data)
+		codec = codecs.getincrementaldecoder(encoding = 'utf-8')()
+		gobject.io_add_watch(r, gobject.IO_IN | gobject.IO_HUP, lambda src, cond: self.got_data(src, cond, codec))
 	
 	def set_responses_sensitive(self):
 		self.set_response_sensitive(RESPONSE_SETUP, True)
@@ -216,7 +216,7 @@ class CompileBox(gtk.Dialog):
 		self.set_response_sensitive(RESPONSE_PUBLISH, have_binary)
 
 	def insert_at_end_and_scroll(self, data, *tags):
-		near_end = self.vscroll.upper - self.vscroll.page_size * 1.5 < self.vscroll.value
+		near_end = self.vscroll.get_upper() - self.vscroll.get_page_size() * 1.5 < self.vscroll.get_value()
 		end = self.buffer.get_end_iter()
 		self.buffer.insert_with_tags(end, data, *tags)
 		if near_end:
@@ -224,13 +224,16 @@ class CompileBox(gtk.Dialog):
 			self.buffer.move_mark(cursor, end)
 			self.tv.scroll_to_mark(cursor, 0, False, 0, 0)
 	
-	def got_data(self, src, cond):
+	def got_data(self, src, cond, codec):
 		data = os.read(src, 100)
 		if data:
-			# TODO: only insert complete UTF-8 sequences, not half sequences
+			data = codec.decode(data)
 			self.insert_at_end_and_scroll(data)
 			return True
 		else:
+			data = codec.decode(b"", final = True)
+			self.insert_at_end_and_scroll(data)
+
 			pid, status = os.waitpid(self.child, 0)
 			assert pid == self.child
 			self.child = None

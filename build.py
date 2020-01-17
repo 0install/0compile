@@ -21,7 +21,7 @@ PKG_CONFIG_OVERRIDES = 'pkg-config-overrides'
 
 def env(name, value):
 	os.environ[name] = value
-	print "%s=%s" % (name, value)
+	print("%s=%s" % (name, value))
 
 def do_env_binding(binding, path):
 	if binding.insert is not None and path is None:
@@ -56,7 +56,7 @@ def do_pkg_config_binding(binding, impl):
 	path = lookup(impl)
 	new_insert = correct_for_64bit(path, binding.insert)
 	if new_insert != binding.insert:
-		print "PKG_CONFIG_PATH dir <%s>/%s not found; using %s instead" % (feed_name, binding.insert, new_insert)
+		print("PKG_CONFIG_PATH dir <%s>/%s not found; using %s instead" % (feed_name, binding.insert, new_insert))
 		binding = model.EnvironmentBinding(binding.name,
 					new_insert,
 					binding.default,
@@ -72,7 +72,7 @@ def do_pkg_config_binding(binding, impl):
 				if '=' not in line: continue
 				name, value = [x.strip() for x in line.split('=', 1)]
 				if name == 'prefix' and os.path.isabs(value):
-					print "Absolute prefix=%s in %s; overriding..." % (value, feed_name)
+					print("Absolute prefix=%s in %s; overriding..." % (value, feed_name))
 					lines[i] = 'prefix=' + os.path.join(
 						path, os.path.splitdrive(value)[1][1:]) +'\n'
 					write_pc(pc, lines)
@@ -90,7 +90,7 @@ def shorten_dynamic_library_install_name(dylib_file):
 	for line in output.split('\n'):
 		if not line.endswith(':'):
 			value = line.strip()
-			print "Absolute install name=%s in %s; fixing..." % (value, dylib_file)
+			print("Absolute install name=%s in %s; fixing..." % (value, dylib_file))
 			break
 	shortname = os.path.basename(dylib_file)
 	subprocess.check_call(['install_name_tool', '-id', shortname, dylib_file])
@@ -112,7 +112,7 @@ def fixup_generated_pkgconfig_file(pc_file):
 		if '=' not in line: continue
 		name, value = [x.strip() for x in line.split('=', 1)]
 		if name == 'prefix' and os.path.isabs(value):
-			print "Absolute prefix=%s in %s; fixing..." % (value, pc_file)
+			print("Absolute prefix=%s in %s; fixing..." % (value, pc_file))
 			rel_path = os.path.relpath(value, os.path.dirname(pc_file))
 			lines[i] = 'prefix=' + os.path.join(
 				'${pcfiledir}', rel_path) + '\n'
@@ -141,7 +141,7 @@ def remove_la_file(path):
 		return
 
 	os.unlink(path)
-	print "Removed %s (.la files contain absolute paths)" % path
+	print("Removed %s (.la files contain absolute paths)" % path)
 
 # libtool archives contain hard-coded paths. Lucky, modern systems don't need them, so remove
 # them.
@@ -187,9 +187,8 @@ def do_build_internal(options, args):
 	info.setAttributeNS(None, 'host', socket.getfqdn())
 	info.setAttributeNS(None, 'user', getpass.getuser())
 	info.setAttributeNS(None, 'arch', '%s-%s' % (uname[0], uname[4]))
-	stream = file(build_env_xml, 'w')
-	buildenv_doc.writexml(stream, addindent="  ", newl="\n")
-	stream.close()
+	with open (build_env_xml, 'w') as stream:
+		buildenv_doc.writexml(stream, addindent="  ", newl="\n")
 
 	# Create local binary interface file.
 	# We use the main feed for the interface as the template for the name,
@@ -213,7 +212,7 @@ def do_build_internal(options, args):
 			try:
 				subprocess.call(["diff", "-urN", buildenv.orig_srcdir, 'src'], stdout = stream)
 			except OSError as ex:
-				print >>sys.stderr, "WARNING: Failed to run 'diff': ", ex
+				print("WARNING: Failed to run 'diff': ", ex, file=sys.stderr)
 		if os.path.getsize(patch_file) == 0:
 			os.unlink(patch_file)
 	elif os.path.exists(patch_file):
@@ -224,7 +223,7 @@ def do_build_internal(options, args):
 	env('SRCDIR', buildenv.user_srcdir or buildenv.orig_srcdir)
 	env('BINARYFEED', buildenv.local_iface_file)
 	os.chdir(builddir)
-	print "cd", builddir
+	print("cd", builddir)
 
 	setup = CompileSetup(iface_cache.stores, sels)
 	setup.prepare_env()
@@ -232,7 +231,7 @@ def do_build_internal(options, args):
 	# These mappings are needed when mixing Zero Install -dev packages with
 	# native package binaries.
 	mappings = {}
-	for impl in sels.selections.values():
+	for impl in list(sels.selections.values()):
 		# Add mappings that have been set explicitly...
 		new_mappings = impl.attrs.get(XMLNS_0COMPILE + ' lib-mappings', '')
 		if new_mappings:
@@ -293,39 +292,41 @@ def do_build_internal(options, args):
 
 		# Run the command, copying output to a new log
 		with open('build.log', 'w') as log:
-			print >>log, "Build log for %s-%s" % (master_feed.get_name(),
-							      src_impl.version)
-			print >>log, "\nBuilt using 0compile-%s" % __main__.version
-			print >>log, "\nBuild system: " + ', '.join(uname)
-			print >>log, "\n%s:\n" % ENV_FILE
+			print("Build log for %s-%s" % (master_feed.get_name(),
+							      src_impl.version), file=log)
+			print("\nBuilt using 0compile-%s" % __main__.version, file=log)
+			print("\nBuild system: " + ', '.join(uname), file=log)
+			print("\n%s:\n" % ENV_FILE, file=log)
 			with open(os.path.join(os.pardir, ENV_FILE)) as properties_file:
 				shutil.copyfileobj(properties_file, log)
 
 			log.write('\n')
 
 			if os.path.exists(patch_file):
-				print >>log, "\nPatched with:\n"
-				shutil.copyfileobj(file(patch_file), log)
+				print("\nPatched with:\n", file=log)
+				with open(patch_file, 'r') as src:
+					shutil.copyfileobj(src, log)
 				log.write('\n')
 
 			if command:
-				print "Executing: " + command, args
-				print >>log, "Executing: " + command, args
+				print("Executing: " + command, args)
+				print("Executing: " + command, args, file=log)
 			else:
-				print "Executing: " + str(prog_args)
-				print >>log, "Executing: " + str(prog_args)
+				print("Executing: " + str(prog_args))
+				print("Executing: " + str(prog_args), file=log)
 
 			# Tee the output to the console and to the log
 			child = subprocess.Popen(prog_args, stdout = subprocess.PIPE, stderr = subprocess.STDOUT)
 			while True:
 				data = os.read(child.stdout.fileno(), 100)
 				if not data: break
+				data = data.decode()
 				sys.stdout.write(data)
 				log.write(data)
 			status = child.wait()
 			failure = None
 			if status == 0:
-				print >>log, "Build successful"
+				print("Build successful", file=log)
 				shorten_dynamic_library_install_names()
 				fixup_generated_pkgconfig_files()
 				remove_la_files()
@@ -334,7 +335,7 @@ def do_build_internal(options, args):
 			else:
 				failure = "Build failure: exited due to signal %d" % (-status)
 			if failure:
-				print >>log, failure
+				print(failure, file=log)
 
 		if failure:
 			os.rename('build.log', 'build-failure.log')
@@ -368,7 +369,7 @@ def do_build(args):
 					"To build anyway, use: 0compile build --force\n" +
 					"To do a clean build:  0compile build --clean")
 		if not options.no_sandbox:
-			print "Build dependencies have changed:\n" + '\n'.join(changes)
+			print("Build dependencies have changed:\n" + '\n'.join(changes))
 
 	ensure_dir(builddir, options.clean)
 	ensure_dir(buildenv.distdir, options.clean)
@@ -383,7 +384,7 @@ def do_build(args):
 		writable = ['build', buildenv.distdir, tmpdir]
 		env('TMPDIR', tmpdir)
 
-		for selection in sels.selections.values():
+		for selection in list(sels.selections.values()):
 			if not is_package_impl(selection):
 				readable.append(lookup(selection))
 
@@ -412,16 +413,16 @@ def find_feed_for(master_feed):
 	uri = master_feed.url
 
 	if is_local:
-		print "Note: source %s is a local feed" % uri
+		print("Note: source %s is a local feed" % uri)
 		for feed_uri in master_feed.feed_for or []:
 			uri = feed_uri
-			print "Will use <feed-for interface='%s'> instead..." % uri
+			print("Will use <feed-for interface='%s'> instead..." % uri)
 			break
 		else:
 			master_feed = minidom.parse(uri).documentElement
 			if master_feed.hasAttribute('uri'):
 				uri = master_feed.getAttribute('uri')
-				print "Will use <feed-for interface='%s'> instead..." % uri
+				print("Will use <feed-for interface='%s'> instead..." % uri)
 
 	return uri
 
@@ -494,7 +495,7 @@ def write_sample_feed(buildenv, master_feed, src_impl):
 		arm_if_0install_attrs(impl_template)
 
 		# Copy attributes from template
-		for fullname, value in impl_template.attrs.iteritems():
+		for fullname, value in impl_template.attrs.items():
 			if fullname == 'arch':
 				set_arch = False
 				if value == '*-*':
@@ -551,7 +552,7 @@ def write_sample_feed(buildenv, master_feed, src_impl):
 	close(group)
 	close(root)
 
-	for ns, prefix in prefixes.prefixes.items():
+	for ns, prefix in list(prefixes.prefixes.items()):
 		root.setAttributeNS(XMLNS_NAMESPACE, 'xmlns:' + prefix, ns)
 
 	stream = codecs.open(path, 'w', encoding = 'utf-8')
@@ -576,7 +577,7 @@ def find_broken_version_symlinks(libdir, mappings):
 			if os.path.islink(path):
 				target = os.readlink(path)
 				if '/' not in target and not os.path.exists(os.path.join(libdir, target)):
-					print "Broken link %s -> %s; will relocate..." % (x, target)
+					print("Broken link %s -> %s; will relocate..." % (x, target))
 					mappings[x[len(prefix):-len(extension)]] = target
 
 def set_up_mappings(mappings):
@@ -593,14 +594,15 @@ def set_up_mappings(mappings):
 	def add_ldconf(config_file):
 		if not os.path.isfile(config_file):
 			return
-		for line in file(config_file):
-			d = line.strip()
-			if d.startswith('include '):
-				glob_pattern = d.split(' ', 1)[1]
-				for conf in glob.glob(glob_pattern):
-					add_ldconf(conf)
-			elif d and not d.startswith('#'):
-				libdirs.append(d)
+		with open(config_file) as stream:
+			for line in stream:
+				d = line.strip()
+				if d.startswith('include '):
+					glob_pattern = d.split(' ', 1)[1]
+					for conf in glob.glob(glob_pattern):
+						add_ldconf(conf)
+				elif d and not d.startswith('#'):
+					libdirs.append(d)
 	add_ldconf('/etc/ld.so.conf')
 
 	def find_library(name, wanted):
@@ -610,7 +612,7 @@ def set_up_mappings(mappings):
 			path = os.path.join(d, wanted)
 			if os.path.exists(path):
 				return path
-		print "WARNING: library '%s' not found (searched '%s')!" % (wanted, libdirs)
+		print("WARNING: library '%s' not found (searched '%s')!" % (wanted, libdirs))
 		return None
 
 	mappings_dir = os.path.join(os.environ['TMPDIR'], 'lib-mappings')
@@ -624,10 +626,10 @@ def set_up_mappings(mappings):
 		soext='.dylib'
 	else:
 		soext='.so'
-	for name, wanted in mappings.items():
+	for name, wanted in list(mappings.items()):
 		target = find_library(name, wanted)
 		if target:
-			print "Adding mapping lib%s%s -> %s" % (name, soext, target)
+			print("Adding mapping lib%s%s -> %s" % (name, soext, target))
 			os.symlink(target, os.path.join(mappings_dir, 'lib' + name + soext))
 
 def copy_file(src, target):
@@ -647,12 +649,12 @@ def dup_src(fn):
 		reldir = root[len(srcdir):]
 
 		if '.git' in dirs:
-			print "dup-src: skipping %s" % (os.path.join(reldir, '.git'))
+			print("dup-src: skipping %s" % (os.path.join(reldir, '.git')))
 			dirs.remove('.git')
 
 		if (reldir == 'build' and build_in_src) or \
 				('0compile.properties' in files and not build_in_src and reldir != ""):
-			print "dup-src: skipping", reldir
+			print("dup-src: skipping", reldir)
 			dirs[:] = []
 			continue
 

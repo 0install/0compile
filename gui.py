@@ -16,6 +16,10 @@ def do_gui(args):
 		# This option no longer has any effect, since it is the default.
 		# However, old versions of 0launch's GUI pass it (< 0.52)
 
+	from zeroinstall.gtkui import pygtkcompat
+	pygtkcompat.enable()
+	pygtkcompat.enable_gtk(version = '3.0')
+
 	import gui_support
 	import gtk
 
@@ -41,10 +45,10 @@ def do_gui(args):
 		gtk.main()
 	except KeyboardInterrupt:
 		pass
-	except SafeException, ex:
+	except SafeException as ex:
 		gui_support.alert(None, '%s' % ex)
 		sys.exit(1)
-	except Exception, ex:
+	except Exception as ex:
 		import traceback
 		traceback.print_exc()
 		gui_support.alert(None, '%s: %s' % (ex.__class__, ex))

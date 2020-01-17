@@ -8,7 +8,6 @@ import locale
 from optparse import OptionParser
 import os, sys
 from logging import warn
-import gobject; gobject.threads_init()
 
 zeroinstall_dir = os.environ.get('ZI_COMPILE_ZEROINSTALL', None)
 if zeroinstall_dir:
@@ -42,13 +41,13 @@ parser.disable_interspersed_args()
 (options, args) = parser.parse_args()
 
 if options.version:
-	print "0compile (zero-install) " + version
-	print "Copyright (C) 2006 Thomas Leonard"
-	print "This program comes with ABSOLUTELY NO WARRANTY,"
-	print "to the extent permitted by law."
-	print "You may redistribute copies of this program"
-	print "under the terms of the GNU General Public License."
-	print "For more information about these matters, see the file named COPYING."
+	print("0compile (zero-install) " + version)
+	print("Copyright (C) 2006 Thomas Leonard")
+	print("This program comes with ABSOLUTELY NO WARRANTY,")
+	print("to the extent permitted by law.")
+	print("You may redistribute copies of this program")
+	print("under the terms of the GNU General Public License.")
+	print("For more information about these matters, see the file named COPYING.")
 	sys.exit(0)
 
 if options.verbose:
@@ -76,26 +75,26 @@ try:
 		raise SafeException("What do you mean by '%s'?\n%s" %
 			(pattern, '\n'.join(['- ' + x.__name__[3:] for x in matches])))
 	matches[0](args[1:])
-except KeyboardInterrupt, ex:
-	print >>sys.stderr, "Interrupted"
+except KeyboardInterrupt as ex:
+	print("Interrupted", file=sys.stderr)
 	sys.exit(1)
-except OSError, ex:
+except OSError as ex:
 	if options.verbose: raise
-	print >>sys.stderr, str(ex)
+	print(str(ex), file=sys.stderr)
 	sys.exit(1)
-except IOError, ex:
+except IOError as ex:
 	if options.verbose: raise
-	print >>sys.stderr, str(ex)
+	print(str(ex), file=sys.stderr)
 	sys.exit(1)
-except UsageError, ex:
-	print >>sys.stderr, str(ex)
-	print >>sys.stderr, "usage: " + os.path.basename(sys.argv[0]) + " " + matches[0].__doc__
+except UsageError as ex:
+	print(str(ex), file=sys.stderr)
+	print("usage: " + os.path.basename(sys.argv[0]) + " " + matches[0].__doc__, file=sys.stderr)
 	sys.exit(1)
-except SafeException, ex:
+except SafeException as ex:
 	if options.verbose: raise
 	try:
-		print >>sys.stderr, unicode(ex)
+		print(str(ex), file=sys.stderr)
 	except:
-		print >>sys.stderr, repr(ex)
+		print(repr(ex), file=sys.stderr)
 	sys.exit(1)
 
