@@ -248,7 +248,7 @@ class TestCompile(unittest.TestCase):
 		os.chdir(self.hello_dir)
 		compile('setup', broken_src, '.')
 		compile('build', expect = 'Build failed with exit code', expect_status = 1)
-		compile('report-bug', expect = "http://0install.net/api/report-bug")
+		compile('report-bug', expect = "http://api.0install.net/api/report-bug")
 
 		env = support.BuildEnv()
 		os.unlink(os.path.join(env.metadir, "build-environment.xml"))

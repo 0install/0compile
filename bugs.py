@@ -29,10 +29,10 @@ def do_report_bug(args):
 
 	print("Sending contents of %s file to default bug reporting site..." % log_name)
 
-	stream = urlopen('http://0install.net/api/report-bug/',
+	stream = urlopen('http://api.0install.net/api/report-bug/',
 		urllib.parse.urlencode({
 		'uri': buildenv.interface,
-		'body': log_text}))
+		'body': log_text}).encode())
 	print(stream.read())
 	stream.close()
 
