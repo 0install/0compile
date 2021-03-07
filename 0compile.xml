@@ -17,7 +17,7 @@ accidentally modify any files outside of the build directory.
 For a full tutorial, see 0compile's homepage.</description>
   <homepage>https://docs.0install.net/tools/0compile/</homepage>
 
-  <feed-for interface="http://0install.net/2006/interfaces/0compile.xml"/>
+  <feed-for interface="https://apps.0install.net/0install/0compile.xml"/>
 
   <release:management xmlns:release="http://zero-install.sourceforge.net/2007/namespaces/0release">
     <!-- Update the copy of the version number in the main program -->
@@ -40,10 +40,10 @@ For a full tutorial, see 0compile's homepage.</description>
       <requires interface="http://rox.sourceforge.net/2005/interfaces/ROX-Lib"/>
     </command>
     <implementation id="." version="1.7-post"/>
-    <requires interface="http://0install.net/2006/interfaces/0publish">
+    <requires interface="https://apps.0install.net/0install/0publish.xml">
       <environment insert="0publish" mode="replace" name="ZI_COMPILE_0PUBLISH"/>
     </requires>
-    <requires interface="http://0install.net/2007/interfaces/ZeroInstall.xml" version="2.3.7..">
+    <requires interface="https://apps.0install.net/0install/0install-python.xml" version="2.3.7..">
       <executable-in-var command="0install" name="ZI_COMPILE_0INSTALL"/>
       <environment insert="" mode="replace" name="ZI_COMPILE_ZEROINSTALL"/>
     </requires>
