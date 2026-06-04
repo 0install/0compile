@@ -24,7 +24,7 @@ For a full tutorial, see 0compile's homepage.</description>
     <release:action phase="commit-release">sed -i &quot;s/^version = '.*'$/version = '$RELEASE_VERSION'/&quot; 0compile</release:action>
   </release:management>
 
-  <group license="OSI Approved :: GNU Lesser General Public License (LGPL)" main="0compile">
+  <group license="LGPL-2.1-or-later" main="0compile">
     <command name="run" path="0compile">
       <runner interface="https://apps.0install.net/python/python.xml">
 	<version not-before="3"/>
